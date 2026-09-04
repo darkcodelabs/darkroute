@@ -1,0 +1,125 @@
+/* ADMIN - a list and a text box. Deliberately plain.
+ *
+ * This is the one screen in the app that is not a driving instrument. It is
+ * read while stationary, by one person, rarely. Giving it the scope's visual
+ * language would make it look like something a driver should glance at. */
+
+.fwm-admin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  height: 100%;
+  padding: var(--fwm-space-4);
+  overflow-y: auto;
+  background: var(--fwm-bg);
+  color: var(--fwm-text);
+}
+
+.fwm-admin-title {
+  margin: 0;
+  font-size: var(--fwm-text-title);
+  letter-spacing: calc(var(--fwm-text-title) * 0.06);
+}
+
+.fwm-admin-note {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.6;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-admin-error {
+  margin: 0;
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-tint-in-range);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-admin-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-admin-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text-2);
+}
+
+.fwm-admin-row {
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-admin-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-admin-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+.fwm-admin-key {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-4);
+  border: 0; /* keyword */
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-alert-in-range);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-bg);
+}
+
+.fwm-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-admin-item {
+  display: flex;
+  gap: var(--fwm-space-2);
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-admin-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-admin-email {
+  font-size: var(--fwm-text-micro);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* keyword */
+}
+
+/* Destructive, and it says so. Not a primary key: removing somebody's access is
+   a thing to mean, not a thing to hit while scrolling. */
+.fwm-admin-remove {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-2);
+  border: 0; /* keyword */
+  background: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-admin {
+  --fwm-admin-rule-w: calc(var(--fwm-space-1) / 4);
+}

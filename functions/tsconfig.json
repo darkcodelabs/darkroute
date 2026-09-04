@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "types": [
+      "@cloudflare/workers-types"
+    ]
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "vitest.config.ts"
+  ],
+  "//": [
+    "TESTS ARE EXCLUDED FROM THIS TYPECHECK, deliberately.",
+    "",
+    "This config sets types to @cloudflare/workers-types, which is what the code",
+    "actually runs on. A vitest file needs vitest's types, and the two cannot",
+    "share a program: workers-types and Node's lib both declare ReadableStream,",
+    "console and crypto, and vitest/globals pulls tinybench, whose EventTarget",
+    "is incompatible with the Workers one. Every arrangement tried produced a",
+    "dozen errors about the toolchain and none about the code.",
+    "",
+    "So the tests are typechecked by vitest's own transpile at run time rather",
+    "than by tsc. The production code -- the part that ships -- keeps its strict",
+    "Workers typing, which is the half that matters."
+  ]
+}

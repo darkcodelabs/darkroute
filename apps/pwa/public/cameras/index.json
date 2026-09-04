@@ -1,0 +1,16 @@
+{
+  "zoom": 11,
+  "generatedAt": "2026-09-01T18:26:43.396Z",
+  "source": "OpenStreetMap (ODbL), via the DeFlock hourly build + our own archive",
+  "upstream": "2026-09-01T18:00:00Z",
+  "attribution": "Map data © OpenStreetMap contributors",
+  "licence": "ODbL-1.0",
+  "cameras": 139918,
+  "tiles": 8803,
+  "bbox": {
+    "south": 17.5,
+    "west": -168,
+    "north": 71.5,
+    "east": -64.5
+  }
+}

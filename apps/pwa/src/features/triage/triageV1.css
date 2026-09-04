@@ -1,0 +1,150 @@
+/* TRIAGE - v1.
+ *
+ * One number, one sentence, five switches. The amber hero is the design's, and
+ * amber is right: this screen is about interruptions, which is what amber means
+ * everywhere else in the product.
+ */
+
+.fwm-triagev1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-triagev1-header {
+  display: flex;
+  align-items: center;
+  /* Room for the back key beside the title. Same gap MISUSE and INTEL use. */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-triagev1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-triagev1-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-4);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-tint-approaching);
+}
+
+.fwm-triagev1-figure {
+  font-size: var(--fwm-text-readout);
+  font-weight: 800;
+  line-height: 0.85;
+  color: var(--fwm-alert-approaching);
+  flex: none; /* keyword */
+}
+
+/* AN UNKNOWN FIGURE IS QUIETER THAN A KNOWN ONE. The em dash is the right
+   answer with no drives recorded, and it must not read like a big amber
+   warning about a number nobody measured. */
+.fwm-triagev1-hero[data-fwm-known='false'] .fwm-triagev1-figure {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-triagev1-hero-body {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-triagev1-baseline {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-triagev1-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-triagev1-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-triagev1-row-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+}
+
+.fwm-triagev1-row-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-triagev1-row-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* Same derivation as SETTINGS' pill, from the same space tokens: two switches
+   in one product must not differ in size. */
+.fwm-triagev1-track {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: calc(var(--fwm-space-6) + var(--fwm-space-8));
+  height: var(--fwm-space-8);
+  padding: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+  transition: background var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+/* AMBER, not cyan. On this screen "on" means "this class will interrupt you",
+   which is the amber statement, and matching SETTINGS' cyan here would make
+   the two switches look like the same kind of decision. */
+.fwm-triagev1-track[data-fwm-on='true'] {
+  justify-content: flex-end;
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-triagev1-knob {
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+.fwm-triagev1-track[data-fwm-on='true'] .fwm-triagev1-knob {
+  background: var(--fwm-text-on-alert);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-triagev1 > * {
+  flex-shrink: 0;
+}

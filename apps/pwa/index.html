@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <!--
+      viewport-fit=cover + user-scalable=no are required verbatim by
+      "Flockys Design System.dc.html", section 06, panel PLATFORM BEHAVIOUR:
+        "safe areas: env(safe-area-inset-*) on nav + header
+         viewport-fit=cover, user-scalable=no"
+      The safe-area helpers in src/styles/global.css depend on viewport-fit=cover.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+
+    <!--
+      theme-color is #000000 because that is the value of --fwm-bg in
+      apps/pwa/src/styles/tokens.css (and of `theme_color` in the MANIFEST
+      TOKENS panel, section 06). index.html is outside apps/pwa/src, which is
+      the only reason a literal is permitted here. A mode override cannot reach
+      the browser chrome, so this value intentionally does not follow modes.
+      If --fwm-bg ever changes, change it here and in vite.config.ts too.
+    -->
+    <meta name="theme-color" content="#000000" />
+    <!--
+      REVERTED TO `dark`, and staying there.
+
+      This was changed to `dark light` to try to stop a black band appearing
+      under the two light modes. It made the result worse on a real device, so
+      it is back. The band is the system's navigation bar, which an installed
+      PWA does not get to paint on Android; declaring light support only
+      changed which of the browser's own surfaces went pale and left the app
+      looking half-dressed rather than fixed.
+
+      If this is worth solving it is a TWA manifest setting, not a meta tag.
+    -->
+    <meta name="color-scheme" content="dark" />
+
+    <title>DarkRoute</title>
+    <meta name="description" content="ALPR camera awareness for drivers. See them before they see you." />
+
+    <!--
+      THE MANIFEST LINK. Without this line the app cannot be installed, and it
+      was missing: `manifest.webmanifest` was generated correctly by the token
+      pass, deployed correctly, and served correctly as
+      `application/manifest+json` -- and no browser ever asked for it, because
+      nothing on the page said it existed. Every other install requirement was
+      already met, so this one line was the whole difference between "add to
+      home screen" appearing and not.
+
+      It also gates the TWA: an Android Trusted Web Activity is a wrapper around
+      an installable PWA, and Digital Asset Links verification is checked
+      against the manifest's scope.
+
+      `crossorigin="use-credentials"` IS LOAD-BEARING BEHIND CLOUDFLARE ACCESS.
+
+      A manifest is fetched as a CORS request and, by default, WITHOUT
+      credentials -- even same-origin. Behind Access that means the request
+      carries no `CF_Authorization` cookie, so Access does not serve it: it
+      redirects to `<team>.cloudflareaccess.com/cdn-cgi/access/login/...`,
+      which sends no `access-control-allow-origin`, and the browser reports a
+      CORS failure on a file that is sitting right there and is not actually
+      cross-origin at all. Measured on the gated host: the redirect's own JWT
+      says `auth_status: NONE`.
+
+      The consequence is not a console warning. No manifest means no install
+      prompt and no TWA, which is the same end state as the missing link above
+      and looks nothing like it from the outside.
+
+      This attribute makes the fetch send cookies, so Access answers it.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- black-translucent is what lets the page paint under the status bar,
+         which is the point of viewport-fit=cover. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DarkRoute" />
+    <!-- The SQUARE artwork, not the mark. iOS shows this uncropped on the home
+         screen and paints no background behind it, so it needs the opaque
+         designed square; `darkroute-mark.png` is the small monochrome route
+         glyph and would land as white-on-nothing. -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- THE TAB ICON, from the MARK rather than the artwork. At 16px the
+         halftone eye and the road lattice both average to one grey; the mark is
+         solid strokes and survives. Both sizes are declared because browsers
+         pick per-context - 16 for the tab, 32 for bookmarks and the taskbar. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png" />
+
+    <!--
+      NO REMOTE FONTS. Both bundled faces are served from this origin; the
+      default platform face requires no download.
+
+      This block used to preconnect to fonts.googleapis.com and pull Chakra
+      Petch and JetBrains Mono from Google's CDN, which meant every cold start
+      handed Google the driver's IP address and a timestamp -- from an app whose
+      entire pitch is reducing what gets recorded about where somebody drives.
+      Self-hosting them removes that disclosure and availability failure.
+
+      It also made the first paint depend on a third party: offline, the faces
+      never arrived and the app fell back to system-ui, which is the one moment
+      a driver is most likely to be looking at it.
+
+      The @font-face rules live in tokens.css beside the family tokens.
+    -->
+  </head>
+
+  <body>
+    <!--
+      Surface detection (section 06) sets data-fwm-surface on <html> at runtime,
+      and mode selection sets data-fwm-mode. Neither is hardcoded here: the
+      default mode `night-watch` IS the :root block of tokens.css, so the
+      document renders correctly before either attribute is applied.
+    -->
+    <div id="root"></div>
+
+    <noscript>darkroute needs javascript. nothing here works without it.</noscript>
+
+    <!--
+      ENTRY CONTRACT for src/main.tsx (owned by the app agent):
+      the first two statements in that file must be, in this order —
+          import './styles/tokens.css';
+          import './styles/global.css';
+      tokens.css must land first because global.css consumes var(--fwm-*), and
+      Tailwind's preflight (emitted from the @tailwind directives at the top of
+      global.css) must come after the custom properties are declared.
+      The stylesheets are deliberately NOT <link>ed here: linking them as well
+      would double-inject them in dev.
+    -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

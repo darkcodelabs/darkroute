@@ -1,0 +1,174 @@
+/* NAVIGATION CHROME - the back key and the page title.
+ *
+ * These declarations are `.fwm-misuse-back` and `.fwm-intelv1-back` merged.
+ * Those two BASE rules were identical down to the property order, in two
+ * feature stylesheets, and both are deleted now: this file is where the
+ * control is described, so a change to it reaches every screen instead of two.
+ *
+ * Not quite verbatim, and the difference matters. `.fwm-misuse-back` appeared
+ * a SECOND time, in misuse.css's liquid-glass rule, which is where it got its
+ * tint, hairline, optics and rim. Taking only the base rule would have made
+ * this the one control in the MISUSE header not made of glass, so the glass
+ * block below is that second rule, folded in for every screen.
+ *
+ * Token rule applies here like everywhere outside tokens.css. The bare
+ * keywords carry the trailing comment `scripts/check-design-values.mjs` wants.
+ */
+
+.fwm-backkey {
+  /* THE TOUCH TARGET IS THE TOKEN, both axes. `--fwm-touch-min` is 44px on a
+     phone and grows to 48 or 68 on the dash and watch palettes, so this
+     control is never below the minimum on any surface without this file
+     knowing what those surfaces are. */
+  width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+
+  /* Never squeezed by the title beside it. A header is a flex row and a long
+     screen name would otherwise shrink the circle under 44px, which is the
+     one thing the size above is here to guarantee. */
+  flex: none; /* keyword */
+
+  /* Centres the glyph without a line-height, which would be a raw number the
+     token set does not model. */
+  display: flex; /* keyword */
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+
+  padding: 0;
+  border-radius: var(--fwm-radius-full);
+  font-size: var(--fwm-text-subtitle);
+  color: var(--fwm-text-2);
+
+  /* MADE OF THE SAME MATERIAL AS THE SCREEN IT SITS ON. `.fwm-misuse-back`
+     carried these four properties through a second rule further down its own
+     stylesheet, and unifying the two copies took only the base rule -- which
+     silently flattened MISUSE's back key to an opaque disc while the chips and
+     cards beside it stayed glass. It was the only control in that header not
+     made of the screen's own material.
+
+     The OFF switch resolves `--fwm-glass-filter` to `none`, so this degrades
+     the way every other glass surface in the app degrades. */
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+
+  /* No 300ms tap delay on a control whose whole job is getting out. */
+  touch-action: manipulation; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* THE PAGE TITLE'S BUTTON - see components/nav/ReloadTitle.tsx.
+ *
+ * These declarations are `.fwm-drive-mark`'s button half, lifted out. DRIVE's
+ * wordmark was the only tappable title in the app and it carried its own chrome
+ * reset; thirteen more screens now draw the same control, and this is the one
+ * description of it so the fourteenth cannot be subtly different.
+ *
+ * What did NOT move is everything about how DRIVE's wordmark LOOKS - its drop
+ * shadow over the basemap, its `nowrap`, its `flex: none` in the status pill.
+ * Those stay in `drive.css` on the `<h1>` this button sits inside, because they
+ * are that screen's answer to being drawn over a map that changes colour and
+ * are not what a title is. Every other screen's `<h1>` keeps its own feature
+ * stylesheet's type in exactly the same way.
+ */
+.fwm-reloadtitle {
+  /* IT MUST NOT LOOK LIKE A BUTTON. A border, a platform fill and padding would
+     draw a box around the screen's name, and the name is a title before it is a
+     control. Tailwind's preflight already flattens most of this; it is written
+     out anyway because the rule that keeps a title looking like a title should
+     be visible in the file that owns the title, not inferred from a dependency.
+     Everything the control needs to be READ as a control - focus ring, tab
+     order, the button role - is untouched. */
+  appearance: none; /* keyword */
+  border: none; /* keyword */
+  background: none; /* keyword */
+  padding: 0;
+  margin: 0;
+
+  /* TYPE COMES FROM THE HEADING, WHOLESALE. A button does not inherit type by
+     default, so without this every title would silently fall back to the
+     platform's control font at the platform's control size - which is the one
+     outcome that makes a title stop reading as a title. `font` rather than
+     four longhands: family, size, weight, style and line-height are all set by
+     the feature stylesheet on the `<h1>`, and naming them one at a time is how
+     the fifth gets forgotten. */
+  font: inherit; /* keyword */
+  color: inherit; /* keyword */
+
+  /* THE TOUCH TARGET IS THE TOKEN, ON BOTH AXES. The words are
+     `--fwm-text-title` tall, which is under 44px at every text scale the app
+     offers, so the target is grown to the minimum here. `inline-flex` centres
+     the words in it without a line-height, which would fight the one the
+     heading just handed down.
+
+     THE EXTRA IS NOT FREE, and an earlier version of this comment claimed it
+     was. Measured at 390px: on the eleven screens whose header row was already
+     44px tall - the eight with a back key, plus DRIVE's 48px pill and
+     EXPOSURE's 52px header - nothing moves at all. On the three without one it
+     grows the row by 8px: MESH 36 -> 44, LOOKUP 36 -> 44, DOCS 208.5 -> 216.5.
+     Nothing clips, overflows or scrolls horizontally at any viewport or text
+     scale that was checked. That is the price of a real 44px target rather
+     than a defect, but it is 8px on three screens and not zero.
+
+     `min-width` IS NOT SYMMETRY FOR ITS OWN SAKE. It was left off and the
+     headless pass found ASK measuring 42x44 at every viewport and text scale,
+     because a target sized by its own label is only as wide as the label and
+     ASK's label is three letters. A screen whose name happens to be short is
+     not a screen whose title should be harder to hit. `--fwm-touch-min` rather
+     than 44px flat: the token is 48 on the dash and 68 on the watch, and this
+     control has to clear the minimum on the surface it is actually drawn on.
+     Left-aligned in the extra width, so a short title does not visibly move. */
+  display: inline-flex; /* keyword */
+  align-items: center; /* keyword */
+  justify-content: flex-start; /* keyword */
+  min-height: var(--fwm-touch-min);
+  min-width: var(--fwm-touch-min);
+
+  /* No 300ms tap delay, same as the back key beside it. */
+  touch-action: manipulation; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* THE WORDMARK, DRAWN AS ARTWORK RATHER THAN SET AS TYPE.
+ *
+ * `darkroute.ai` is a distressed logotype - the letters are eaten through with
+ * dither and speckle - and no font in the stack reproduces that. So DRIVE's
+ * heading draws the asset instead of the word. See `ReloadTitle`'s `asMark`.
+ *
+ * A MASK, NOT AN `<img>`, and that is the whole reason this needs no second
+ * file. The artwork's texture lives in its ALPHA channel: measured on the
+ * source, 77.9% of pixels are fully transparent, 21.8% are partial - the
+ * distress itself - and 0.3% fully opaque. A mask reads only that alpha and
+ * takes its COLOUR from this rule, so one stencil paints white on the dark
+ * palettes and near-black on `refinement`, the one light one, with nothing to
+ * keep in sync. Shipping an inverted copy would have meant two files to
+ * re-export every time the brand changes, and a light theme that silently kept
+ * the dark artwork whenever somebody forgot one.
+ *
+ * `--fwm-text` is the same token the word used, so the mark inherits whatever
+ * the active theme decided text should be.
+ *
+ * SIZED BY HEIGHT, WIDTH FOLLOWS. `--fwm-text-title` is what every other page
+ * title measures, which is what makes this read as this screen's heading and
+ * not as a caption on the status pill. `aspect-ratio` carries the artwork's own
+ * proportion so the glyphs cannot letterbox or stretch at any text scale; the
+ * asset is pre-trimmed to its alpha bounding box, so the ratio is the letters
+ * themselves and not their padding.
+ *
+ * The `<h1>` keeps `.fwm-drive-mark`'s drop shadow, which is what makes the
+ * mark readable over a basemap that changes colour under it. */
+.fwm-reloadtitle-mark {
+  display: block; /* keyword */
+  height: var(--fwm-text-title);
+  aspect-ratio: 1200 / 336;
+  background: var(--fwm-text);
+  -webkit-mask-image: url("/assets/darkroute-wordmark.png");
+  mask-image: url("/assets/darkroute-wordmark.png");
+  -webkit-mask-position: left center;
+  mask-position: left center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}

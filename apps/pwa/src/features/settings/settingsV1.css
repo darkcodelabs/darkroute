@@ -1,0 +1,583 @@
+/* SETTINGS - v1.
+ *
+ * Cards on the page rather than sections down a form. The one screen where the
+ * product lets a driver change what it does, so the controls are big and the
+ * chrome around them is quiet.
+ */
+
+.fwm-settingsv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-settingsv1-header {
+  display: flex;
+  align-items: center;
+  /* The gap the back key needs beside the title. Same value MISUSE and INTEL
+     already used for the same pair, so the control sits in the same place on
+     every screen that draws it. */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-settingsv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-settingsv1-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settingsv1-note[data-fwm-warn='true'] {
+  padding: var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--fwm-alert-approaching);
+  border-radius: var(--fwm-radius-4);
+  color: var(--fwm-alert-approaching);
+}
+
+/* --- the card ------------------------------------------------------------- */
+
+.fwm-settingsv1-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-settingsv1-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-settingsv1-card-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-settingsv1-card-value {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- theme swatches ------------------------------------------------------- */
+
+.fwm-settingsv1-swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-2);
+}
+
+/* THE SWATCH IS PAINTED IN THE MODE IT NAMES. `[data-fwm-mode]` lives on
+   <html>, so a card cannot inherit another mode's palette - the three dots come
+   from the `--fwm-swatch-*` triples in tokens.css instead, and the card's own
+   ground is that mode's background. Picking a theme should look like the thing
+   you are picking. `swatches.test.ts` fails when a triple drifts from the
+   palette it names. */
+.fwm-settingsv1-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: var(--fwm-mark-w) solid transparent;
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-swatch-bg);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settingsv1-swatch[data-fwm-selected='true'] {
+  border-color: var(--fwm-swatch-clear);
+}
+
+.fwm-settingsv1-swatch:disabled {
+  opacity: 0.4;
+}
+
+.fwm-settingsv1-swatch-chips {
+  display: flex;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-settingsv1-chip {
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-settingsv1-chip[data-fwm-chip='bg'] {
+  /* Outlined, because the ground colour drawn on the ground colour is invisible
+     and its being invisible is itself the information. */
+  border: var(--fwm-rule-w) solid var(--fwm-swatch-clear);
+  background: var(--fwm-swatch-bg);
+}
+
+.fwm-settingsv1-chip[data-fwm-chip='accent'] {
+  background: var(--fwm-swatch-clear);
+}
+
+.fwm-settingsv1-chip[data-fwm-chip='alert'] {
+  background: var(--fwm-swatch-alert);
+}
+
+.fwm-settingsv1-swatch-name {
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  /* The mode's own CLEAR hue - the one every mode retunes, and the only colour
+     in the triple guaranteed to read on that mode's own ground, light modes
+     included. See the swatch block in tokens.css. */
+  color: var(--fwm-swatch-clear);
+}
+
+/* One rule per v1 theme. `swatches.test.ts` walks `V1_MODES` and fails if any
+   of them is missing here, so a theme added to the list without a
+   swatch shows the night-watch fallback declared on `.fwm-settingsv1-swatch`
+   rather than an unpainted card. */
+.fwm-settingsv1-swatch {
+  --fwm-swatch-bg: var(--fwm-swatch-night-watch-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-night-watch-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-night-watch-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='ember'] {
+  --fwm-swatch-bg: var(--fwm-swatch-ember-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-ember-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-ember-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='tide'] {
+  --fwm-swatch-bg: var(--fwm-swatch-tide-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-tide-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-tide-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='moss'] {
+  --fwm-swatch-bg: var(--fwm-swatch-moss-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-moss-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-moss-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='sodium'] {
+  --fwm-swatch-bg: var(--fwm-swatch-sodium-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-sodium-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-sodium-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='slate'] {
+  --fwm-swatch-bg: var(--fwm-swatch-slate-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-slate-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-slate-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='carbon'] {
+  --fwm-swatch-bg: var(--fwm-swatch-carbon-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-carbon-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-carbon-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='violet'] {
+  --fwm-swatch-bg: var(--fwm-swatch-violet-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-violet-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-violet-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='e-ink'] {
+  --fwm-swatch-bg: var(--fwm-swatch-e-ink-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-e-ink-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-e-ink-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='refinement'] {
+  --fwm-swatch-bg: var(--fwm-swatch-refinement-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-refinement-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-refinement-alert);
+}
+
+.fwm-settingsv1-swatch[data-fwm-mode-swatch='paper'] {
+  --fwm-swatch-bg: var(--fwm-swatch-paper-bg);
+  --fwm-swatch-clear: var(--fwm-swatch-paper-clear);
+  --fwm-swatch-alert: var(--fwm-swatch-paper-alert);
+}
+
+/* --- design --------------------------------------------------------------- */
+
+.fwm-settingsv1-designs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-settingsv1-design {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: var(--fwm-mark-w) solid transparent;
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settingsv1-design[data-fwm-selected='true'] {
+  border-color: var(--fwm-accent-scan);
+}
+
+.fwm-settingsv1-design-name {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-settingsv1-design-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- threshold ------------------------------------------------------------ */
+
+.fwm-settingsv1-threshold-reading {
+  font-size: var(--fwm-text-readout);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-settingsv1-threshold-unit {
+  font-size: var(--fwm-text-body);
+}
+
+.fwm-settingsv1-stops {
+  display: flex;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-settingsv1-stop {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  touch-action: manipulation;
+}
+
+.fwm-settingsv1-stop[data-fwm-selected='true'] {
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+}
+
+/* --- switches ------------------------------------------------------------- */
+
+.fwm-settingsv1-switches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-settingsv1-switch-row,
+.fwm-settingsv1-help {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settingsv1-switch-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+}
+
+.fwm-settingsv1-switch-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-settingsv1-switch-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* The pill. Same derivation as v0's, from the same space tokens, so the two
+   switches cannot drift in size - only in shape. */
+.fwm-settingsv1-track {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: calc(var(--fwm-space-6) + var(--fwm-space-8));
+  height: var(--fwm-space-8);
+  padding: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+  transition: background var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+.fwm-settingsv1-track[data-fwm-on='true'] {
+  justify-content: flex-end;
+  background: var(--fwm-accent-scan);
+}
+
+.fwm-settingsv1-knob {
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+.fwm-settingsv1-track[data-fwm-on='true'] .fwm-settingsv1-knob {
+  background: var(--fwm-text-on-alert);
+}
+
+.fwm-settingsv1-chevron {
+  font-size: var(--fwm-text-subtitle);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settingsv1-removal {
+  padding-top: var(--fwm-space-2);
+}
+
+/* --- permissions ---------------------------------------------------------- */
+
+.fwm-settingsv1-perms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-settingsv1-perm {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The rule carries the state, same as ONBOARDING's rows - one vocabulary for
+   permissions across the whole design. */
+.fwm-settingsv1-perm-rule {
+  flex: none; /* keyword */
+  width: var(--fwm-mark-w);
+  height: var(--fwm-space-8);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+[data-fwm-state='ALLOW'] .fwm-settingsv1-perm-rule {
+  background: var(--fwm-accent-scan);
+}
+
+[data-fwm-state='GRANTED'] .fwm-settingsv1-perm-rule {
+  background: var(--fwm-alert-clear);
+}
+
+[data-fwm-state='DENIED'] .fwm-settingsv1-perm-rule {
+  background: var(--fwm-alert-in-range);
+}
+
+[data-fwm-state='OPTIONAL'] .fwm-settingsv1-perm-rule {
+  background: var(--fwm-alert-approaching);
+}
+
+/* CHECKING has no block on purpose. The default rule above is already
+   --fwm-text-muted, and a row whose permission has not been read yet must not
+   wear a state hue: the eye would read it as a decision the app has not made
+   yet. Same for the word colour below. */
+
+.fwm-settingsv1-perm-word {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+[data-fwm-state='GRANTED'] .fwm-settingsv1-perm-word {
+  color: var(--fwm-alert-clear);
+}
+
+[data-fwm-state='DENIED'] .fwm-settingsv1-perm-word {
+  color: var(--fwm-alert-in-range-text);
+}
+
+[data-fwm-state='ALLOW'] .fwm-settingsv1-perm-word {
+  color: var(--fwm-accent-scan);
+}
+
+/* --- removal -------------------------------------------------------------- */
+
+.fwm-settingsv1-removal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding-top: var(--fwm-space-2);
+}
+
+.fwm-settingsv1-removal-warning {
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-tint-in-range);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-in-range-text);
+}
+
+/* OUTLINED, NEVER FILLED. A filled destructive key is the easiest thing on a
+   page to hit by accident, and this one cannot be undone. */
+.fwm-settingsv1-removal-key {
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: var(--fwm-rule-w) solid var(--fwm-alert-in-range);
+  border-radius: var(--fwm-radius-5);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-alert-in-range-text);
+  touch-action: manipulation;
+}
+
+.fwm-settingsv1-removal-key:disabled {
+  border-color: var(--fwm-line);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settingsv1-removal-cancel {
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+.fwm-settingsv1-removal-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  list-style: none; /* keyword */
+}
+
+.fwm-settingsv1-removal-line,
+.fwm-settingsv1-removal-reason {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-settingsv1 > * {
+  flex-shrink: 0;
+}
+
+/* The material the two glass controls are describing, painted in it. */
+.fwm-settingsv1-glass-sample {
+  padding: var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+/* THE PERMISSION ROWS ARE SWITCHES HERE TOO.
+ *
+ * Same control, same geometry, same states as the onboarding rows. They are the
+ * same three permissions, and a driver who learned the switch on the first
+ * screen of the app must not meet a status pill doing a different job on this
+ * one. See `onboardingV1.css` for why the track is decoration on a row-sized
+ * target and why a granted row is not dimmed. */
+.fwm-settingsv1-perm-track {
+  position: relative;
+  flex: none; /* keyword */
+  width: var(--fwm-space-12);
+  height: var(--fwm-space-8);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+  transition: background var(--fwm-dur-base);
+}
+
+.fwm-settingsv1-perm-knob {
+  position: absolute;
+  top: calc((var(--fwm-space-8) - var(--fwm-space-6)) / 2);
+  left: calc((var(--fwm-space-8) - var(--fwm-space-6)) / 2);
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text);
+  transition: transform var(--fwm-dur-base);
+}
+
+.fwm-settingsv1-perm[aria-checked='true'] .fwm-settingsv1-perm-track {
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-settingsv1-perm[aria-checked='true'] .fwm-settingsv1-perm-knob {
+  background: var(--fwm-bg);
+  transform: translateX(
+    calc(var(--fwm-space-12) - var(--fwm-space-6) - (var(--fwm-space-8) - var(--fwm-space-6)))
+  );
+}
+
+.fwm-settingsv1-perm[aria-disabled='true'][aria-checked='true'] {
+  cursor: default; /* keyword */
+}
+
+.fwm-settingsv1-perm[aria-disabled='true'][aria-checked='false'] {
+  cursor: default; /* keyword */
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fwm-settingsv1-perm-track,
+  .fwm-settingsv1-perm-knob {
+    transition: none; /* keyword */
+  }
+}

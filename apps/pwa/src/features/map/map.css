@@ -1,0 +1,339 @@
+/* THE MAP CANVAS.
+ *
+ * It fills its slot and nothing else. Every control MapLibre ships is off --
+ * the product draws its own, and a second set of zoom buttons in the corner of
+ * a driving instrument is clutter competing with the ones that match the
+ * design. */
+
+.fwm-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--fwm-bg);
+  /**
+   * ITS OWN STACKING CONTEXT, so nothing inside it can outrank the dock.
+   *
+   * The dock is `position: fixed` with `z-index: auto`, which puts it in the
+   * root context's zero layer. This element had no stacking context of its own,
+   * so the edge fades (z-index 2) and the vehicle marker (z-index 3) were
+   * promoted into that SAME root context and painted straight over the bottom
+   * navigation -- "when it loads it kills the bottom nav". The nav was never
+   * removed or unmounted; it was covered.
+   *
+   * `isolation: isolate` makes the z-indexes below mean "within the map",
+   * which is all they were ever meant to mean. Giving the dock a higher number
+   * would have fixed this instance and left the next one to be discovered the
+   * same way.
+   */
+  isolation: isolate;
+}
+
+/* MapLibre's own chrome. The attribution STAYS -- OpenStreetMap's licence
+   requires it and the project deserves it -- but it is styled to sit quietly
+   in the corner instead of as a white browser-default strip. */
+.fwm-map .maplibregl-ctrl-attrib {
+  background: var(--fwm-surface-card-over);
+  color: var(--fwm-text-muted);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+}
+
+.fwm-map .maplibregl-ctrl-attrib a {
+  color: var(--fwm-text-2);
+}
+
+.fwm-map .maplibregl-ctrl-logo {
+  display: none; /* keyword */
+}
+
+/* The canvas must not show a focus ring on tap -- same defect that put a white
+   rounded rectangle on the old scope. */
+.fwm-map .maplibregl-canvas:focus {
+  outline: none; /* keyword */
+}
+
+/* THE VEHICLE - the one thing on this map that is the driver.
+ *
+ * There was no marker at all: the map centred on them and drew nothing to say
+ * so, which on a screen full of camera clusters leaves no answer to "where am
+ * I". Reported as "I have no navigation arrow".
+ *
+ * A filled arrowhead rather than a dot, because with the map locked north-up
+ * the heading has to be readable somewhere on the ground, and this is the only
+ * object whose orientation means anything.
+ *
+ * `--fwm-space-8` (32px), up from `--fwm-space-6` (24px). At 24 the arrow was
+ * the same size as a camera cluster and read as one more marker in a field of
+ * them, which is backwards: every other dot is a thing to notice and this one
+ * is the fixed point the rest is measured from. A driver glancing down has to
+ * find themselves first, and a phone on a mount is the worst viewing condition
+ * a 24px shape will ever get.
+ *
+ * The dashed circle around it is NOT part of this marker - it is the alert
+ * threshold, drawn as a real ground distance by `thresholdLayer` in
+ * `layers.ts`. The arrow has to stay comfortably inside it at the driving
+ * zoom, which is what bounds this size rather than taste. */
+.fwm-vehicle {
+  width: var(--fwm-space-8);
+  height: var(--fwm-space-8);
+  /* Above every camera layer. A driver who cannot find themselves under a
+     cluster has lost the only fixed point on the screen. */
+  z-index: 3;
+  pointer-events: none; /* keyword */
+}
+
+.fwm-vehicle-arrow {
+  width: 100%;
+  height: 100%;
+  fill: var(--fwm-accent-scan);
+  /* A dark rim so the arrow survives being drawn over a pale road casing or a
+     cluster halo. Without it the shape disappears exactly where the map is
+     busiest. */
+  stroke: var(--fwm-bg);
+  stroke-width: var(--fwm-rule-w);
+  stroke-linejoin: round; /* keyword */
+}
+
+/* NO HEADING, NO CLAIM ABOUT DIRECTION. Parked, the orientation gate holds the
+   heading null on purpose -- a course from two identical positions is noise.
+   The arrow dims rather than pointing somewhere it cannot justify. */
+.fwm-vehicle[data-fwm-heading='unknown'] .fwm-vehicle-arrow {
+  fill: var(--fwm-text-muted);
+}
+
+/* THE MAP FADES UNDER THE CHROME.
+ *
+ * The basemap ground is grey, not black, so every panel edge sitting on it read
+ * as a hard seam -- an instrument panel bolted onto a photograph rather than
+ * readings over ground. A short gradient at the top and bottom lets the map
+ * arrive and leave instead of starting and stopping.
+ *
+ * `pointer-events: none` because these overhang the map: a gradient a thumb
+ * cannot drag through is a dead strip along the edge of the thing you pan. */
+.fwm-map::before,
+.fwm-map::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: var(--fwm-space-8);
+  content: ''; /* keyword */
+  pointer-events: none; /* keyword */
+  z-index: 2;
+}
+
+.fwm-map::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--fwm-bg), transparent);
+}
+
+.fwm-map::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--fwm-bg), transparent);
+}
+
+/* ===========================================================================
+ * THE EGO MARKER - v1.
+ *
+ * SOURCE: `.design-src-v1/FlockysWatchingMe.dc.html`, the `isDrive` block,
+ * lines 93-101: a 186px sweep ring with a rotating conic wedge, two static
+ * rings, a pinging ring, and a 44px disc carrying the brand eye.
+ *
+ * WHY IT IS DONE HERE AND NOT IN THE SCREEN
+ *
+ * The marker is a MapLibre `Marker`: MapLibre owns its position and its
+ * rotation, and it pans and rotates with the ground. A copy of this drawn as
+ * an overlay in `DriveScreen` would need the map's projection to stay on the
+ * vehicle, and would slide off it during every pan and every animated
+ * recentre. Styling the real marker keeps one object in one place.
+ *
+ * This used to be scoped away from v0's arrow. There is one arrow now, and the
+ * heading rule still applies: with no heading the marker says so rather than
+ * pointing somewhere it cannot justify.
+ * ======================================================================== */
+
+:root .fwm-vehicle {
+  /* The design's 44px disc. */
+  width: var(--fwm-ego-disc);
+  height: var(--fwm-ego-disc);
+  display: grid;
+  place-items: center;
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-map-earth);
+  border: var(--fwm-mark-w) solid var(--fwm-accent-scan);
+}
+
+:root {
+  --fwm-ego-disc: calc(var(--fwm-space-12) - var(--fwm-space-1));
+  /* The design's 186px scope. */
+  --fwm-ego-scope: calc(var(--fwm-space-12) * 4 - var(--fwm-space-2));
+}
+
+/* The arrow becomes the brand eye: the design puts the mark itself at the
+   centre, and the heading is carried by the marker's own rotation. */
+:root .fwm-vehicle-arrow {
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+  fill: var(--fwm-accent-scan);
+  stroke: none; /* keyword */
+}
+
+/* THE HEADING WEDGE IS GONE, REPLACED BY THE PIXEL SWEEP.
+ *
+ * It was a static conic-gradient beam pointing where the marker points. Static
+ * because it used to spin, and a wedge rotating inside a marker that already
+ * carries the heading turns the one object meaning "which way am I facing" into
+ * something meaning nothing - reported at the time as the arrow "spinning
+ * around like a maniac".
+ *
+ * `pixelSweep.ts` now draws the scope: a radar wipe on a canvas, counter-rotated
+ * so it stays level with the world while the arrow keeps the heading. Leaving
+ * the wedge in place put BOTH on screen - a hard cyan quarter-circle sitting
+ * over a particle trail, which is what "the old broken overlay" was.
+ *
+ * The heading is still readable: it is the arrow, which is what it always was.
+ */
+
+/* The outer ring, so the scope reads as an instrument rather than a smear. */
+:root .fwm-vehicle::after {
+  position: absolute;
+  width: var(--fwm-ego-scope);
+  height: var(--fwm-ego-scope);
+  border: var(--fwm-rule-w) solid var(--fwm-tint-scan-weak);
+  border-radius: var(--fwm-radius-full);
+  content: ''; /* keyword */
+  pointer-events: none; /* keyword */
+  z-index: -1;
+}
+
+/* NO HEADING, NO SWEEP. The sweep is a scope, not a direction, but with no fix
+   to sweep around there is nothing to draw and a wipe would only imply the app
+   is measuring something it is not. The arrow going muted below says the rest. */
+:root .fwm-vehicle[data-fwm-heading='unknown'] .fwm-vehicle-sweep {
+  display: none; /* keyword */
+}
+
+:root .fwm-vehicle[data-fwm-heading='unknown'] {
+  border-color: var(--fwm-text-muted);
+}
+
+:root .fwm-vehicle[data-fwm-heading='unknown'] .fwm-vehicle-arrow {
+  fill: var(--fwm-text-muted);
+}
+
+/* ===========================================================================
+ * THE LABELLED CAMERA - a dot with its distance under it.
+ *
+ * SOURCE: `.design-src-v1/FlockysWatchingMe.dc.html`, the `isDrive` block,
+ * lines 81-88: a 13px dot ringed in the page ground, and a glass chip under it
+ * carrying `0.4`.
+ *
+ * The dot is ringed rather than outlined because the map underneath is busy:
+ * a 3px halo in the page's own ground is what keeps a crimson dot legible over
+ * a pale road casing, and it is the same trick the vehicle arrow uses.
+ * ======================================================================== */
+
+.fwm-camera-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fwm-space-1);
+  /* Above the camera layers, below the vehicle: the driver is the one fixed
+     point and nothing may cover it. */
+  z-index: 2;
+  pointer-events: none; /* keyword */
+}
+
+.fwm-camera-label-dot {
+  width: var(--fwm-space-3);
+  height: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+  /* OUTLINE, NOT A SHADOW. It is a ring in the page's own ground that keeps the
+     dot legible over a pale road casing, and an outline neither grows the
+     element nor needs a shadow token to describe a solid halo. */
+  outline: var(--fwm-mark-w) solid var(--fwm-bg);
+}
+
+.fwm-camera-label[data-fwm-state='in-range'] .fwm-camera-label-dot {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-camera-label[data-fwm-state='approaching'] .fwm-camera-label-dot {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-camera-label-chip {
+  padding: 0 var(--fwm-space-1);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-camera-label[data-fwm-state='in-range'] .fwm-camera-label-chip {
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-camera-label[data-fwm-state='approaching'] .fwm-camera-label-chip {
+  color: var(--fwm-alert-approaching);
+}
+
+
+/* NO FADES UNDER v1.
+ *
+ * The top and bottom gradients exist so v0's opaque panels do not sit on the
+ * map as a hard seam. v1 floats translucent glass over it instead, so the
+ * fades are not softening an edge - they are two 32px bands of solid black at
+ * the top and bottom of a screen that is meant to run edge to edge, and they
+ * are exactly what "cut off" looks like. */
+:root .fwm-map::before,
+:root .fwm-map::after {
+  display: none; /* keyword */
+}
+
+/* THE PIXEL SWEEP.
+ *
+ * A radar wipe made of decaying pixels, drawn on a canvas pinned to the ego
+ * marker. See `pixelSweep.ts` for the particle system and for why the pool is
+ * small: this composites over a live GL map on a phone with a measured thermal
+ * history.
+ *
+ * COUNTER-ROTATED, and that is the whole reason it is a sibling of the arrow
+ * rather than a child of something rotating. MapLibre turns the marker to carry
+ * the heading; `--fwm-vehicle-rotation` is the negative of that, so the sweep
+ * stays level with the world while the arrow points where the car does. A wipe
+ * that inherited the heading would be a second object pretending to mean
+ * direction, which is the mistake the static heading wedge already avoids. */
+:root .fwm-vehicle-sweep {
+  position: absolute;
+  /* CENTRED ON THE DISC, NOT ANCHORED TO ITS CORNER.
+   *
+   * The marker is a 44px disc and the scope is 186px, so an absolutely
+   * positioned child with no offsets lays out from the disc's own box and the
+   * sweep hangs off it - which is what put a square up and to the left of the
+   * vehicle instead of a wipe around it. Half-and-back is the only way to
+   * centre a box bigger than its parent. */
+  top: 50%;
+  left: 50%;
+  width: var(--fwm-ego-scope);
+  height: var(--fwm-ego-scope);
+  pointer-events: none; /* keyword */
+  /* Order matters: translate first to centre, THEN counter-rotate about that
+     centre. Rotating first would swing the offset around with it. */
+  transform: translate(-50%, -50%) rotate(var(--fwm-vehicle-rotation, 0deg));
+}
+
+/* NOTHING SWEEPS FOR SOMEBODY WHO ASKED FOR STILLNESS. The canvas is removed
+   from the layout rather than merely paused, so it costs no compositing. */
+@media (prefers-reduced-motion: reduce) {
+  :root .fwm-vehicle-sweep {
+    display: none; /* keyword */
+  }
+}

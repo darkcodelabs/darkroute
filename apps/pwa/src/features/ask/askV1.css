@@ -1,0 +1,254 @@
+/* ASK - v1. A ping ring, a prompt, the questions it can answer. */
+
+.fwm-askv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-askv1-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-askv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+  margin-right: auto;
+}
+
+.fwm-askv1-badge {
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- the mic -------------------------------------------------------------- */
+
+.fwm-askv1-mic-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fwm-space-4);
+  padding: var(--fwm-space-6) var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-askv1-mic {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--fwm-askv1-mic-size);
+  height: var(--fwm-askv1-mic-size);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  color: var(--fwm-text-on-alert);
+  touch-action: manipulation;
+}
+
+.fwm-askv1 {
+  /* The ring stack, derived rather than written: 128px outer, 88px inner,
+     72px key, off the space scale so a mode that rescales space rescales it. */
+  --fwm-askv1-mic-size: calc(var(--fwm-space-12) * 2 + var(--fwm-space-8));
+  --fwm-askv1-inner-inset: var(--fwm-space-6);
+  --fwm-askv1-key-size: calc(var(--fwm-space-12) + var(--fwm-space-6));
+}
+
+/* THE PING ONLY RUNS WHILE THE MICROPHONE IS OPEN. An idle animation on this
+   screen would be the product implying it is listening when it is not. */
+.fwm-askv1-ring {
+  position: absolute;
+  inset: 0;
+  border: var(--fwm-rule-w) solid var(--fwm-tint-scan-ring);
+  border-radius: var(--fwm-radius-full);
+  opacity: 0;
+}
+
+.fwm-askv1-mic[data-fwm-listening='true'] .fwm-askv1-ring {
+  animation: fwm-askv1-ping var(--fwm-askv1-ping-dur) var(--fwm-ease-out) infinite;
+}
+
+.fwm-askv1 {
+  --fwm-askv1-ping-dur: calc(var(--fwm-dur-alert) * 6);
+}
+
+@keyframes fwm-askv1-ping {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fwm-askv1-mic[data-fwm-listening='true'] .fwm-askv1-ring {
+    animation: none; /* keyword */
+    opacity: 0.5;
+  }
+}
+
+.fwm-askv1-ring-inner {
+  position: absolute;
+  inset: var(--fwm-askv1-inner-inset);
+  border: var(--fwm-rule-w) solid var(--fwm-tint-scan-weak);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-askv1-glyph {
+  position: relative;
+  width: var(--fwm-askv1-key-size);
+  height: var(--fwm-askv1-key-size);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+}
+
+.fwm-askv1-mic:disabled .fwm-askv1-glyph {
+  background: var(--fwm-line);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-askv1-prompt {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+  text-align: center; /* keyword */
+}
+
+.fwm-askv1-phase {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+}
+
+/* --- transcript and answer ------------------------------------------------ */
+
+.fwm-askv1-transcript {
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+/* A recogniser's first guess is often wrong. Dimming it shows which words
+   have settled without hiding what it heard. */
+.fwm-askv1-transcript[data-fwm-interim='true'] {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-askv1-answer {
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-tint-scan);
+}
+
+/* A REFUSAL IS NOT AN ANSWER, and must not be painted as one. */
+.fwm-askv1-answer[data-fwm-answered='false'] {
+  background: var(--fwm-surface-1);
+}
+
+.fwm-askv1-answer-text {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+.fwm-askv1-notice {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-askv1-notice[data-fwm-tone='warning'] {
+  color: var(--fwm-alert-approaching);
+}
+
+/* `unsupported` stays muted. It is a fact about the BROWSER, not a warning
+   about the drive, and painting it amber would put a platform limitation on the
+   same footing as an alert. */
+.fwm-askv1-notice[data-fwm-tone='unsupported'] {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-askv1-wake {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-askv1-wake:disabled {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-askv1-eyebrow {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-muted);
+  padding-top: var(--fwm-space-2);
+}
+
+.fwm-askv1-commands {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-askv1-command {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-askv1-command-say {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-askv1-command-hint {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-askv1 > * {
+  flex-shrink: 0;
+}

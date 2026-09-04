@@ -1,0 +1,40 @@
+/* THE 24x24 STROKE MARKS.
+ *
+ * Geometry is verbatim in `icons.tsx`; paint and stroke live here so whatever
+ * carries a mark can drive it through `currentColor`.
+ *
+ * WHY THIS IS ITS OWN FILE. These rules were in `dock.css`, the stylesheet that
+ * drew v0's six-key bar. v0's dock is deleted, and `DockIcon` is not: MESH's
+ * screen draws the node mark in its header and against every message on the
+ * feed (`features/node/NodeScreen.tsx`, sized by `.fwm-node-mark .fwm-dock-icon`
+ * in `node.css`). While these lived in `dock.css` that screen's icons were
+ * painted by a stylesheet nothing on the screen imported - they worked because
+ * some OTHER component in the bundle happened to pull it in. `icons.tsx` owns
+ * its own paint now, so the mark cannot be un-drawn by an edit somewhere else.
+ *
+ * The class name is kept: `node.css` sizes against `.fwm-dock-icon`, and
+ * renaming it here would be a rename of somebody else's selector.
+ */
+
+.fwm-dock-icon {
+  flex: none; /* keyword */
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+  fill: none; /* keyword */
+  stroke: currentcolor; /* keyword */
+  /* "a 24px stroke icon on the platform 1.6px grid" -- the design writes
+   * stroke-width="1.6" on every rendered mark. Unitless SVG user units, so it
+   * is not a CSS length and there is no token for it; the token pass ruled on
+   * that in docs/gaps-inbox/tokens-v2.md#type-and-spacing-are-not-a-v2-delta. */
+  stroke-width: 1.6;
+  stroke-linecap: round; /* keyword */
+  stroke-linejoin: round; /* keyword */
+}
+
+/* The parts the design draws filled rather than stroked: RADAR's centre pip,
+ * LOG's three bullets and NODE's vertices, each written `fill="<hue>"
+ * stroke="none"` in the design. */
+.fwm-dock-icon-fill {
+  fill: currentcolor; /* keyword */
+  stroke: none; /* keyword */
+}

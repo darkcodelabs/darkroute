@@ -1,0 +1,126 @@
+/* THE DETOUR OFFER - a card in the middle of the screen, asking one question.
+ *
+ * SHAPED LIKE THE INSTALL INVITE ON PURPOSE. Both are the app interrupting to
+ * ask for something rather than reporting something, and a driver who has met
+ * one should recognise the other as the same kind of moment. Centred, because
+ * it is a decision and the middle of the screen is where a person looks; the
+ * scan hue, because that is this product's word for "this part is live".
+ *
+ * IT SCROLLS. The install card can be short. This one carries the disclosure,
+ * the limits and whatever the plan could not do, and on a small phone in a
+ * large text scale that is taller than the viewport. Capping the height and
+ * scrolling INSIDE keeps the two keys reachable, which on a prompt whose
+ * refusal must always be available is the load-bearing part. */
+.fwm-detour {
+  position: absolute;
+  left: var(--fwm-space-4);
+  right: var(--fwm-space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  max-height: calc(100% - var(--fwm-space-8) * 2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-6) var(--fwm-space-4);
+  border: var(--fwm-hairline) solid var(--fwm-tint-scan-ring);
+  border-radius: var(--fwm-radius-5);
+  background:
+    linear-gradient(160deg, var(--fwm-tint-scan-weak) 0%, var(--fwm-surface-glass) 55%),
+    var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  overflow-y: auto; /* keyword */
+}
+
+/* Nothing in the stack may be squeezed to fit - a compressed key is a key a
+   thumb misses, and the refusal is one of them. */
+.fwm-detour > * {
+  flex-shrink: 0;
+}
+
+.fwm-detour-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-detour-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 800;
+  color: var(--fwm-text);
+  /* Pushes the close key to the trailing edge, where the report sheet keeps it
+     and therefore where a thumb goes looking. */
+  margin-right: auto;
+}
+
+.fwm-detour-lead {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+/* WHAT THIS ROUTE CANNOT DO, in the alert hue.
+ *
+ * A camera on the road and a camera past the link's stop limit are the two
+ * facts a driver is most likely to skim, and they are the two that decide
+ * whether the detour is worth the disclosure. They get the colour the product
+ * reserves for "this one is a warning". */
+.fwm-detour-warn {
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-left: var(--fwm-rule-w) solid var(--fwm-alert-in-range);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-tint-in-range-weak);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+/* THE TWO SUNK BLOCKS: what leaves the phone, and what the route is not.
+   Sunk rather than tinted, so they read as the small print they are without
+   competing with the warning above them for the same attention. */
+.fwm-detour-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-detour-block-label {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text);
+}
+
+.fwm-detour-block-body {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-detour-key {
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: var(--fwm-hairline) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-5);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+/* ONE FILLED KEY, and it is the one that discloses. The refusal beside it is
+   outlined at full strength rather than greyed: it is a real answer, and for
+   plenty of drivers it is the right one. */
+.fwm-detour-key[data-fwm-key='primary'] {
+  border-color: transparent;
+  background: var(--fwm-accent-scan);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+}
+
+.fwm-detour-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}

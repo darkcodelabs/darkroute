@@ -1,0 +1,7 @@
+Contact: https://github.com/darkcodelabs/darkroute/security/advisories/new
+Contact: mailto:cory@darkcode.ai
+Encryption: https://darkroute.ai/.well-known/security-key.asc
+Expires: 2027-08-31T23:59:59Z
+Preferred-Languages: en
+Canonical: https://darkroute.ai/.well-known/security.txt
+Policy: https://github.com/darkcodelabs/darkroute/blob/main/docs/public/SECURITY.md

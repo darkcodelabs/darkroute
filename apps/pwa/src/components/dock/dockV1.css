@@ -1,0 +1,193 @@
+/* THE DOCK - v1.
+ *
+ * A floating glass pill of five keys, and the report circle beside it. v0's is
+ * a full-width opaque panel pinned to the bottom edge; this one has air on all
+ * four sides, which is the single loudest difference between the two designs
+ * on every screen at once.
+ */
+
+.fwm-dockv1 {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  padding: 0 var(--fwm-space-4) var(--fwm-space-6);
+  pointer-events: none; /* keyword */
+}
+
+/* THE PILL. The one place in the app that spends the glass tokens on chrome
+   rather than on a card: it floats over the map on DRIVE, and a solid bar
+   there would cut the road off at a hard line. */
+.fwm-dockv1-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-1);
+  border: var(--fwm-rule-w) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  pointer-events: auto; /* keyword */
+}
+
+/* The dock floats over the map now rather than sitting in a row of its own, so
+   it needs the gap the row used to give it. See `.fwm-shell-dock`. */
+:root .fwm-dockv1 {
+  padding-bottom: var(--fwm-space-3);
+}
+
+.fwm-dockv1-key {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fwm-space-2);
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+  transition: background var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+/* NOTHING BUT GLYPHS, AND THE ACTIVE ONE IS THE BRIGHT ONE.
+ *
+ * This has been through both wrong answers. First a filled white pill with an
+ * icon and a label - the one opaque object on the screen, a hard lozenge
+ * sitting on top of the material everything else is made of, cancelling exactly
+ * what the glass is for. Then the word alone, which fixed the fill and broke
+ * the rhythm: one lump of text in a row of glyphs, at a different width from
+ * its neighbours, and the eye lands on the text instead of on the map.
+ *
+ * A row of evenly spaced icons is the shape the material wants. It reads as one
+ * object rather than as five controls and a caption.
+ *
+ * SO WHAT SAYS WHICH SCREEN YOU ARE ON? Brightness, which is the same answer
+ * the map rail already gives: the active glyph is full-strength foreground and
+ * the rest are `--fwm-text-2`. That is a real contrast step, not a hue, so it
+ * survives every one of the seven themes without any of them needing an
+ * exception - and it is a distinction the eye reads without stopping to read.
+ *
+ * NO `flex: 1.6`. The growth existed to make room for the word. With every key
+ * carrying the same glyph at the same size, equal widths are what makes the row
+ * scan as a row. */
+.fwm-dockv1-key[data-fwm-active="true"] {
+  background: none; /* keyword */
+  color: var(--fwm-text);
+}
+
+/* Every key carries its word FOR A SCREEN READER, and none of them paint it.
+   Same clip as v0's `.fwm-dock-word`, for the same reason: an icon button with
+   no accessible name is an unusable one, and "just show the icon" is a
+   statement about what is drawn, never about what is announced. */
+.fwm-dockv1-word {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden; /* keyword */
+  clip-path: inset(50%);
+  white-space: nowrap; /* keyword */
+}
+
+/* --- the report circle ---------------------------------------------------- */
+
+/* LIFTED OUT OF THE BAR. v0 folds REPORT in as a sixth key behind a hairline;
+   v1 gives it its own circle, saturated, at the thumb's natural rest. The
+   COMPONENT is the same one - both gestures, the slop, the queued badge - so
+   this block only changes its shape. */
+.fwm-dockv1-report {
+  flex: none; /* keyword */
+  pointer-events: auto; /* keyword */
+}
+
+/* GLASS, NOT A FLAT DISC.
+ *
+ * It was a solid `--fwm-alert-in-range` fill: the brightest, most saturated
+ * object on the screen, sitting permanently above a dark map at the exact
+ * moment a driver needs their night vision. It also made the one colour that
+ * MEANS "a camera is inside your threshold" into permanent furniture, which
+ * spends the alert hue on a button that is always there.
+ *
+ * NOW UNTINTED BY THE ALERT HUE AT ALL. The dark red tint that replaced the
+ * solid fill was still red, which kept spending the one colour that means "a
+ * camera is inside your threshold" on a control that is on screen the whole
+ * drive. The wash is driven from `--fwm-accent-scan` instead - every theme
+ * redefines it, so the key follows the palette the driver picked - and at a
+ * seventh of the old strength, so it reads as glass with the map through it.
+ * `--fwm-glass-filter` resolves to `none` when the driver turns glass off,
+ * which removes the per-frame read-back rather than just the look of it. */
+.fwm-dockv1 .fwm-dock-report-key {
+  position: relative;
+  width: var(--fwm-space-12);
+  height: var(--fwm-space-12);
+  border-radius: var(--fwm-radius-full);
+  border: var(--fwm-hairline) solid var(--fwm-report-key-line);
+  /* A LENS, NOT A DISC. The tint sits low and fades up, so the key reads as a
+     curved piece of glass with the map showing through the top of it rather
+     than as a flat coin. It is the same two-stop idea the install card uses,
+     turned the other way up because a key is lit from above. */
+  background:
+    radial-gradient(
+      120% 100% at 50% 115%,
+      var(--fwm-report-key-wash) 0%,
+      var(--fwm-report-key-lift) 70%
+    ),
+    var(--fwm-report-key-lift);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}
+
+/* THE MENISCUS. A bright arc across the top third, which is the one detail that
+   separates glass from a tinted circle: real glass catches a highlight where it
+   curves away from you. Drawn as a pseudo-element so it does not fight the
+   background gradient, and clipped to the circle. */
+.fwm-dockv1 .fwm-dock-report-key::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--fwm-report-key-sheen) 0%, transparent 42%);
+  opacity: 0.4;
+  pointer-events: none; /* keyword */
+}
+
+/* THE MARK, WHITE.
+ *
+ * Three versions: punched out of a solid crimson disc, then crimson on dark
+ * glass, now white. White wins on both counts a glyph is judged by - it is the
+ * highest contrast available against a nearly clear key, and it makes no claim.
+ * A red mark on a permanent control reads as a warning that is always on, which
+ * is the thing the alert hue is for. */
+/* THE MARK, MASKED HERE RATHER THAN INHERITED.
+ *
+ * This rule set only the fill and relied on `dock.css:350` for the mask that
+ * makes the fill logo-shaped. That worked while v0 existed: `dock.css` is
+ * imported by `Dock.tsx`, and removing v0 stopped mounting that component, so
+ * the stylesheet stopped loading and the mask went with it. The button kept its
+ * colour and lost its shape - a filled blob where the mark should be, on a
+ * build where every test still passed, because no test renders a browser.
+ *
+ * The mask is declared here so the v1 dock owns its own appearance and cannot
+ * lose it again to a stylesheet that is no longer on the page. */
+.fwm-dockv1 .fwm-report-eye {
+  background: var(--fwm-report-key-glyph);
+  -webkit-mask-image: url("/assets/darkroute-mark.png");
+  mask-image: url("/assets/darkroute-mark.png");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Sized here rather than on the element, same as v0's `.fwm-dock-icon`: a
+   width is a design value, and the gate is right to refuse one in a component. */
+.fwm-dockv1-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+}

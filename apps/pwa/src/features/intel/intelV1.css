@@ -1,0 +1,516 @@
+/* INTEL - v1. The camera detail.
+ *
+ * A hero framed in the camera OWNER'S hue, three tiles, a grid of what is
+ * known, then the two keys that decide whether the record survives.
+ */
+
+/* THIS IS A SHEET AS OFTEN AS IT IS A SCREEN.
+ *
+ * `main.tsx` registers this component under BOTH the `intel` screen id and the
+ * `intel` overlay id, so the same element is a full page when deep-linked and
+ * a card raised over DRIVE when a camera dot is tapped. It shipped with no
+ * ground of its own, so in the overlay case the map and DRIVE's cards showed
+ * straight through it and the two interleaved into an unreadable stack.
+ *
+ * An opaque ground and a rounded top edge make it read as a sheet in the
+ * layer, and cost a screen nothing - a screen with a background is a screen.
+ * `.fwm-shell-layer` caps the height and pins it to the bottom. */
+.fwm-intelv1 {
+  /* THE CARD'S ONE ACCENT, resolved from `data-fwm-owner` a few rules down.
+     Neutral here, which is the answer for a record nobody has classified. */
+  --fwm-intelv1-owner: var(--fwm-line-strong);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  /* THE LAST ROW OF THIS CARD WAS UNREACHABLE, and this is the whole reason.
+   *
+   * `.fwm-shell-dock` is `position: absolute; bottom: 0; z-index: 4` and this
+   * card's layer is `z-index: 2`, so the dock paints OVER the card. The card is
+   * its own scroll container (`overflow-y: auto` below) and it runs to the
+   * bottom of the shell, so the final `--fwm-dock-h` of its content had nowhere
+   * to scroll to: MUTE THIS ONE and SHARE were drawn underneath the dock bar
+   * and could not be tapped or read at any scroll position.
+   *
+   * This is the same reservation `global.css`'s `.fwm-safe-dock-gutter` makes
+   * and that more/exposure/triage/help/docs each hand-roll. It is written here
+   * rather than by adding that class in the markup because this element IS the
+   * scroll container - the padding has to be inside the thing that scrolls, or
+   * it just moves the clipping outwards.
+   *
+   * `--fwm-dock-h` (84px) NOT `--fwm-nav-h` (64px): the wrapper is the taller
+   * one, and reserving the shorter left a band where the bar overlapped. The
+   * safe-area inset is ADDED, never folded in - it is below the dock, not part
+   * of it - and `--fwm-space-4` is the breathing room the five hand-rolled
+   * copies already chose, kept so this card matches them. */
+  padding-bottom: calc(
+    var(--fwm-dock-h) + var(--fwm-space-4) + env(safe-area-inset-bottom, 0px)
+  );
+  /* NO COLOURED EDGE ALONG THE TOP. It used to carry the owner hue as a
+     `border-top`, which put a saturated rule hard against the browser's own
+     chrome - the one place on the screen the app does not control - so on a
+     phone it read as a stray line belonging to the address bar rather than as
+     part of the card. The hero's frame below carries the same hue, in the
+     same place the eye is already going, so nothing was lost by taking it off
+     the edge. See the owner-hue note below for what still carries it. */
+  border-radius: var(--fwm-radius-5) var(--fwm-radius-5) var(--fwm-radius-0) var(--fwm-radius-0);
+  background: var(--fwm-bg);
+  overflow-y: auto; /* keyword */
+}
+
+/* =============================================================================
+   THE CARD IS THE COLOUR OF THE DOT THAT OPENED IT
+   =============================================================================
+   A driver taps a camera on the map and this comes up. That dot was painted by
+   `cameraLayer`'s `circle-color` match expression, and the filter panel's
+   swatches restate the same five hues so the legend agrees with the map. A
+   card that ignored them would answer a tap with a different-looking camera.
+
+   THE MAP'S OWN HUES, VERBATIM (`features/map/layers.ts` is the source; the
+   swatches in `features/map/mapControlPanel.css` already agree with it):
+
+     police        --fwm-alert-in-range
+     inter_agency  --fwm-alert-multiple
+     hoa           --fwm-alert-approaching
+     private       --fwm-plasma-6
+     unverified    --fwm-accent-scan
+
+   AN ABSENT OWNER STAYS NEUTRAL, and that is the whole safety argument for
+   doing this with an attribute rather than a default. `unverified` is a class
+   somebody asserted; absence is the absence of an assertion, and absence is the
+   COMMON case -- OSM's ALPR nodes usually carry no owner at all. A card that
+   fell through to a hue would tell a driver a camera is police when nobody
+   knows who owns it. `features/map/ownerFilter.ts` refuses the same conflation
+   for the same reason, and `unknown` here is that refusal made visible.
+
+   ONLY THE HERO'S FRAME CARRIES IT. Never text. (The sheet's top edge did too
+   until it was removed -- see the note on `border-radius` above.)
+   (It was also a rule over the facts; that rule is gone, because the facts are
+   a card of their own now rather than a list under the hero.) `--fwm-alert-in-range` is a FILL hue: the tokens file
+   keeps a separate `--fwm-alert-in-range-text` precisely because the saturated
+   version is not a reading colour, and body text whose contrast depended on
+   who owned the camera would be a legibility lottery played at the roadside. */
+.fwm-intelv1[data-fwm-owner='police'] {
+  --fwm-intelv1-owner: var(--fwm-alert-in-range);
+}
+
+.fwm-intelv1[data-fwm-owner='inter_agency'] {
+  --fwm-intelv1-owner: var(--fwm-alert-multiple);
+}
+
+.fwm-intelv1[data-fwm-owner='hoa'] {
+  --fwm-intelv1-owner: var(--fwm-alert-approaching);
+}
+
+.fwm-intelv1[data-fwm-owner='private'] {
+  --fwm-intelv1-owner: var(--fwm-plasma-6);
+}
+
+.fwm-intelv1[data-fwm-owner='unverified'] {
+  --fwm-intelv1-owner: var(--fwm-accent-scan);
+}
+
+.fwm-intelv1-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+/* `.fwm-intelv1-back` used to be here, byte-identical to `.fwm-misuse-back`.
+ * The other screens' copies are now the one `.fwm-backkey` in
+ * `components/nav/nav.css`. This card draws neither: it is raised over DRIVE
+ * far more often than it is a screen, so it draws the product's one close key,
+ * `.fwm-overlay-close`. `.fwm-intelv1-header` still lays the row out. */
+
+.fwm-intelv1-screen-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+  margin-right: auto;
+}
+
+.fwm-intelv1-id {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-intelv1-empty {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- the hero ------------------------------------------------------------- */
+
+/* THE FRAME IS THE OWNER, WHERE IT USED TO BE THE ALERT STATE.
+ *
+ * It was `--fwm-line` stepping to amber at `approaching` and crimson at
+ * `in-range`, which sounds informative and mostly was not. The card is opened
+ * FROM the camera DRIVE is already warning about - driven headlessly, every
+ * card opened off the closest-card key came up amber - so the frame spent its
+ * one hue restating what the driver had just been told.
+ *
+ * Little is lost by moving it. The distance is printed inside this same frame,
+ * in the readout; DRIVE's own card and the alert takeover both still carry the
+ * state hue; and `data-fwm-state` is still on the root for anything that wants
+ * it. What was NOT anywhere on the card was the one thing a driver opens it to
+ * check - who is running this camera - so that is what the frame carries now,
+ * in the map's own colour for it. */
+.fwm-intelv1-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  border: var(--fwm-rule-w) solid var(--fwm-intelv1-owner);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-intelv1-kicker {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-2);
+}
+
+/* A NOTE IS NOT A FACT. It is the product explaining an absence, and it must
+   not read as though the record said it. */
+.fwm-intelv1-kicker[data-fwm-note='true'] {
+  color: var(--fwm-text-muted);
+  letter-spacing: normal; /* keyword */
+}
+
+.fwm-intelv1-place {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* HOW FAR, BESIDE WHERE.
+ *
+ * The readout took the whole width and left the right-hand half of the hero
+ * empty; the mini map fills it. The readout keeps the flexible column so the
+ * picture is never squeezed - a map narrower than its own frame is a map with
+ * the camera off-centre, and off-centre is a lie here, since being in the
+ * middle is what makes the mark the camera.
+ *
+ * THE ROW WRAPS, AND THE READOUT KEEPS ITS CONTENT MINIMUM. At 320px the two
+ * fit with two pixels to spare, which is not a margin to trust: the TEXT SCALE
+ * setting can grow the readout, and a `watch` surface is narrower than any
+ * phone. With `flex-wrap` the picture drops BELOW the readout when the line
+ * runs out instead of pushing past the hero's edge, and no `min-width: 0` -
+ * that would let the readout shrink under its own digits and take the wrap
+ * away, which is the overflow it was meant to prevent. */
+.fwm-intelv1-locate {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-intelv1-readout {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+/* THE MARK WEARS THE ALERT STATE, like the hero border above it.
+ *
+ * NOTE THE SPELLING. `RadarState` is `in_range` with an UNDERSCORE - it comes
+ * from `AlertState` in `@fwm/core` - and the two hero rules further up this
+ * file spell it `in-range`, so they match nothing and the hero border has never
+ * turned red. That is a real defect and it is not this change's to fix; what
+ * matters here is not copying it. These rules use the value the model actually
+ * writes into `data-fwm-state`. */
+[data-fwm-state='in_range'] .fwm-minimap {
+  --fwm-minimap-hue: var(--fwm-alert-in-range);
+}
+
+[data-fwm-state='approaching'] .fwm-minimap {
+  --fwm-minimap-hue: var(--fwm-alert-approaching);
+}
+
+.fwm-intelv1-distance {
+  font-size: var(--fwm-text-readout);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+.fwm-intelv1-unit,
+.fwm-intelv1-cardinal {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* THREE TILES, BUT NOT THREE COLUMNS ON A PHONE.
+ *
+ * MEASURED, not chosen. At the value's real type - 17px/700 Chakra Petch - and
+ * this tile's 24px of horizontal padding and 8px gap:
+ *
+ *   "TRAFFIC SIGNALS"   145px   3-across needs a 523px card
+ *   "OVERLAND PARK PD"  165px   3-across needs a 583px card
+ *   "TRAFFIC" alone      71px   3-across needs a 301px card
+ *   "UNVERIFIED"         96px   3-across needs a 376px card
+ *
+ * A 320px phone gives this card 288px, so three `flex: 1` columns were 67px of
+ * inner width - narrower than the single word "TRAFFIC", which is why MOUNT
+ * broke mid-word. Even a 390px phone only reaches 96px. Three across has never
+ * fitted a phone at all; it fitted the mock, at a width no phone is.
+ *
+ * So: two columns, OWNER across the top. OWNER is the widest field by a
+ * distance - median operator is 25 characters, and `shortOperator` abbreviating
+ * it is a mitigation rather than a fix - and full width gives it 264px even at
+ * 320px, which takes "OVERLAND PARK PD" in one line. MOUNT and FACING split the
+ * second row: 151px of inner column at 390px, enough for "TRAFFIC SIGNALS"
+ * whole, and at 320px it wraps cleanly BETWEEN the two words instead of through
+ * one.
+ *
+ * Three across returns at 35rem/560px, the first width where the 523px card
+ * above actually exists. That is a tablet or a desktop browser, which is the
+ * honest answer: this row was never a phone layout.
+ *
+ * The tiles still never ellipsis and are still never dropped. This widens the
+ * box the value wraps inside; it does not start hiding text. */
+.fwm-intelv1-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-2);
+}
+
+/* OWNER, always first out of `intelTiles()`. */
+.fwm-intelv1-tile:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 35rem) {
+  .fwm-intelv1-tiles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .fwm-intelv1-tile:first-child {
+    grid-column: auto; /* keyword */
+  }
+}
+
+.fwm-intelv1-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-intelv1-tile-value {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+  /* IT WRAPS, IT DOES NOT ELLIPSIS.
+   *
+   * A tile is about 55px of inner column on a 320px screen - five characters
+   * at this size - and the OWNER tile prints an agency name. Measured over the
+   * whole archive, 71.5% of the records that carry an `operator` carry a token
+   * longer than six characters, so a value overflowing this box is the common
+   * case, not the tail.
+   *
+   * `text-overflow: ellipsis` would be the shorter rule and the wrong one: it
+   * turns "OVERLAND PARK POLICE" into "OVER..." and, worse, `check-text-fits`
+   * deliberately EXCLUDES ellipsis from its report because an ellipsis reads as
+   * a considered decision to truncate. That would hide this from the repo's own
+   * detector rather than fix it. The tile is a flex column with no fixed
+   * height, so wrapping simply grows it and the row stretches to match. */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* AN UNKNOWN VALUE IS DIM. The em dash carries as much weight as a number
+   otherwise, and this screen is read at a glance. */
+.fwm-intelv1-tile[data-fwm-known='false'] .fwm-intelv1-tile-value {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-intelv1-tile-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text-muted);
+}
+
+/* --- facts ---------------------------------------------------------------- */
+
+/* EIGHT FACTS, ONE BLOCK - NOT EIGHT CARDS.
+ *
+ * Each of these was a full-width filled row with its own radius and a 44px
+ * floor, stacked: about 400px of scrolling to read eight short labels, five of
+ * which are an em dash in this build. The information did not justify the
+ * furniture.
+ *
+ * THE IDIOM IS DRIVE'S CLOSEST CARD (`features/drive/drive.css`), which is the
+ * one card in this product a driver reads at speed and which boxes nothing
+ * inside itself: one frame around the whole thing, and the content grouped by
+ * a rule and by spacing. Two columns rather than one, at every width - the
+ * point of the change is fitting the block on a screen, and an `auto-fit` that
+ * collapsed back to a single column on a 320px phone would undo it exactly
+ * where it is needed most.
+ *
+ * The rule over it is the owner's hue, the same line the hero is framed in, so
+ * the grid reads as the rest of this card rather than a list underneath it. */
+.fwm-intelv1-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+
+  /* ONE CARD, NOT A RULE OVER A LIST.
+   *
+   * This was `padding-top` under a `--fwm-rule-w` line in the owner's hue,
+   * which made the facts a block sitting UNDER the hero rather than a peer of
+   * it. Asked for as "all contained in one card and laid out similar to the
+   * card above it with no boarder tho", and that is what this is: the tile
+   * treatment from `.fwm-intelv1-tile` - same sunk ground, same radius, same
+   * inner padding - applied ONCE around the whole grid instead of once per
+   * cell.
+   *
+   * NO BORDER, hence none here. The owner's hue is still carried by the sheet's
+   * top edge and the hero's frame, which is where this card's comment on
+   * `data-fwm-owner` says it belongs: lines, never text, and not every line. */
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+/* A CELL: the value, then the label under it.
+ *
+ * The value used to be pushed to the right-hand edge of a full-width row,
+ * which only reads as a pair when the row is the width of the screen. In a
+ * 138px cell the two have to stack.
+ *
+ * NO GROUND AND NO BORDER OF ITS OWN. The card around the grid carries both
+ * now, so a cell that also drew them would be a card inside a card - which is
+ * exactly the stack of separate pills this replaced.
+ *
+ * `min-width: 0` because a grid item's default `min-width: auto` refuses to
+ * shrink below its content - which is how a long value stops being a wrapped
+ * value and becomes a column that pushes the page sideways. */
+.fwm-intelv1-fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-width: 0;
+}
+
+.fwm-intelv1-fact-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text-muted);
+}
+
+/* IT WRAPS, IT DOES NOT ELLIPSIS - the same rule, and the same argument, as
+   the tile above: "1 SEPT 2026 · 2 DAYS AGO" is 24 characters into a cell that
+   holds about 16 of them, and a card whose freshness stamp is cut in half is
+   worse than the rows this grid replaced. The cell has no fixed height, so a
+   second line simply grows the row. */
+.fwm-intelv1-fact-value {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-intelv1-fact[data-fwm-tone='clear'] .fwm-intelv1-fact-value {
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-intelv1-fact[data-fwm-tone='alert'] .fwm-intelv1-fact-value {
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-intelv1-fact[data-fwm-known='false'] .fwm-intelv1-fact-value {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-intelv1-mute-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-approaching);
+}
+
+/* --- actions -------------------------------------------------------------- */
+
+.fwm-intelv1-actions {
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-intelv1-key {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+.fwm-intelv1-key:disabled {
+  opacity: 0.5;
+}
+
+/* THE PRIMARY. Full width, filled in the accent, with the pin - the design
+   gives the one action that is about the DRIVE rather than about the record
+   its own row. */
+.fwm-intelv1-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fwm-space-2);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-accent-scan);
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+  touch-action: manipulation;
+}
+
+.fwm-intelv1-primary-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-4);
+}
+
+/* "IT'S GONE" is the destructive one - it asks the network to drop a record -
+   so it is the only key on the screen that carries the alert hue. */
+.fwm-intelv1-key[data-fwm-key='dispute'] {
+  border-color: var(--fwm-alert-in-range);
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-intelv1-outcome {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-intelv1-outcome[data-fwm-failed='true'] {
+  color: var(--fwm-alert-in-range-text);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-intelv1 > * {
+  flex-shrink: 0;
+}

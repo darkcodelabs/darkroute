@@ -1,0 +1,316 @@
+/* MORE - v1's hub.
+ *
+ * A big title, an install card, a 2x2 of tiles, a list, one text key. The
+ * hierarchy is deliberate: the tiles are the things a driver has never seen,
+ * the rows are the things they came looking for.
+ */
+
+.fwm-more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-more-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+/* --- install -------------------------------------------------------------- */
+
+/* ONE CLASS, THREE ELEMENTS. `ready` renders a <button>, the other two a <p>,
+   because a state that cannot be acted on must not look like a target. The
+   fill is the difference the eye reads. */
+.fwm-more-install {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-more-install[data-fwm-install='ready'] {
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+}
+
+.fwm-more-install-label {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+}
+
+.fwm-more-install-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-more-install[data-fwm-install='ready'] .fwm-more-install-sub {
+  color: var(--fwm-text-on-alert);
+  opacity: 0.72;
+}
+
+/* THE WAY BACK from a permanent refusal. Quiet - it is an undo, not an offer,
+   and the offer itself returns on the next launch rather than on this tap. */
+.fwm-more-install-again {
+  align-self: flex-start; /* keyword */
+  min-height: var(--fwm-touch-min);
+  margin-top: var(--fwm-space-2);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+/* --- tiles ---------------------------------------------------------------- */
+
+.fwm-more-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-more-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-height: calc(var(--fwm-space-12) * 2);
+  padding: var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The kicker is the only coloured thing on a tile, and its hue is the product's
+   word for what the tile is about: amber interrupts, green is a receipt, cyan
+   is live. Nothing else on the tile competes with it. */
+.fwm-more-tile-kicker {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-muted);
+  margin-bottom: auto;
+}
+
+[data-fwm-hue='warn'] .fwm-more-tile-kicker {
+  color: var(--fwm-alert-approaching);
+}
+
+[data-fwm-hue='ok'] .fwm-more-tile-kicker {
+  color: var(--fwm-alert-clear);
+}
+
+[data-fwm-hue='scan'] .fwm-more-tile-kicker {
+  color: var(--fwm-accent-scan);
+}
+
+[data-fwm-hue='mesh'] .fwm-more-tile-kicker {
+  color: var(--fwm-accent-mesh);
+}
+
+.fwm-more-tile-label {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-more-tile-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+/* --- rows ----------------------------------------------------------------- */
+
+.fwm-more-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-more-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-more-dot {
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+  flex: none; /* keyword */
+}
+
+[data-fwm-hue='ok'] .fwm-more-dot {
+  background: var(--fwm-alert-clear);
+}
+
+[data-fwm-hue='scan'] .fwm-more-dot {
+  background: var(--fwm-accent-scan);
+}
+
+[data-fwm-hue='mesh'] .fwm-more-dot {
+  background: var(--fwm-accent-mesh);
+}
+
+[data-fwm-hue='warn'] .fwm-more-dot {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-more-row-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+}
+
+.fwm-more-row-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-more-row-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-more-row-chevron {
+  font-size: var(--fwm-text-subtitle);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-more-replay {
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-more > * {
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+ * LIQUID GLASS, the same material the report sheet and the DRIVE cards use.
+ * =============================================================================
+ * One rule rather than a change to each card, so this screen cannot drift from
+ * the rest of the app: the tint, the hairline, the optics and the specular rim
+ * all come from the tokens, and the OFF switch resolves `--fwm-glass-filter` to
+ * `none`, which removes the read-back entirely rather than the visible half.
+ *
+ * Only the top-level cards. A glass panel nested inside another one stacks two
+ * backdrop read-backs to show a surface that is itself translucent, which costs
+ * double and reads as mud.
+ * ========================================================================== */
+.fwm-more-install,
+.fwm-more-tile,
+.fwm-more-row,
+.fwm-more-replay {
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}
+
+/* THE LIGHT/DARK DEMO - see `ThemeDemo` in MoreScreen.tsx.
+ *
+ * Built out of `.fwm-more-install`'s card, because it is the same kind of thing:
+ * a labelled block on this hub that acts rather than navigates. Same ground,
+ * same radius, same inner padding, so the two read as siblings and the hub does
+ * not gain a third opinion about what a card is. */
+.fwm-more-theme {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-more-theme-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-more-theme-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* Two ends of one setting, side by side so the comparison is the shape of the
+   control. `--fwm-space-2` above them separates the keys from the words. */
+.fwm-more-theme-keys {
+  display: flex;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-2);
+}
+
+/* EACH END IS A REAL TARGET. `--fwm-touch-min` on both axes for the same reason
+   `.fwm-backkey` takes it: the token is 48 on the dash and 68 on the watch, and
+   a two-word label is not wide enough to clear the minimum on its own. */
+.fwm-more-theme-key {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-sunk);
+  font: inherit; /* keyword */
+  color: var(--fwm-text-2);
+  touch-action: manipulation; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* THE SELECTED END IS DRAWN, NOT JUST ANNOUNCED. `aria-checked` carries it for
+   a screen reader; this carries it for everybody else. */
+.fwm-more-theme-key[data-fwm-selected='true'] {
+  border-color: var(--fwm-accent-scan);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text);
+}
+
+/* Inert on a watch, and visibly so: the sub-line says why. */
+.fwm-more-theme-key:disabled {
+  color: var(--fwm-text-disabled);
+  cursor: default; /* keyword */
+}

@@ -1,0 +1,165 @@
+/* THE REPORT KEY.
+ *
+ * Every rule here was `dock.css`, which drew v0's six-key bar AND, incidentally,
+ * this key. v0's dock is deleted; `ReportKey` is not - it is the one component
+ * the v1 dock reuses rather than rebuilds, because the tap-opens-the-sheet and
+ * hold-1s-drops-a-pin gestures, the abort-on-drag slop and the queued badge are
+ * worth exactly nothing rewritten a second time.
+ *
+ * SO THIS FILE EXISTS TO KEEP THE KEY'S OWN RULES WITH THE KEY. It used to be
+ * possible to delete the file that drew v0's dock and take the report key's
+ * brand mask with it, silently: the key kept its size, its background and both
+ * gestures, so nothing failed. That happened. See `reportKeyMark.test.tsx`,
+ * which renders the shipped dock and asks the eye what it computes to.
+ *
+ * WHAT THIS FILE IS NOT. It is not the key's SHAPE. `dockV1.css` turns this
+ * square into the floating circle beside the pill - the radius, the glass, the
+ * meniscus and the white glyph are all there, at a higher specificity, and they
+ * load after this. What lives here is what survives that: the box, the button
+ * reset, the touch floor, the mask, the confirmation and the badge.
+ *
+ * THIS FILE DECLARES NO HOVER STATE AND NEVER WILL. This is a touch-first
+ * product; a pointer hover never fires on a phone in a car mount. Pressed
+ * feedback, if it is ever specified, belongs on :active. `reportKeyMark.test.tsx`
+ * reads every stylesheet in this directory off disk and fails if a hover
+ * selector appears in any of them.
+ *
+ * Every value is var(--fwm-*) or derived from one. The locals are
+ * component-scoped custom properties, NOT new tokens.
+ */
+
+/* ---------------------------------------------------------------------------
+ * The key itself. A 42px square in v0's bar; `dockV1.css` re-shapes it.
+ *
+ * The hue does NOT follow the active screen. v0's own predecessor took the lit
+ * key's colour; every rendered dock since draws one fixed mark a driver can
+ * find without looking.
+ * GAP: see docs/gaps-inbox/dock-v2.md#report-no-longer-follows-the-screen-hue
+ * ------------------------------------------------------------------------ */
+
+.fwm-dock-report-key {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none; /* keyword */
+  width: var(--fwm-dock-key-h);
+  height: var(--fwm-dock-key-h);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  /* "42px eye mark on a tinted chip". The panel says tinted; the rendered
+   * markup fills nothing behind the mark.
+   * GAP: see docs/gaps-inbox/dock-v2.md#report-chip-tint-panel-vs-render */
+  background: var(--fwm-tint-in-range);
+  padding: 0;
+  color: var(--fwm-text-icon);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  /* The 1s hold is ours. The browser must not pan, zoom or long-press-select. */
+  touch-action: none; /* keyword */
+}
+
+/* THE TOUCH FLOOR, not a decoration.
+ *
+ * The design draws a 42px key and --fwm-touch-min is 44px, so 1px of transparent
+ * overhang on each edge takes the hit area to the floor without moving a drawn
+ * pixel. It is inside the button, so it needs no handler of its own. Same
+ * pattern, same reasoning as `.fwm-sweep-key::before`.
+ * See the design-conflict register, item 7: touch-target floor violated by
+ * the design. (That register is internal and is not part of the public tree.)
+ * and docs/gaps-inbox/dock-v2.md#inactive-keys-are-narrower-than-the-touch-floor */
+.fwm-dock-report-key::before {
+  content: ""; /* keyword */
+  position: absolute;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-dock-key-h)) / -2);
+  inset-inline: calc(var(--fwm-space-1) / -4);
+  background: transparent; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * The word.
+ *
+ * Clipped, never removed. This key paints no word at all - the mark is the eye
+ * and nothing else - but an icon-only button with no accessible name cannot be
+ * used with a screen reader and cannot be found by a test that looks for what a
+ * driver would call the key. `display:none` would take the name away with the
+ * picture, so the word is clipped to nothing instead. The same class carries
+ * the key's name and its queue sentence, which the design draws as a bare
+ * numeral.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dock-word {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden; /* keyword */
+  clip-path: inset(50%);
+  white-space: nowrap; /* keyword */
+}
+
+/* The brand eye. One shipped brand image, masked so it takes a token colour
+ * instead of shipping a second, recoloured copy of itself. Rendered 22px in a
+ * 42px cell; --fwm-icon-size is 24px and is the nearest token.
+ * GAP: see docs/gaps-inbox/dock-v2.md#divider-22-and-eye-22
+ *
+ * THE MASK IS THE MARK. Lose these eight declarations and the key still draws:
+ * right size, right fill, both gestures, no test failing. It just has no eye in
+ * it. `reportKeyMark.test.tsx` is the guard. */
+.fwm-report-eye {
+  flex: none; /* keyword */
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+  background: var(--fwm-alert-in-range);
+  -webkit-mask-image: url("/assets/darkroute-mark.png");
+  mask-image: url("/assets/darkroute-mark.png");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* The receipt for a 1s hold. The design draws the dock only in its resting
+ * state, so the confirmation has no drawn treatment; the 52px bar that once
+ * held "PIN DROPPED" has nowhere to be painted any more. Inverting the chip is
+ * the smallest thing that reads at a glance and needs no new value: the tint
+ * goes solid and the mark takes the ink token the system already names for a
+ * label on a saturated alert fill.
+ * GAP: see docs/gaps-inbox/dock-v2.md#pin-drop-confirmation-is-undrawn-in-v2 */
+.fwm-dock-report-key[data-fwm-confirming="true"] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-dock-report-key[data-fwm-confirming="true"] .fwm-report-eye {
+  background: var(--fwm-text-on-alert);
+}
+
+/* "Amber badge = queued reports."
+ *
+ * The dock panel says amber; the rendered markup draws the numeral in the same
+ * crimson as the eye, unbadged. Amber is the colour the design uses for a queue
+ * everywhere it writes one out in full -- "2 REPORTS QUEUED · SYNC ON WIFI" is
+ * #FFC02E on the REPORT sheet -- so the panel is taken as the later word.
+ * GAP: see docs/gaps-inbox/dock-v2.md#queue-badge-amber-vs-crimson
+ *
+ * Offsets are the drawn `top:-2px; right:-1px`, derived from --fwm-space-1
+ * rather than written as lengths. */
+.fwm-report-badge {
+  position: absolute;
+  inset-block-start: calc(var(--fwm-space-1) / -2);
+  inset-inline-end: calc(var(--fwm-space-1) / -4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--fwm-space-4);
+  padding: 0 var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alert-approaching);
+  /* Rendered 10px; the phone type floor is 11px.
+   * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fwm-text-on-alert);
+}

@@ -1,0 +1,23 @@
+/* THE ONE CLOSE KEY, for every sheet and modal in the product.
+ *
+ * IT IS THE REPORT SHEET'S KEY, MOVED RATHER THAN COPIED. `.fwm-reportv1-close`
+ * was the only overlay control in the app a driver could count on: a round 44px
+ * key at the top right of the sheet, and it worked. INTEL drew a back chevron
+ * instead and the install invite drew no dismiss at all, so a driver who opened
+ * either one in the installed PWA - no address bar, no tab, no obvious back
+ * gesture - was looking at a surface with no visible way out.
+ *
+ * One declaration block rather than three near-identical ones, because three is
+ * how a close key ends up 40px on one sheet and 44px on the next.
+ */
+.fwm-overlay-close {
+  flex: none; /* keyword */
+  width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client", "vite-plugin-pwa/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src",
+    "e2e",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "tailwind.config.ts"
+  ],
+  "exclude": ["dist", "dev-dist", "node_modules"]
+}

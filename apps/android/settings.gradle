@@ -1,0 +1,31 @@
+/*
+ * DarkRoute — Android (Trusted Web Activity).
+ *
+ * The app is the PWA. This project exists to give it a launcher icon, a
+ * standalone window with no address bar, and — the reason it exists at all —
+ * ANDROID'S location permission instead of the browser's, so the alert still
+ * works with the screen off. See app/build.gradle for that dependency and
+ * README.md for why a plain "Add to home screen" install cannot do it.
+ */
+
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        // androidbrowserhelper and locationdelegation are published to Google's
+        // Maven repo, NOT to Maven Central. Dropping google() here fails with a
+        // "could not find" that reads like a typo.
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'darkroute'
+include ':app'

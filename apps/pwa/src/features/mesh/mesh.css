@@ -1,0 +1,172 @@
+/* MESH - v1. Two tabs over the node feature.
+ *
+ * The pitch card is the one place in the product that has to explain what a
+ * LoRa radio is for, so it gets the mesh hue and the largest type on the
+ * screen. Everything under it is instrument.
+ */
+
+.fwm-mesh {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-mesh-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-mesh-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-mesh-tabs {
+  display: flex;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-mesh-tab {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  touch-action: manipulation;
+}
+
+.fwm-mesh-tab[data-fwm-selected='true'] {
+  background: var(--fwm-accent-mesh);
+  color: var(--fwm-bg);
+}
+
+/* THE PITCH. The mesh hue, filled, because this is the one card on the screen
+   making an argument rather than reporting a state. */
+.fwm-mesh-pitch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-accent-mesh);
+}
+
+.fwm-mesh-pitch-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--fwm-bg);
+}
+
+.fwm-mesh-pitch-body {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-bg);
+}
+
+/* WHAT LEAVES YOUR CAR. Two states and no third: a thing is sent or it is
+   not, and a maybe here would be the product hedging about the one promise
+   that matters. */
+.fwm-mesh-leaves {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-4);
+  list-style: none; /* keyword */
+}
+
+.fwm-mesh-leaf {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-mesh-leaf-state {
+  min-width: var(--fwm-space-12);
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  border: var(--fwm-rule-w) solid var(--fwm-alert-clear);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  text-align: center; /* keyword */
+  color: var(--fwm-alert-clear);
+  flex: none; /* keyword */
+}
+
+.fwm-mesh-leaf-state[data-fwm-state='NEVER'] {
+  border-color: var(--fwm-alert-in-range);
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-mesh-leaf-text {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+/* The node feature keeps its own padding, so it is not padded twice. */
+.fwm-mesh-node {
+  margin: 0 calc(var(--fwm-space-4) * -1);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-mesh > * {
+  flex-shrink: 0;
+}
+
+/* THE CHAT TAB OWNS THE SCREEN.
+ *
+ * RADIOS is a long document and scrolls as one. CHAT must not: its composer is
+ * the one control that has to stay under a thumb, and in a scrolling column it
+ * walks off the bottom as the thread grows. So on this tab the section becomes
+ * a fixed-height flex column, the page stops scrolling, and the THREAD is the
+ * only thing that does - see `.fwm-chat-thread`.
+ */
+.fwm-mesh[data-fwm-tab='chat'] {
+  height: 100%;
+  overflow-y: hidden; /* keyword */
+}
+
+.fwm-mesh[data-fwm-tab='chat'] > .fwm-chat {
+  min-height: 0;
+}
+
+/* =============================================================================
+ * LIQUID GLASS, the same material the report sheet and the DRIVE cards use.
+ * =============================================================================
+ * One rule rather than a change to each card, so this screen cannot drift from
+ * the rest of the app: the tint, the hairline, the optics and the specular rim
+ * all come from the tokens, and the OFF switch resolves `--fwm-glass-filter` to
+ * `none`, which removes the read-back entirely rather than the visible half.
+ *
+ * Only the top-level cards. A glass panel nested inside another one stacks two
+ * backdrop read-backs to show a surface that is itself translucent, which costs
+ * double and reads as mud.
+ * ========================================================================== */
+.fwm-mesh-tabs,
+.fwm-mesh-leaves {
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}

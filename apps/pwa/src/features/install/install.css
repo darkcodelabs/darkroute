@@ -1,0 +1,140 @@
+/* THE INSTALL INVITE - a card in the middle of the screen, raised once.
+ *
+ * IT WAS A BOTTOM SHEET AND THE DOCK ATE IT. Anchored to the bottom edge it sat
+ * under the dock and the report key, so its last control - the one that
+ * dismisses it - was behind a button that does something else. An invite whose
+ * decline is unreachable is a trap.
+ *
+ * Centred instead. It is a decision, not a drawer: it interrupts once, it wants
+ * an answer, and the middle of the screen is where a person looks. The grabber
+ * goes with the sheet metaphor.
+ *
+ * COLOUR, AND WHY IT IS THE SCAN HUE. The card was the plain glass every
+ * surface uses, which made the one moment the app asks for something look like
+ * furniture. The scan hue is this product's word for "this part is live", and
+ * an install offer is the app being live at you. It is a tint and a rim, not a
+ * fill: full-strength anything at this size on a night map is a flash. */
+.fwm-install {
+  position: absolute;
+  left: var(--fwm-space-4);
+  right: var(--fwm-space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  max-height: calc(100% - var(--fwm-space-12) * 2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-6) var(--fwm-space-4) var(--fwm-space-6);
+  border: var(--fwm-hairline) solid var(--fwm-tint-scan-ring);
+  border-radius: var(--fwm-radius-5);
+  background:
+    linear-gradient(
+      160deg,
+      var(--fwm-tint-scan-weak) 0%,
+      var(--fwm-surface-glass) 55%
+    ),
+    var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-install > * {
+  flex-shrink: 0;
+}
+
+/* Hidden, not deleted: the component still renders it and a future sheet
+   presentation would want it back. A grab handle on a centred card invites a
+   drag that does nothing. */
+.fwm-install-grabber {
+  display: none; /* keyword */
+  align-self: center;
+  width: var(--fwm-space-8);
+  height: var(--fwm-mark-w);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line-strong);
+  margin: var(--fwm-space-1) 0;
+}
+
+.fwm-install-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+/* THE APP'S OWN MARK, in the scan hue.
+ *
+ * It was `node-mesh-eye.png` - the MESH hexagon, a different mark for a
+ * different feature. On a card whose entire job is "put THIS app on your
+ * phone", showing another feature's icon is the one image that must not be
+ * wrong. */
+.fwm-install-mark {
+  flex: none; /* keyword */
+  width: calc(var(--fwm-space-8) * 1.83);
+  height: var(--fwm-space-8);
+  background: var(--fwm-accent-scan);
+  -webkit-mask-image: url("/assets/darkroute-mark.png");
+  mask-image: url("/assets/darkroute-mark.png");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.fwm-install-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 800;
+  color: var(--fwm-text);
+  /* Pushes the close key to the trailing edge of the head row, which is where
+   * the report sheet keeps it and therefore where a thumb goes looking. */
+  margin-right: auto;
+}
+
+.fwm-install-body {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-install-manual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-install-manual-title {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-install-key {
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: var(--fwm-hairline) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-5);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+/* ONE FILLED KEY. "Keep using the website" is a real choice and is deliberately
+   not styled as a refusal - it is outlined, not greyed. */
+.fwm-install-key[data-fwm-key='primary'] {
+  border-color: transparent;
+  background: var(--fwm-accent-scan);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+}
+
+.fwm-install-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}

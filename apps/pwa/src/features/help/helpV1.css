@@ -1,0 +1,112 @@
+/* HELP - v1. A green promise, then the answers as cards.
+ *
+ * Green is the product's word for "clear", and it is the right hue for the one
+ * card on this screen that is a claim about the whole product rather than an
+ * answer to a question.
+ */
+
+.fwm-helpv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-helpv1-header {
+  display: flex;
+  align-items: center;
+  /* Room for the back key beside the title. Same gap MISUSE and INTEL use. */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-helpv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-helpv1-promise {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-tint-clear);
+}
+
+.fwm-helpv1-promise-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 800;
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-helpv1-promise-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-helpv1-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-helpv1-section-title {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+  padding-top: var(--fwm-space-2);
+}
+
+.fwm-helpv1-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-helpv1-question {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-helpv1-answer {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-helpv1-files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  list-style: none; /* keyword */
+}
+
+/* The citation, in the cyan the product uses for "this part is live". It is
+   not a link: there is nothing to open offline, and a path that looks tappable
+   and is not is worse than one that reads as a reference. */
+.fwm-helpv1-file {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-accent-scan);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-helpv1 > * {
+  flex-shrink: 0;
+}

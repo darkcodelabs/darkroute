@@ -1,0 +1,207 @@
+/* MISUSE - who has abused this, and where.
+ *
+ * An amber hero, filter chips, then one card per documented case. Amber
+ * because this screen is about interruption of the wrong kind: the product's
+ * amber means "somebody is doing something you should know about", and that is
+ * exactly what a record is.
+ */
+
+.fwm-misuse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-misuse-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+/* `.fwm-misuse-back` used to be here, byte-identical to `.fwm-intelv1-back`.
+ * Both are `.fwm-backkey` in `components/nav/nav.css` now - one description of
+ * one control, so widening the target or changing its hue is one edit rather
+ * than a hunt through feature stylesheets for the copies. */
+
+.fwm-misuse-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-misuse-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-tint-approaching);
+}
+
+.fwm-misuse-headline {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-misuse-body {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-misuse-count {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- filters -------------------------------------------------------------- */
+
+.fwm-misuse-filters {
+  display: flex;
+  gap: var(--fwm-space-2);
+  overflow-x: auto; /* keyword */
+  padding-bottom: var(--fwm-space-1);
+}
+
+.fwm-misuse-chip {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-misuse-chip[data-fwm-selected='true'] {
+  background: var(--fwm-text);
+  color: var(--fwm-bg);
+}
+
+/* NEAR ME with no county is inert, and visibly so. A chip that silently
+   returned everything would read as "nothing near me", which is a claim. */
+.fwm-misuse-chip:disabled {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-misuse-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- the records ---------------------------------------------------------- */
+
+.fwm-misuse-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-misuse-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-misuse-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+}
+
+/* The count, not a category. The file records how many documented incidents an
+   entry stands for; it does not classify what they were, and this screen is
+   not entitled to decide that from one sentence. */
+.fwm-misuse-tag {
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border: var(--fwm-rule-w) solid var(--fwm-alert-approaching);
+  border-radius: var(--fwm-radius-full);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-misuse-year {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-misuse-agency {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-misuse-where {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-misuse-summary {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+/* THE CITATION IS A REAL LINK and is styled like one. The entire screen rests
+   on a reader being able to open it, so it must not look like a caption. */
+.fwm-misuse-source {
+  min-height: var(--fwm-touch-min);
+  display: flex;
+  align-items: center;
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-accent-scan);
+  text-decoration: underline; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The most important sentence on the screen. See the component header. */
+.fwm-misuse-footer {
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* Nothing on this page may be squashed below its content. See more.css. */
+.fwm-misuse > * {
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+ * LIQUID GLASS, the same material the report sheet and the DRIVE cards use.
+ * =============================================================================
+ * One rule rather than a change to each card, so this screen cannot drift from
+ * the rest of the app: the tint, the hairline, the optics and the specular rim
+ * all come from the tokens, and the OFF switch resolves `--fwm-glass-filter` to
+ * `none`, which removes the read-back entirely rather than the visible half.
+ *
+ * Only the top-level cards. A glass panel nested inside another one stacks two
+ * backdrop read-backs to show a surface that is itself translucent, which costs
+ * double and reads as mud.
+ * ========================================================================== */
+/* `.fwm-misuse-back` was the first selector in this rule and matched nothing
+ * after the back key moved to `components/nav/nav.css`. The four properties
+ * below now live on `.fwm-backkey` itself, so every screen's key is glass. */
+.fwm-misuse-chip,
+.fwm-misuse-card {
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}

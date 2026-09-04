@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Modelled on GoogleChrome/android-browser-helper demos/twa-basic, with the
+    ExtraFeaturesService from demos/twa-location-delegation.
+
+    Every ${fwm*} placeholder is filled from gradle.properties via
+    app/build.gradle, so the launch URL, the deep-link host and the asset
+    statement can never disagree with each other.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Foreground location, requested by the location-delegation library on
+        the app's behalf. COARSE is declared alongside FINE because Android 12+
+        lets the driver grant only the approximate one, and an app that
+        declares FINE alone gets no location at all in that case rather than a
+        worse one.
+
+        NOT declared: ACCESS_BACKGROUND_LOCATION. Delegation covers the screen
+        being off while the app is running, which is the case that matters in a
+        car. Background location is a separate Play review with a video
+        justification, and it is not needed for the alert to work.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar">
+
+        <!--
+            allowBackup is false on purpose. The app's local store holds the
+            driver's own movement history and their evidence queue; letting
+            Android sync that to Google's backup transport would move it off the
+            device, which is the one promise onboarding makes.
+        -->
+
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
+
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+                android:value="https://${fwmHost}/?screen=settings" />
+        </activity>
+
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:label="@string/app_name"
+            android:exported="true">
+
+            <meta-data
+                android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                android:value="${fwmStartUrl}" />
+
+            <!-- Both bars are the fwm-bg token (#000000). Night Watch is the default
+                 mode and the only one allowed on an always-on surface. -->
+            <meta-data
+                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                android:resource="@color/backgroundColor" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR_DARK"
+                android:resource="@color/backgroundColor" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
+                android:resource="@color/backgroundColor" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR_DARK"
+                android:resource="@color/backgroundColor" />
+
+            <!--
+                Portrait, matching `orientation: portrait-primary` in the web
+                manifest and `services/pwa/orientation.ts`. A driver rotating
+                the phone must not reflow the alert.
+            -->
+            <meta-data
+                android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
+                android:value="portrait" />
+
+            <!--
+                IMMERSIVE AT LAUNCH, BEFORE THE PAGE EVEN LOADS.
+
+                A TWA does NOT read the web manifest's `display` field. Its
+                display mode comes from this key and nowhere else: with the key
+                absent, android-browser-helper's
+                `LauncherActivityMetadata.getDisplayMode` falls through to
+                `TrustedWebActivityDisplayMode.DefaultMode`, which androidx
+                documents as "the system UI (status bar, navigation bar) is
+                shown". So the app launched with both bars regardless of
+                `display: "fullscreen"` being in manifest.webmanifest, and no
+                web-side code could reach it - `services/pwa/immersive.ts` is a
+                deliberate no-op on an installed copy.
+
+                STICKY, not plain immersive. On a plain `immersive` the first
+                edge swipe brings the bars back permanently; sticky restores
+                them transiently and hides them again. On a surface somebody
+                touches while driving, an accidental swipe must not cost the
+                whole look for the rest of the trip.
+
+                The accepted values are the literal token set in
+                `LauncherActivityMetadata`: immersive, sticky-immersive,
+                minimal-ui, browser, window-controls-overlay, tabbed. Note that
+                "fullscreen" and "standalone" are NOT among them - they fall
+                through to DefaultMode silently, with no error, which is exactly
+                the kind of quiet nothing this comment exists to prevent.
+            -->
+            <meta-data
+                android:name="android.support.customtabs.trusted.DISPLAY_MODE"
+                android:value="sticky-immersive" />
+
+            <meta-data
+                android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
+                android:resource="@drawable/splash" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
+                android:resource="@color/backgroundColor" />
+            <meta-data
+                android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
+                android:value="300" />
+
+            <meta-data
+                android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
+                android:value="@string/provider_authority" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+                autoVerify makes Android check .well-known/assetlinks.json on
+                the host at install time. If it does not verify, the app still
+                launches — with a Chrome address bar across the top. That looks
+                like it worked, which is why the README treats hosting the file
+                as part of shipping, not as a follow-up.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${fwmHost}" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
+
+        <activity
+            android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="@string/provider_authority"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
+
+        <!--
+            Our DelegationService subclass, not the library's, because it
+            registers the location handler in its constructor. The service does
+            its own access control, hence the ignored lint warning — the same
+            note the upstream demo carries.
+        -->
+        <service
+            android:name=".ExtraFeaturesService"
+            android:enabled="true"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

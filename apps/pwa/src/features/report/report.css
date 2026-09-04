@@ -1,0 +1,755 @@
+/* REPORT -- the sheet that files a camera.
+ *
+ * SOURCE: `Flockys App Screens v2.dc.html`, panel `06 · REPORT - SHEET FROM
+ * THE DOCK KEY` (lines 413-470). v1's `06 · REPORT - SHEET FROM ANY SCREEN`
+ * still describes everything v2 did not redraw; where the two disagree, v2
+ * wins.
+ *
+ * =============================================================================
+ * WHAT v2 CHANGED HERE, AND IT IS NOT A RESKIN
+ * =============================================================================
+ * "v2 · flat borderless controls, 8px radius, fill-based depth". Every 1px
+ * `--fwm-line` / `--fwm-line-strong` edge on this sheet is gone except two, and
+ * a fill took its job:
+ *
+ *   the toggle       one 1px box, 2px radius   -> a --fwm-surface-track trough,
+ *                                                 8px radius, 3px inset, two
+ *                                                 6px-radius halves, no edge
+ *   POSITION card    1px edge on --fwm-surface-1 -> --fwm-surface-card, 6px, no edge
+ *   the dial         1px stroked ring, no fill   -> a --fwm-surface-card disc,
+ *                                                   no stroke
+ *   the two tiles    1px --fwm-line-strong edge  -> --fwm-surface-control fill,
+ *                                                   8px radius, no edge
+ *   the mount chips  999px outlined pills        -> 8px --fwm-surface-control
+ *                                                   chips, no edge
+ *   SUBMIT REPORT    2px radius                  -> 8px radius
+ *
+ * The two edges v2 KEPT are load-bearing and are both still drawn below: the
+ * crimson rule under the header, and the 1px `--fwm-tint-in-range-line` on the
+ * SELECTED mount chip -- the only chip state that has to shout across a car.
+ *
+ * Every colour, length, radius, duration and easing below is `var(--fwm-*)` or
+ * a `calc()` over one. Lines that render a value the token set does not carry
+ * are marked `GAP:` and filed in `docs/gaps-inbox/report-v2.md` (v2 deltas) or
+ * `docs/gaps-inbox/report.md` (everything v1 already filed).
+ *
+ * WHAT IS STILL A LITERAL HERE, EXACTLY, so this comment cannot be read as a
+ * claim it does not keep -- the enforcement script and a hex/rgb grep both
+ * miss unitless numbers, so they are named instead:
+ *   - the unitless RATIOS (`line-height`) are declared once each as
+ *     component-scoped locals in the `.fwm-report` block below and referenced
+ *     as `var(--fwm-report-*)` at every use, the pattern `intel.css` uses for
+ *     `--fwm-intel-scrim-alpha`. The token set carries no leading ramp for them
+ *     to be tokens of.
+ *     GAP: see docs/gaps-inbox/report.md#unitless-ratios-have-no-token
+ *     (v1's `--fwm-report-wedge-alpha` is GONE: the tokens phase landed
+ *     `--fwm-tint-in-range-arc`, which is v2's own 35% mix, so the wedge is now
+ *     a paint token and not a hue plus an opacity.)
+ *   - `font-weight: 400 / 500 / 700`, which the token set does not carry either
+ *     and which CSS itself names (400 = `normal`, 700 = `bold`). v2 added the
+ *     500 -- the tile labels. Filed in the same entry.
+ *
+ * =============================================================================
+ * ONE HUE, AND IT MEANS "THIS IS A REPORT"
+ * =============================================================================
+ * The panel uses `--fwm-alert-in-range` for the header rule, the title, the
+ * pressed toggle half, the selected chip and the submit fill. On this screen
+ * the crimson is not an alert state -- it is the report action itself, the same
+ * crimson the REPORT key in the dock carries. No other hue decorates anything
+ * here: green is the instrument line, amber is the queue, orange is a failure,
+ * cyan is the one interactive hint.
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product, same rule as RADAR, SWEEP and ASK. `ReportView.test.tsx`
+ * reads this file off disk and fails if `:hover` appears.
+ * ========================================================================== */
+
+.fwm-report {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline v2 still draws under the
+   * header and around the selected chip; /2 is the 2px outline of the camera
+   * glyph inside the PHOTO key. Derived, so a mode that rescales space
+   * rescales the strokes with it. Component-scoped locals, NOT new tokens. */
+  --fwm-report-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-report-glyph-w: calc(var(--fwm-space-1) / 2);
+
+  /* GAP: see docs/gaps-inbox/report.md#status-dot-size-has-no-token
+   * The queue line's dot renders 6px, the same dot RADAR's strips draw and the
+   * same derivation `radar.css` uses. */
+  --fwm-report-dot: calc(var(--fwm-space-1) * 1.5);
+
+  /* The dial is 120px on the panel, which is 2.5 x --fwm-space-12 exactly. The
+   * SVG viewBox in `facing.ts` is 120 units, so one unit stays one pixel. */
+  --fwm-report-dial-size: calc(var(--fwm-space-12) * 2.5);
+
+  /* GAP: see docs/gaps-inbox/report.md#tile-and-button-heights-have-no-token
+   * The tiles and the submit button render 56px. Expressed as the product's own
+   * 44px touch floor plus one 12px step, so a surface that raises the floor
+   * (dash: 68px) raises them with it instead of leaving a 56px control on a
+   * head unit that requires 68. */
+  --fwm-report-tile-h: calc(var(--fwm-touch-min) + var(--fwm-space-3));
+
+  /* GAP: see docs/gaps-inbox/report-v2.md#toggle-half-40px-and-close-key-36px
+   * v2 shrank the toggle halves from 46px to 40px and kept the `✕` key at
+   * 44x36. Both are under the 44px floor, so both keep the DRAWN height and
+   * extend their hit area with a transparent `::before`, the pattern
+   * `.fwm-sweep-key` established. Derived from the space scale, not from
+   * `--fwm-touch-min`, so raising the floor grows the overhang rather than the
+   * drawn control -- same derivation `--fwm-sweep-key-h` uses. */
+  --fwm-report-mode-h: calc(var(--fwm-space-8) + var(--fwm-space-2));
+  --fwm-report-close-h: calc(var(--fwm-space-8) + var(--fwm-space-1));
+
+  /* GAP: see docs/gaps-inbox/report-v2.md#segment-track-inset-is-3px
+   * v2 insets the segmented track by 3px and gaps its halves by the same 3px.
+   * The space scale starts at 4. 0.75 x --fwm-space-1 is the exact 3px. */
+  --fwm-report-track-pad: calc(var(--fwm-space-1) * 0.75);
+
+  /* GAP: see docs/gaps-inbox/report.md#unitless-ratios-have-no-token
+   * The unitless ratios the panel renders, declared once so no rule
+   * hand-carries them and a mode swap changes them in one place. v2 still sets
+   * the facing readout at `line-height:1.7`; every other block of prose on the
+   * sheet renders 1.5. Component-scoped locals, NOT new tokens -- the token set
+   * exports no leading ramp. Same pattern as `--fwm-intel-scrim-alpha`. */
+  --fwm-report-leading: 1.5;
+  --fwm-report-leading-readout: 1.7;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  overflow-x: hidden; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `REPORT` at 19px/700/.06em in the report hue, the rule under
+ * it in the same hue, and a 44x36 `✕` key on the right.
+ *
+ * v2 renamed the heading from `REPORT CAMERA` to `REPORT`, retracked it from
+ * .1em to .06em and grew it 17px -> 19px -- the same title metric v2 gave every
+ * other screen. The crimson rule SURVIVED v2's border cull; it is the one thing
+ * that says the sheet is a report and not a screen.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  flex: none; /* keyword */
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-report-rule-w) solid var(--fwm-alert-in-range);
+}
+
+/* Rendered 19px; --fwm-text-subtitle is 17px and the ramp has nothing between
+ * it and --fwm-text-title (24px).
+ * GAP: see docs/gaps-inbox/report-v2.md#screen-title-19px-has-no-step */
+.fwm-report-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.06);
+  color: var(--fwm-alert-in-range);
+  white-space: nowrap; /* keyword */
+}
+
+/* v2 filled it and rounded it: `#1B1E25`, 8px, no edge. Drawn 44x36, which is
+ * 8px under the floor on the short axis -- the hit area below fixes that
+ * without moving a drawn pixel.
+ * GAP: see docs/gaps-inbox/report-v2.md#toggle-half-40px-and-close-key-36px */
+.fwm-report-close {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none; /* keyword */
+  width: var(--fwm-touch-min);
+  height: var(--fwm-report-close-h);
+  padding: 0;
+  border: 0;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-family: var(--fwm-font-data);
+  /* Rendered 13px. GAP: see docs/gaps-inbox/report.md#report-type-steps-missing */
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* The hit area, not a decoration: 4px of transparent overhang top and bottom
+ * takes the 36px key to --fwm-touch-min without moving a drawn pixel. It is
+ * inside the button, so it needs no handler of its own.
+ * See docs/gaps-inbox/README.md#touch-target-floor */
+.fwm-report-close::before {
+  content: ""; /* keyword */
+  position: absolute;
+  inset-inline: 0;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-report-close-h)) / -2);
+  background: transparent; /* keyword */
+}
+
+.fwm-report-close:disabled {
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack gap, and the bottom block pinned by
+ * `margin-top:auto` exactly as the panel pins it.
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * The scale steps 12 -> 16, so the 14px stack gap takes the nearest step below.
+ *
+ * The column scrolls. The panel is drawn at a fixed 830px with the MAKE / MODEL
+ * field closed; open it on a short phone and the stack is taller than the
+ * viewport, and a sheet that cuts its own submit button off is unusable.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+  overflow-y: auto; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * `NEW CAMERA` / `CONFIRM EXISTING`.
+ * v2: a `--fwm-surface-track` trough at 8px radius with a 3px inset and a 3px
+ * gap, holding two 40px halves at 6px radius. The pressed half is filled with
+ * the report hue and lettered in `--fwm-text-on-alert` (v2's ink for a
+ * saturated fill -- NOT the page ground, which is what v1 used); the other is
+ * muted text on nothing. No edge anywhere: the trough IS the edge.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-modes {
+  display: flex;
+  gap: var(--fwm-report-track-pad);
+  flex: none; /* keyword */
+  padding: var(--fwm-report-track-pad);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-track);
+  overflow: hidden; /* keyword */
+}
+
+.fwm-report-mode {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-report-mode-h);
+  padding: 0 var(--fwm-space-2);
+  border: 0;
+  border-radius: var(--fwm-radius-2);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  font-weight: 400;
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* 2px of transparent overhang top and bottom takes the drawn 40px half to the
+ * 44px floor. It lands inside the trough's own 3px inset, so the two halves
+ * never overlap each other and nothing outside the trough is stolen. */
+.fwm-report-mode::before {
+  content: ""; /* keyword */
+  position: absolute;
+  inset-inline: 0;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-report-mode-h)) / -2);
+  background: transparent; /* keyword */
+}
+
+.fwm-report-mode[aria-pressed="true"] {
+  background: var(--fwm-alert-in-range);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+}
+
+/* ---------------------------------------------------------------------------
+ * `POSITION · AUTO`.
+ * v2: no edge at all -- a `--fwm-surface-card` fill at 6px radius, 14px/16px
+ * padding, a 10px/.18em label, the pair at 17px/700 mono, the instrument line
+ * at 10px/.14em in the clear hue.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-position {
+  flex: none; /* keyword */
+  min-width: 0;
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card);
+}
+
+/* ---------------------------------------------------------------------------
+ * `WHERE WAS IT` -- the card that makes a report mappable.
+ *
+ * Same card material as POSITION, and directly under it, because it answers the
+ * question POSITION raises: that card shows where the PHONE is, this one asks
+ * where the CAMERA was. Drawn as a card rather than a bare chip row so the pair
+ * reads as one thought.
+ *
+ * Two chip rows share `.fwm-report-chips`, so they inherit the wrapping, the
+ * 44px hit floor and the pressed tint from MountChips without restating any of
+ * it. The second row is REMOVED, not disabled, when the answer is OVERHEAD --
+ * a gantry camera has no "how far over", and a greyed row would imply the
+ * question still applies.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  min-width: 0;
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card);
+}
+
+/* UNANSWERED IS NOT AN ERROR AND NOT A READING. The clear-green of
+   `.fwm-report-detail` means "here is an instrument value"; there is no value
+   here yet. Muted says "outstanding" without dressing an ordinary empty state
+   as a fault, which would be the wrong pressure on somebody who genuinely did
+   not see which side it was on. */
+.fwm-report-where [data-fwm-report-where="unset"] {
+  color: var(--fwm-text-muted);
+}
+
+/* The section labels: `POSITION · AUTO`, `FACING · FROM COMPASS`.
+ * Rendered 10px mono at .18em.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor -- 11px here. */
+.fwm-report-label {
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  font-weight: 400;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-report-coords {
+  margin: var(--fwm-space-1) 0 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-report-detail {
+  margin: var(--fwm-space-1) 0 0;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-alert-clear);
+}
+
+/* No fix is not an instrument reading. It is the absence of one, and it is
+   drawn in the amber the offline strip uses rather than the green that means
+   "locked". */
+.fwm-report-detail[data-fwm-report-detail="no-fix"] {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-report-position[data-fwm-report-position="no-fix"] .fwm-report-coords {
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * `FACING · FROM COMPASS` -- the dial and its readout.
+ *
+ * v2 turned the dial inside out: v1 drew a 1px `--fwm-line` ring around
+ * nothing, v2 draws a filled `--fwm-surface-card` disc with no stroke. Same
+ * 120px, same wedge, same centre dot; the cardinals went 9px/`--fwm-line-strong`
+ * to 10px/`--fwm-text-muted`, which is the first time they are actually legible.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-facing {
+  flex: none; /* keyword */
+  min-width: 0;
+}
+
+.fwm-report-facing-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  margin-top: var(--fwm-space-2);
+}
+
+/* The dial is a control: it takes a tap anywhere on it and it takes the
+   keyboard. `touch-action: manipulation` keeps a tap from being swallowed by
+   the browser's double-tap-to-zoom delay. */
+.fwm-report-dial {
+  flex: none; /* keyword */
+  width: var(--fwm-report-dial-size);
+  height: var(--fwm-report-dial-size);
+  overflow: visible; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* v2: fill, no stroke. The element is unchanged -- only what it paints is. */
+.fwm-report-dial-ring {
+  fill: var(--fwm-surface-card);
+  stroke: none; /* keyword */
+}
+
+/* v2 paints the wedge `rgba(255,45,94,.35)`, and the tokens phase landed that
+ * exact mix as `--fwm-tint-in-range-arc`, named for this arc. It is a paint
+ * token, so a mode that remaps the crimson remaps the arc with it, and the
+ * wedge no longer needs an `opacity` standing in for a colour the set did not
+ * carry. Supersedes DESIGN-GAPS.md#report-bar-tint-and-alert-tints. */
+.fwm-report-dial-wedge {
+  fill: var(--fwm-tint-in-range-arc);
+}
+
+.fwm-report-dial-centre {
+  fill: var(--fwm-text);
+}
+
+/* Rendered 10px in --fwm-text-muted (v1 drew 9px in --fwm-line-strong).
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-report-dial-cardinal {
+  fill: var(--fwm-text-muted);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+}
+
+.fwm-report-facing-readout {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Rendered 26px/700 in the report hue. --fwm-text-title is 24px, the nearest
+ * step the type scale carries.
+ * GAP: see docs/gaps-inbox/report.md#report-type-steps-missing */
+.fwm-report-facing-cardinal {
+  margin: 0;
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-report-facing-detail {
+  margin: var(--fwm-space-1) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: var(--fwm-report-leading-readout);
+  color: var(--fwm-text-muted);
+  /* The lane sentence wraps; the panel breaks it across three lines. */
+  white-space: normal; /* keyword */
+}
+
+/* `TAP ARC TO ADJUST` -- the one interactive hint on the sheet, in the scan
+   hue the design system reserves for links and taps. */
+.fwm-report-facing-hint {
+  display: block;
+  color: var(--fwm-accent-scan);
+}
+
+/* ---------------------------------------------------------------------------
+ * `PHOTO` and `MAKE / MODEL` -- two 56px keys, then the field the second one
+ * discloses.
+ *
+ * v2: the 1px `--fwm-line-strong` edge is gone and a `--fwm-surface-control`
+ * fill at 8px radius carries them instead. The labels went 13px/600 UI at .08em
+ * to 12px/500 MONO at .1em -- these read as instrument keys now, not as prose.
+ * The camera glyph inside PHOTO kept its 2px outline and went 2px -> 3px
+ * radius, the only 3px corner in the whole of v2.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-tiles-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  min-width: 0;
+}
+
+.fwm-report-tiles {
+  display: flex;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-report-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fwm-space-2);
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-report-tile-h);
+  padding: 0 var(--fwm-space-2);
+  border: 0;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* Rendered 12px/500 mono at .1em. --fwm-text-micro is 11px, the nearest step.
+ * GAP: see docs/gaps-inbox/report-v2.md#tile-label-12px-mono-has-no-step */
+.fwm-report-tile-label {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  font-weight: 500;
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+}
+
+/* The 16x12 outlined block v2 draws inside the PHOTO key, at the 3px radius
+ * the tokens phase named `--fwm-radius-glyph` for exactly this one corner. */
+.fwm-report-tile-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-3);
+  border: var(--fwm-report-glyph-w) solid var(--fwm-text-2);
+  border-radius: var(--fwm-radius-glyph);
+}
+
+/* A refused capability is drawn as refused. It is not hidden: the panel draws
+   this key, and a control that vanishes cannot be asked about.
+   v2 has no edge left to fade, so the refusal drops the key one rung down the
+   fill ladder -- --fwm-surface-control to --fwm-surface-1 -- which is the same
+   "recessed, not raised" reading the missing border used to carry. */
+.fwm-report-tile:disabled,
+.fwm-report-tile[data-fwm-report-capture="unavailable"] {
+  background: var(--fwm-surface-1);
+}
+
+.fwm-report-tile:disabled .fwm-report-tile-label,
+.fwm-report-tile[data-fwm-report-capture="unavailable"] .fwm-report-tile-label {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-report-tile:disabled .fwm-report-tile-glyph,
+.fwm-report-tile[data-fwm-report-capture="unavailable"] .fwm-report-tile-glyph {
+  border-color: var(--fwm-text-disabled);
+}
+
+/* The one authored sentence on this sheet, in RADAR's offline-strip idiom.
+ * GAP: see docs/gaps-inbox/report.md#photo-refusal-copy-is-authored */
+.fwm-report-note {
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: var(--fwm-report-leading);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-alert-approaching);
+}
+
+/* GAP: see docs/gaps-inbox/report.md#make-model-opens-an-undrawn-field
+ * The panel draws the key and never the field. This is the key's own v2 idiom
+ * continued: the same `--fwm-surface-control` fill and 8px radius, no edge,
+ * with the type left at reading weight because it is an input and not a label.
+ *
+ * The edge is declared TRANSPARENT rather than omitted so the invalid state
+ * below can turn it on without the field growing 2px and shoving the submit
+ * button down the moment a driver types a plate. */
+.fwm-report-field {
+  flex: none; /* keyword */
+  width: 100%;
+  min-width: 0;
+  height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-report-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+}
+
+/* A plate-shaped entry is refused, and the edge says so before the status line
+   under the button repeats it in words. v2 borderless does not mean "no state
+   may ever draw an edge" -- v2 itself keeps one on the selected mount chip. */
+.fwm-report-field[data-fwm-report-make-model="plate-shaped"] {
+  border-color: var(--fwm-destructive);
+  color: var(--fwm-destructive);
+}
+
+/* ---------------------------------------------------------------------------
+ * The mount chips.
+ * v2: 999px outlined pills became 8px `--fwm-surface-control` chips with no
+ * edge, 9px/13px padding, 11px MONO at .06em (v1 drew 12px UI). The selected
+ * one is v2's one surviving chip edge: a `--fwm-tint-in-range-weak` fill, a 1px
+ * `--fwm-tint-in-range-line` edge, and `--fwm-alert-in-range-text` -- the
+ * lighter crimson v2 introduced for a label sitting on its own tint.
+ *
+ * GAP: see docs/gaps-inbox/report.md#chips-are-below-the-touch-floor -- the
+ * drawn chip is ~34px tall. It keeps the raised 44px min-height rather than the
+ * drawn-height-plus-::before pattern used on the toggle and the `✕`: these
+ * chips WRAP, and an 5px overhang on rows 8px apart would put two chips' hit
+ * areas on top of each other, which is worse than a taller chip.
+ * GAP: see docs/gaps-inbox/report-v2.md#wrapping-chips-cannot-use-the-before-hit-extension
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-chips {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+.fwm-report-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-report-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.06);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-report-chip[aria-pressed="true"] {
+  border-color: var(--fwm-tint-in-range-line);
+  background: var(--fwm-tint-in-range-weak);
+  color: var(--fwm-alert-in-range-text);
+}
+
+/* Last, so a chip that is both pressed and unwired reads as unwired. */
+.fwm-report-chip:disabled {
+  border-color: transparent; /* keyword */
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * The bottom block: queue line, `SUBMIT REPORT`, hold hint.
+ * v2 changed exactly one value here -- the button's radius, 2px -> 8px. The
+ * amber queue line, the 6px dot, the 56px height, the crimson fill, the
+ * page-ground label and the hold hint are all v1 unchanged.
+ * ------------------------------------------------------------------------ */
+
+.fwm-report-submit-block {
+  margin-top: auto; /* keyword */
+  flex: none; /* keyword */
+  min-width: 0;
+}
+
+/* Rendered 10px mono at .14em in amber, with a 6px dot. */
+.fwm-report-status {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  margin: 0 0 var(--fwm-space-3);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: var(--fwm-report-leading);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-alert-approaching);
+}
+
+/* Nothing queued and nothing blocking draws nothing, exactly as the REPORT key
+   in the dock draws no `0` badge.
+   GAP: see DESIGN-GAPS.md#empty-and-loading-states-mostly-undrawn
+
+   IT IS HIDDEN BY BEING EMPTY, NOT BY BEING HIDDEN. This element is the live
+   region that announces the receipt -- the only feedback a successful submit
+   produces, because the panel draws no confirmation
+   (docs/gaps-inbox/report.md#submit-has-no-drawn-confirmation). A live region
+   that transitions OUT of `display:none` (or `visibility:hidden`, or
+   `content-visibility`, or being unmounted) is unreliably announced across
+   assistive technology, so the first `1 REPORT QUEUED` could be silent to a
+   non-visual user. `SubmitBlock` renders no dot and no text at this tone, and
+   an empty flex container has no line box and no height, so zeroing the bottom
+   margin draws exactly the same nothing while the region stays in both the box
+   tree and the accessibility tree. */
+.fwm-report-status[data-fwm-report-status="none"] {
+  margin-bottom: 0;
+}
+
+/* A failure is not a warning. */
+.fwm-report-status[data-fwm-report-status="failed"] {
+  color: var(--fwm-destructive);
+}
+
+.fwm-report-status-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-report-dot);
+  height: var(--fwm-report-dot);
+  border-radius: var(--fwm-radius-full);
+  background: currentcolor; /* keyword */
+}
+
+.fwm-report-status-text {
+  min-width: 0;
+}
+
+/* Rendered 56px, filled with the report hue, lettered in the page ground at
+ * 16px/700/.12em, now at v2's 8px radius. --fwm-text-body (15px) is the step
+ * the design system's own `Report camera` button primitive uses.
+ * v2 keeps `color:#000` HERE -- it is the one saturated fill on the sheet that
+ * is NOT lettered in --fwm-text-on-alert, and that is v2's own choice, not an
+ * oversight to normalise away.
+ * GAP: see docs/gaps-inbox/report.md#report-type-steps-missing */
+.fwm-report-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--fwm-report-tile-h);
+  padding: 0 var(--fwm-space-4);
+  border: 0;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-alert-in-range);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-body) * 0.12);
+  color: var(--fwm-bg);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* GAP: see docs/gaps-inbox/report.md#no-blocked-or-failed-state-is-drawn
+ * The panel draws the button in one state. A report that cannot be filed must
+ * not offer a live button, so this borrows the system's disabled vocabulary
+ * rather than inventing a treatment. */
+.fwm-report-submit:disabled {
+  background: var(--fwm-surface-2);
+  color: var(--fwm-text-disabled);
+}
+
+/* Rendered 10px mono, muted, centred, at .1em. The hint is about the REPORT KEY
+ * IN THE DOCK, not about this button -- v2 retitled the panel "SHEET FROM THE
+ * DOCK KEY" and the key is where the 1s hold lives. The string is v2's, verbatim. */
+.fwm-report-hold-hint {
+  margin: var(--fwm-space-3) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: var(--fwm-report-leading);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}

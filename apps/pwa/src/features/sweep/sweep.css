@@ -1,0 +1,2290 @@
+/* SWEEP -- the scope.
+ *
+ * SOURCE: `Flockys App Screens v2.dc.html`, screen `02 · SWEEP` -- the later
+ * decision, and the authority wherever it disagrees with anything below;
+ * `Flockys App Screens.dc.html`, the same screen, for everything v2 did not
+ * redraw; `Flockys Design System.dc.html`, the `SWEEP PRIMITIVES` card;
+ * `Flockys Screens II.dc.html`, `B4` (muted cameras, and the re-alert that
+ * pierces a mute) and `B9` (dot treatment -- its FLAGGED OPERATOR ring is not
+ * drawn, and cannot be until a camera record says who operates the camera:
+ * GAP: see docs/gaps-inbox/sweep.md#flagged-operator-dot-not-drawn).
+ *
+ * Every colour, length, radius, duration and easing below is `var(--fwm-*)` or
+ * a `calc()` over one. Where the design renders a value the token set does not
+ * carry, the line is marked `GAP:` and the entry is filed in
+ * `docs/gaps-inbox/sweep.md` or `docs/gaps-inbox/sweep-v2.md`. Nothing here is
+ * a literal.
+ *
+ * =============================================================================
+ * WHAT V2 CHANGED ON THIS SCREEN
+ * =============================================================================
+ *   title          17px/.1em -> 19px/.06em, nowrap
+ *   ROUTE / MESH   radius 2 -> radius 8. The 1px --fwm-line edge STAYS: v2's
+ *                  own "flat borderless" rule took RADAR's REP/SET keys and
+ *                  left these two alone.
+ *   the scope      311px with a 1px edge and three 1px inner circles
+ *                  -> 343px, no edge, and eight masked layers: a grey 5px dot
+ *                  lattice under a vignette, four scan-cyan dot rings at
+ *                  10/21/34/48.5%, a .4deg-per-5deg tick comb and a
+ *                  1deg-per-30deg one, and two crosshairs at 12%
+ *   the ego        a 16x18 arrow -> an 18x20 arrow inside a 44px ring at 18%
+ *   in range       an 11px dot + a 12px halo -> a 34x34 four-corner RETICLE
+ *   known          an 11px dot -> a 7px dot inside a 20x20 ring at 35%
+ *   flocky         an 11px dot at 60% -> an 11px DASHED circle at 65%
+ *   callouts       none -> `FWM-0442` over `425FT` beside each in-range marker
+ *   telemetry      none -> `SCAN 2.4s / RES 12PX / SRC MESH+DB` bottom left and
+ *                  `HDG 041° / LAT / LON` bottom right, both 8px in
+ *                  --fwm-text-instrument
+ *   intel card     radius 2 -> radius 6 (drawn by the INTEL feature, not here)
+ *   REPORT bar     gone from this screen; absorbed into the dock, which is
+ *                  `components/dock/`'s and not this feature's
+ *
+ * =============================================================================
+ * THE MASKED LAYERS ARE DIVS, THE MEASURED THINGS ARE SVG
+ * =============================================================================
+ * Every ring in v2 is a repeating background under a radial mask. CSS does
+ * that; SVG does not, without a `<mask>` per ring. So the scope's furniture is
+ * a stack of `<div>`s here and everything with a measured position -- ring
+ * labels, ego marker, every camera marker -- stays in the SVG, whose user space
+ * is v2's own 343 pixels. See the header of `geometry.ts`.
+ *
+ * =============================================================================
+ * HUE MEANS STATE AND NOTHING ELSE -- THE SAME SIX AS RADAR
+ * =============================================================================
+ * One custom property, `--fwm-sweep-hue`, is set per marker from the state
+ * `radarState.ts` resolved, and read by the marker, its reticle and its facing
+ * arc. No element picks its own colour.
+ *
+ *   in range     --fwm-alert-in-range     #FF2D5E  + reticle
+ *   known        --fwm-alert-approaching  #FFC02E  + ring
+ *   muted        --fwm-text-muted         #6B7381  flat, and STILL DRAWN
+ *   no fix       --fwm-line-strong        #3A3F4B  grey, not a hue
+ *   flocky ghost --fwm-accent-mesh        #8A6BFF  dashed, at 65%
+ *
+ * The SCOPE's own furniture is not state-coloured: v2 draws every lattice ring,
+ * tick and crosshair in --fwm-accent-scan on all of them, which is why this
+ * screen can use the `--fwm-tint-scan-*` tokens the v2 pass authored for it and
+ * RADAR -- whose scope DOES follow the state hue -- cannot.
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * `components/SweepTelemetry.test.tsx` reads this file and fails if `:hover`
+ * appears.
+ * ========================================================================== */
+
+.fwm-sweep {
+  /* The dial's own locals used to live here, on the SWEEP screen root. When
+   * RADAR absorbed SWEEP this element stopped being rendered and every one of
+   * them went undefined on a dial that was still on screen: the dot lattice had
+   * no grid size, the vignette no mask, the beam no duration. They now live on
+   * `.fwm-sweep-dial` itself. See the note there. */
+  --fwm-sweep-key-h: calc(var(--fwm-space-8) + var(--fwm-space-1));
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `SWEEP`, and the ROUTE / MESH pair.
+ * Rendered: height 52px (= --fwm-header-h exactly), padding 0 16px, 1px rule,
+ * title 19px/700/.06em, keys 36px tall with 12px side padding, a 1px
+ * --fwm-line edge, an 8px radius and 10px mono type.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none; /* keyword */
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-sweep-rule-w) solid var(--fwm-line);
+}
+
+/* Rendered 19px; --fwm-text-subtitle is 17px and the ramp has nothing between
+ * it and --fwm-text-title (24px). v2's tracking dropped from .1em to .06em.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#screen-title-19px-has-no-step */
+.fwm-sweep-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.06);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-sweep-keys {
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+/* Rendered 36px tall, which is under the product's own 44px touch floor.
+ * `docs/gaps-inbox/README.md#touch-target-floor` settles exactly this case: the
+ * VISUAL control keeps the drawn height so the layout matches the design, and
+ * the HIT AREA is expanded to the floor with a transparent ::before extension.
+ * A 44px-tall key would also sit inside a 52px header with 4px to spare.
+ * GAP: see docs/gaps-inbox/sweep.md#layer-key-36px-below-touch-floor
+ *
+ * v2 kept the 1px edge on THIS pair while stripping it from RADAR's REP / SET.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#route-mesh-kept-its-border */
+.fwm-sweep-key {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--fwm-sweep-key-h);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-sweep-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-3);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* The hit area, not a decoration: 4px of transparent overhang top and bottom
+ * takes the 36px key to --fwm-touch-min without moving a drawn pixel. It is
+ * inside the button, so it needs no handler of its own.
+ * See docs/gaps-inbox/README.md#touch-target-floor */
+.fwm-sweep-key::before {
+  content: ""; /* keyword */
+  position: absolute;
+  inset-inline: 0;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-sweep-key-h)) / -2);
+  background: transparent; /* keyword */
+}
+
+/* The design draws neither key as selected, and a toggle has to say which one
+ * is on. The treatment is v2's own selected-control state -- the dock's active
+ * key: a tinted fill in the hue, and the hue as the label. `--fwm-tint-scan` is
+ * the exact 18% v2 draws on SWEEP's own dock key.
+ * GAP: see docs/gaps-inbox/sweep.md#route-mesh-toggle-undefined */
+.fwm-sweep-key[aria-pressed="true"] {
+  border-color: var(--fwm-accent-scan);
+  background: var(--fwm-tint-scan);
+  color: var(--fwm-accent-scan);
+}
+
+/* A key with nothing wired to it says so instead of pretending. */
+.fwm-sweep-key:disabled {
+  border-color: var(--fwm-line);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- rendered `padding:16px; gap:18px`.
+ * --fwm-space-4 (16px) is the nearest step to the 18px gap.
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-4);
+  padding: var(--fwm-space-4);
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * THE SCOPE.
+ *
+ * Rendered 343px square, `background:#000`, `border-radius:999px`, and NO
+ * border -- v1's 1px --fwm-line edge is gone. 7.15 x --fwm-space-12 is 343.2px,
+ * the closest a derived value gets, and `min()` keeps it inside a narrow
+ * surface rather than overflowing it.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#scope-diameter-343px
+ * ------------------------------------------------------------------------ */
+
+/* =============================================================================
+ * THE DIAL OWNS ITS OWN VARIABLES.
+ * =============================================================================
+ * All of these used to be declared on `.fwm-sweep` -- the SWEEP screen's root
+ * element. That worked for exactly as long as the dial was only ever rendered
+ * inside that screen.
+ *
+ * When RADAR absorbed SWEEP, `.fwm-sweep` stopped being rendered and the dial
+ * kept going, on a screen whose root is `.fwm-radar`. Every local below
+ * resolved to nothing:
+ *
+ *   --fwm-sweep-grid           the dot lattice had no cell size, so the pixel
+ *                              dot-matrix field disappeared entirely
+ *   --fwm-sweep-dot-*          the dots had no radii to draw
+ *   --fwm-sweep-dur            the 2.4s scan beam had no duration, so the
+ *                              sweeping animation never ran
+ *   --fwm-sweep-rule-w etc.    every stroke on the scope drew at zero width
+ *
+ * Nothing errored. A CSS custom property that does not resolve is not a
+ * failure, it is an empty string, and the rules using it are simply dropped.
+ *
+ * So they live HERE, on the element that uses them. A component that carries
+ * its own variables cannot be separated from them by a routing change --
+ * exactly the same reasoning that moved the stylesheet import into
+ * `components/SweepDial.tsx`.
+ * ========================================================================== */
+.fwm-sweep-dial {
+  /* The pan scale resolves against this box -- see the transform below. Inline
+   * size only: full size containment would make the square aspect-ratio depend
+   * on a height this element derives from its width. */
+  container-type: inline-size; /* keyword */
+
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design draws everywhere,
+   * *0.375 is v2's 1.5px reticle and dashed-ghost stroke, *0.75 is the 3px
+   * facing-arc stroke. Derived, so a mode that rescales space rescales the
+   * strokes with it. Component-scoped locals, NOT new tokens. */
+  --fwm-sweep-rule-w: calc(var(--fwm-space-1) / 4);
+  /* Half a hairline: the cluster's edges join its members without becoming
+     lines the eye follows the way it follows a road. */
+  --fwm-sweep-cluster-edge-w: calc(var(--fwm-space-1) / 10);
+  --fwm-sweep-mark-w: calc(var(--fwm-space-1) * 0.375);
+  --fwm-sweep-arc-w: calc(var(--fwm-space-1) * 0.75);
+
+  /* GAP: see docs/gaps-inbox/sweep-v2.md#scope-dot-lattice-has-no-tokens
+   * v2 builds the scope out of one repeated dot: `radial-gradient(circle at
+   * center, <colour> 0.7px, transparent 1.2px) 0 0/5px 5px`, with a fatter dot
+   * on the outer hue ring (0.8/1.3) and a middle weight on the inner three
+   * (0.75/1.25). None of the five lengths is on the space scale; each is an
+   * exact multiple of --fwm-space-1 (4px), the same derivation RADAR's v2
+   * scope uses. Component-scoped locals, NOT new tokens. */
+  --fwm-sweep-grid: calc(var(--fwm-space-1) * 1.25);
+  --fwm-sweep-dot-core: calc(var(--fwm-space-1) * 0.175);
+  --fwm-sweep-dot-edge: calc(var(--fwm-space-1) * 0.3);
+  --fwm-sweep-ring-dot-core: calc(var(--fwm-space-1) * 0.1875);
+  --fwm-sweep-ring-dot-edge: calc(var(--fwm-space-1) * 0.3125);
+  --fwm-sweep-rim-dot-core: calc(var(--fwm-space-1) * 0.2);
+  --fwm-sweep-rim-dot-edge: calc(var(--fwm-space-1) * 0.325);
+
+  /* v2 insets the telemetry corners `12px` from the side and `14px` from the
+   * bottom. 12 is --fwm-space-3; 14 is 3.5 x --fwm-space-1. */
+  --fwm-sweep-telemetry-inset: calc(var(--fwm-space-1) * 3.5);
+
+  /* GAP: see DESIGN-GAPS.md#animations-are-not-tokens and
+   * docs/gaps-inbox/sweep.md#sweep-duration-derived-from-dur-alert
+   * The design's sweep is 2400ms, six times --fwm-dur-alert (400ms), the
+   * longest duration the system exports. Expressed as that exact multiple, and
+   * printed by `telemetry.ts` as `SCAN 2.4s` -- a test reads this line to keep
+   * the two in step. */
+  --fwm-sweep-dur: calc(var(--fwm-dur-alert) * 6);
+
+  position: relative;
+  width: min(100%, calc(var(--fwm-space-12) * 7.15));
+  aspect-ratio: 1;
+  flex: none; /* keyword */
+  margin: 0 auto; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-bg);
+  overflow: hidden; /* keyword */
+  /* The scope owns its multi-touch gesture. `index.html` sets
+     `user-scalable=no` -- required verbatim by section 06 -- so the browser's
+     own pinch is gone and `../pinch.ts` provides it. Nothing else on this
+     screen takes a two-finger gesture, so nothing is being stolen. */
+  touch-action: none; /* keyword */
+}
+
+/* Every masked layer is the same square, differing only in dot, colour, mask
+ * and opacity. None of them may ever intercept a tap meant for a marker. */
+.fwm-sweep-field,
+.fwm-sweep-band,
+.fwm-sweep-ticks,
+.fwm-sweep-axis,
+.fwm-sweep-beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* keyword */
+}
+
+/* 1. The field: a grey 5px dot lattice under v2's shared scope vignette. */
+.fwm-sweep-field {
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-line-grid-2) var(--fwm-sweep-dot-core),
+        transparent var(--fwm-sweep-dot-edge)
+      )
+      0 0 / var(--fwm-sweep-grid) var(--fwm-sweep-grid);
+  -webkit-mask: var(--fwm-mask-scope-vignette);
+  mask: var(--fwm-mask-scope-vignette);
+}
+
+/* 2-5. The four range rings, each a scan-cyan lattice masked to a band.
+ *
+ * THE MASK PERCENTAGES ARE THE RING SCALE. `geometry.ts` places every camera
+ * with the same four numbers -- 10 / 21 / 34 / 48.5 -- read against the same
+ * `farthest-corner` reach a radial-gradient uses, so a camera at 500 ft lands
+ * on the ring drawn at 34%. If either side of that pair moves alone, the dots
+ * come off the scale silently; `geometry.test.ts` reads this file to check. */
+.fwm-sweep-band {
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-accent-scan) var(--fwm-sweep-ring-dot-core),
+        transparent var(--fwm-sweep-ring-dot-edge)
+      )
+      0 0 / var(--fwm-sweep-grid) var(--fwm-sweep-grid);
+}
+
+/* Ring 1 -- 100 ft at 10%. */
+.fwm-sweep-band[data-fwm-sweep-band="1"] {
+  opacity: 0.3;
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 6.5%,
+    var(--fwm-mask-solid) 10%,
+    transparent 13.5%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 6.5%,
+    var(--fwm-mask-solid) 10%,
+    transparent 13.5%
+  );
+}
+
+/* Ring 2 -- 300 ft at 21%. */
+.fwm-sweep-band[data-fwm-sweep-band="2"] {
+  opacity: 0.34;
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 17%,
+    var(--fwm-mask-solid) 21%,
+    transparent 25%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 17%,
+    var(--fwm-mask-solid) 21%,
+    transparent 25%
+  );
+}
+
+/* Ring 3 -- 500 ft at 34%. */
+.fwm-sweep-band[data-fwm-sweep-band="3"] {
+  opacity: 0.4;
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 29.5%,
+    var(--fwm-mask-solid) 34%,
+    transparent 38.5%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 29.5%,
+    var(--fwm-mask-solid) 34%,
+    transparent 38.5%
+  );
+}
+
+/* Ring 4 -- the rim, 1000 ft at 48.5%, on v2's fatter dot. */
+.fwm-sweep-band[data-fwm-sweep-band="4"] {
+  opacity: 0.6;
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-accent-scan) var(--fwm-sweep-rim-dot-core),
+        transparent var(--fwm-sweep-rim-dot-edge)
+      )
+      0 0 / var(--fwm-sweep-grid) var(--fwm-sweep-grid);
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 43.5%,
+    var(--fwm-mask-solid) 48.5%,
+    transparent 53.5%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 43.5%,
+    var(--fwm-mask-solid) 48.5%,
+    transparent 53.5%
+  );
+}
+
+/* 6. The fine tick comb: a hairline every 5deg, masked to the rim.
+ * `--fwm-tint-scan-ring` is v2's own 42% and its comment names this element. */
+.fwm-sweep-ticks[data-fwm-sweep-ticks="minor"] {
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--fwm-tint-scan-ring) 0 0.4deg,
+    transparent 0.4deg 5deg
+  );
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 45%,
+    var(--fwm-mask-solid) 48.5%,
+    transparent 52%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 45%,
+    var(--fwm-mask-solid) 48.5%,
+    transparent 52%
+  );
+}
+
+/* 7. The coarse comb: a fatter tick every 30deg, on `--fwm-tint-scan-strong`
+ * (70%), whose comment names this element too. */
+.fwm-sweep-ticks[data-fwm-sweep-ticks="major"] {
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--fwm-tint-scan-strong) 0 1deg,
+    transparent 1deg 30deg
+  );
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 42%,
+    var(--fwm-mask-solid) 47%,
+    transparent 52%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 42%,
+    var(--fwm-mask-solid) 47%,
+    transparent 52%
+  );
+}
+
+/* 8. The two crosshairs, fading out well before the rim. v2 draws them at 12%
+ * alpha, which is exactly `--fwm-tint-scan-weak`. */
+.fwm-sweep-axis {
+  background: linear-gradient(
+    transparent,
+    var(--fwm-tint-scan-weak) 28%,
+    var(--fwm-tint-scan-weak) 72%,
+    transparent
+  );
+}
+
+.fwm-sweep-axis[data-fwm-sweep-axis="vertical"] {
+  inset-inline: calc(50% - var(--fwm-sweep-rule-w) / 2);
+}
+
+.fwm-sweep-axis[data-fwm-sweep-axis="horizontal"] {
+  inset-block: calc(50% - var(--fwm-sweep-rule-w) / 2);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--fwm-tint-scan-weak) 28%,
+    var(--fwm-tint-scan-weak) 72%,
+    transparent
+  );
+}
+
+/* 9. The conic scan line.
+ *   "sweep 70 deg conic, 2.4s linear"  -- SWEEP PRIMITIVES
+ * v2 draws the wedge at 66 deg and `rgba(34,200,224,.2)`. The ALPHA is taken:
+ * `--fwm-tint-scan-soft` is that exact 20% and its token comment names this
+ * element. The ANGLE is not: 70 deg is on the explicit instruction this
+ * feature was built to, which is the highest-ranked public source under
+ * docs/gaps-inbox/README.md#source-authority and outranks a design file.
+ * v1 rendered 74, v2 renders 66, the primitives card says 70, and only one of
+ * those three is authority 1.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#conic-wedge-70-vs-66
+ *
+ * GAP: see docs/gaps-inbox/sweep.md#no-constant-rate-easing-token
+ * The design's timing function is `linear`; the token set exports two eased
+ * curves and nothing constant-rate, and `linear` written here would be a raw
+ * easing value. So the declaration asks for the token this needs and falls back
+ * to the nearest one that exists: today --fwm-ease-mech runs, and the beam
+ * accelerates and decelerates once per turn instead of scanning evenly, which
+ * is visible. Adding `--fwm-ease-linear: linear` to section 08 of tokens.css --
+ * a shared file this feature may not edit -- fixes it with no change here. */
+.fwm-sweep-beam {
+  border-radius: var(--fwm-radius-full);
+  background: conic-gradient(from 0deg, var(--fwm-tint-scan-soft), transparent 70deg);
+  animation: fwmSweep var(--fwm-sweep-dur) var(--fwm-ease-linear, var(--fwm-ease-mech)) infinite;
+}
+
+/* No fix, no scan. A beam that keeps turning over a dead scope is a claim that
+   the app is still looking. */
+.fwm-sweep-dial[data-fwm-sweep-scanning="false"] .fwm-sweep-beam {
+  display: none; /* keyword */
+}
+
+/* THE MARKERS ARE CLIPPED TO THE SCOPE. THE LATTICE IS NOT.
+ *
+ * This was `overflow: visible`, which is harmless while the dial itself clips
+ * -- and the bleed variant deliberately does not clip, so the SVG started
+ * painting camera blips, road lines and cluster counts anywhere its geometry
+ * put them: over the hero readout, over the range rail, off the left edge of
+ * the phone. Contacts appeared outside the instrument that is supposed to be
+ * measuring them.
+ *
+ * A marker outside the scope is not a marker, it is a lie about a bearing. The
+ * canvas clips to its own box; only the FIELD is allowed past the edge, because
+ * texture running off the screen is the effect and a contact running off the
+ * screen is a bug. */
+.fwm-sweep-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* keyword */
+}
+
+/* Rendered 9px mono in #5C6472 at .08em, centred on the vertical axis. v1 drew
+ * them in --fwm-text-disabled; v2's --fwm-text-scale is a rung brighter and its
+ * token comment names these four labels.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-sweep-ring-label {
+  fill: var(--fwm-text-scale);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  text-anchor: middle; /* keyword */
+}
+
+/* The vehicle. v2 draws an 18x20 white arrow pinned at the centre... */
+/* THE VEHICLE - an outlined navigation arrow, not a solid white triangle.
+ *
+ * Hollow and stroked in scan cyan: it is the instrument's own mark, not a
+ * contact, and a filled white shape at the centre of a dark scope is the
+ * brightest thing on screen - competing with the camera blips, which are the
+ * things a driver is meant to look at.
+ *
+ * The notch in its tail comes from `geometry.ts` and is what makes it read as a
+ * direction rather than as a blob. */
+.fwm-sweep-ego {
+  fill: none; /* keyword */
+  stroke: var(--fwm-accent-scan);
+  stroke-width: var(--fwm-sweep-mark-w);
+  stroke-linejoin: round; /* keyword */
+}
+
+/* ...inside a 44px ring at 18%, which is `--fwm-tint-text` exactly -- the token
+ * comment names this ring. */
+.fwm-sweep-ego-ring {
+  fill: none; /* keyword */
+  stroke: var(--fwm-tint-text);
+  stroke-width: var(--fwm-sweep-rule-w);
+}
+
+/* ---------------------------------------------------------------------------
+ * Markers.
+ *
+ * The hue is set once per marker from the state RADAR resolved, and everything
+ * in the marker reads it. `mesh` is the one class with no alert state behind it.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-dot {
+  --fwm-sweep-hue: var(--fwm-line-strong);
+  --fwm-sweep-dot-opacity: 1;
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-sweep-dot[data-fwm-sweep-hue="in-range"] {
+  --fwm-sweep-hue: var(--fwm-alert-in-range);
+}
+
+.fwm-sweep-dot[data-fwm-sweep-hue="approaching"] {
+  --fwm-sweep-hue: var(--fwm-alert-approaching);
+}
+
+.fwm-sweep-dot[data-fwm-sweep-hue="clear"] {
+  --fwm-sweep-hue: var(--fwm-alert-clear);
+}
+
+.fwm-sweep-dot[data-fwm-sweep-hue="multiple"] {
+  --fwm-sweep-hue: var(--fwm-alert-multiple);
+}
+
+/* "MUTED CAMERAS DON'T DISAPPEAR. They still draw on SWEEP in grey" -- B4.
+   Grey, at full opacity, same size, same arc, same tap target. */
+.fwm-sweep-dot[data-fwm-sweep-hue="muted"] {
+  --fwm-sweep-hue: var(--fwm-text-muted);
+}
+
+/* The fix aged out. Grey, because a coloured marker on this screen always means
+   a camera the engine measured this tick. */
+.fwm-sweep-dot[data-fwm-sweep-hue="no-gps"] {
+  --fwm-sweep-hue: var(--fwm-line-strong);
+}
+
+/* v2's flocky: an 11px circle with a 1.5px DASHED edge and no fill, at 65%. */
+.fwm-sweep-dot[data-fwm-sweep-hue="mesh"] {
+  --fwm-sweep-hue: var(--fwm-accent-mesh);
+  --fwm-sweep-dot-opacity: 0.65;
+}
+
+.fwm-sweep-dot-core {
+  fill: none; /* keyword */
+  stroke: var(--fwm-sweep-hue);
+  stroke-width: var(--fwm-sweep-mark-w);
+  stroke-dasharray: var(--fwm-sweep-mark-w);
+  opacity: var(--fwm-sweep-dot-opacity);
+}
+
+/* v2's in-range RETICLE: four 9-unit corner brackets on a 34x34 box, at 1.5px.
+ * This is what replaced v1's `box-shadow:0 0 12px` halo, which v2 draws
+ * nowhere on this screen.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#in-range-glow-replaced-by-a-reticle */
+.fwm-sweep-dot-reticle {
+  fill: none; /* keyword */
+  stroke: var(--fwm-sweep-hue);
+  stroke-width: var(--fwm-sweep-mark-w);
+  stroke-linecap: butt; /* keyword */
+  /* NOT hit-testable. `hitRadiusForDot` clamps the hit circle so a tap can
+     never resolve to the farther of two cameras - and that guarantee is void
+     the moment anything else in the group takes taps of its own, unclamped.
+     The reticle is decoration; the hit circle is the control. */
+  pointer-events: none; /* keyword */
+}
+
+/* v2's known marker: a 20x20 ring at 35%, which is `--fwm-tint-approaching-ring`
+ * exactly -- but that token is hue-locked to amber, and this ring has to follow
+ * `--fwm-sweep-hue` so a muted or aged-out camera does not keep an amber ring
+ * under a grey face. So the hue is painted at full strength and the 35% is
+ * carried by `opacity`, the same resolution RADAR's v2 scope reached.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#marker-tints-are-hue-locked */
+.fwm-sweep-dot-ring {
+  fill: none; /* keyword */
+  stroke: var(--fwm-sweep-hue);
+  stroke-width: var(--fwm-sweep-rule-w);
+  opacity: 0.35;
+  pointer-events: none; /* keyword */
+}
+
+/* "facing arc: 60 deg stroke 3px, hue of dot" -- SWEEP PRIMITIVES.
+ * Rendered at opacity .75 in v1's `02 · SWEEP`. v2 draws no facing arc and no
+ * substitute for one, and this is the only mark on the screen that says which
+ * way a lens points, so it is kept.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#facing-arc-not-redrawn-in-v2 */
+.fwm-sweep-dot-arc {
+  fill: none; /* keyword */
+  stroke: var(--fwm-sweep-hue);
+  stroke-width: var(--fwm-sweep-arc-w);
+  stroke-linecap: butt; /* keyword */
+  opacity: 0.75;
+  /* Same reason as the reticle: a 3px stroke at radius 13 is hit-testable along
+     its whole length, which reached further than the clamped hit circle. */
+  pointer-events: none; /* keyword */
+}
+
+/* v2's callout: `FWM-0442` at 8px/.06em in the hue, over `425FT` in
+ * --fwm-text-muted. Rendered 8px; --fwm-text-micro (11px) is the floor the
+ * ramp has. GAP: see docs/gaps-inbox/sweep-v2.md#instrument-type-8px-has-no-step */
+.fwm-sweep-dot-callout {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.06);
+  pointer-events: none; /* keyword */
+}
+
+.fwm-sweep-dot-callout-id {
+  fill: var(--fwm-sweep-hue);
+}
+
+.fwm-sweep-dot-callout-range {
+  fill: var(--fwm-text-muted);
+}
+
+/* An 11px marker is a quarter of the 44px touch floor, so the hit circle is
+ * --fwm-touch-min across -- less where a second marker is nearer than that, so
+ * a tap can never resolve to the farther of two cameras (`geometry.ts`,
+ * `hitRadiusForDot`). Its `r` is a measurement and lives on the element;
+ * `transparent` still takes the tap, `none` would not.
+ * GAP: see docs/gaps-inbox/sweep.md#hit-radius-mirrors-touch-min */
+.fwm-sweep-dot-hit {
+  fill: transparent; /* keyword */
+}
+
+/* NO UA FOCUS BOX. THIS IS THE BUG THAT PUT A WHITE RECTANGLE ON THE MAP.
+ *
+ * `outline: none` was scoped to `:focus-visible` -- and a TOUCH TAP does not
+ * match `:focus-visible`. So on a phone the element took plain `:focus`, the
+ * rule never applied, and the browser drew its own ring: a big white rounded
+ * square around whatever had last been tapped, sitting on the map until
+ * something else took focus. Nobody chose that; it was the default showing
+ * through a selector that could not reach it.
+ *
+ * Bare `:focus` catches both. The tap highlight goes with it -- same defect,
+ * different UA feature. */
+.fwm-sweep-dot {
+  -webkit-tap-highlight-color: transparent; /* keyword */
+}
+
+.fwm-sweep-dot:focus,
+.fwm-sweep-dot:focus-visible {
+  outline: none; /* keyword */
+}
+
+/* Keyboard focus gets a RING, not a fatter node.
+ *
+ * Stroking the node itself was the old answer and it changed the size of the
+ * thing whose size means how close it is. The ring is drawn on the tap target,
+ * which is invisible the rest of the time and already the right shape. */
+.fwm-sweep-dot:focus-visible .fwm-sweep-dot-hit {
+  stroke: var(--fwm-accent-scan);
+  stroke-width: var(--fwm-sweep-rule-w);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE TELEMETRY CORNERS -- v2 only.
+ *
+ * `left:12px; bottom:14px` and `right:12px; bottom:14px`, both 8px mono at
+ * .14em in --fwm-text-instrument with `line-height:1.7`, the right one
+ * right-aligned. Rendered 8px; --fwm-text-micro (11px) is the floor the ramp
+ * has, and RADAR's v2 pass filed the same shortfall.
+ * GAP: see docs/gaps-inbox/sweep-v2.md#instrument-type-8px-has-no-step
+ *
+ * The vehicle block carries the driver's own coordinates. It is TEXT CONTENT
+ * and nothing else -- there is no attribute here that holds a value. See the
+ * header of `telemetry.ts`.
+ * ------------------------------------------------------------------------ */
+
+/* ---------------------------------------------------------------------------
+ * The range key -- what the scope is showing, and the tap that steps it.
+ *
+ * Bottom-centre, over the scope's own edge. The dial is a circle inside a
+ * square, so the bottom-centre of that square is outside the drawn scope: the
+ * key sits in space the rings never reach and covers no camera marker.
+ *
+ * It takes taps -- unlike every other layer on the dial, which is
+ * `pointer-events: none` -- and it stops the pinch handler seeing them, so a
+ * tap on the key can never be read as the start of a one-finger drag.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-range-key {
+  position: absolute;
+  bottom: var(--fwm-sweep-telemetry-inset);
+  left: 50%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--fwm-space-2);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-1) var(--fwm-space-3);
+  transform: translateX(-50%);
+  border: var(--fwm-sweep-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-family: var(--fwm-font-data);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-sweep-range-eyebrow {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-sweep-range-value {
+  font-size: var(--fwm-text-label);
+  letter-spacing: calc(var(--fwm-text-label) * 0.06);
+  color: var(--fwm-text);
+}
+
+/* At the widest rung the next tap wraps back to the tightest. Marked so the
+ * key can say so rather than appearing to jump backwards for no reason. */
+.fwm-sweep-range-key[data-fwm-sweep-range-ceiling="true"] .fwm-sweep-range-value {
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-sweep-range-key:disabled .fwm-sweep-range-value {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-sweep-telemetry {
+  position: absolute;
+  bottom: var(--fwm-sweep-telemetry-inset);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  line-height: 1.7;
+  color: var(--fwm-text-instrument);
+  white-space: nowrap; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-sweep-telemetry[data-fwm-sweep-telemetry="instrument"] {
+  left: var(--fwm-space-3);
+  text-align: left; /* keyword */
+}
+
+.fwm-sweep-telemetry[data-fwm-sweep-telemetry="vehicle"] {
+  right: var(--fwm-space-3);
+  text-align: right; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Legend -- `IN RANGE 3 · KNOWN 11 · HAKCERS 2`. Unchanged by v2.
+ * Rendered: centred, gap 16px, 10px mono at .1em in #6B7381.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-legend {
+  display: flex;
+  flex: none; /* keyword */
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-4);
+  justify-content: center;
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-sweep-legend-entry {
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-sweep-legend-entry[data-fwm-sweep-legend="in-range"] .fwm-sweep-legend-swatch {
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-sweep-legend-entry[data-fwm-sweep-legend="known"] .fwm-sweep-legend-swatch {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-sweep-legend-entry[data-fwm-sweep-legend="ghost"] .fwm-sweep-legend-swatch {
+  color: var(--fwm-accent-mesh);
+}
+
+/* ---------------------------------------------------------------------------
+ * The note and the hint.
+ *
+ * The note is the only thing on this screen the design does not draw: it exists
+ * so an empty scope cannot be mistaken for a clear road.
+ * GAP: see docs/gaps-inbox/sweep.md#empty-dial-copy-not-drawn
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-note {
+  flex: none; /* keyword */
+  margin: 0;
+  text-align: center; /* keyword */
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* `TAP DOT → INTEL CARD`, rendered 10px mono at .16em in #22C8E0. It sits at
+   the bottom of the panel, where the design puts the card it opens. */
+.fwm-sweep-hint {
+  flex: none; /* keyword */
+  margin: auto 0 0; /* keyword */
+  text-align: center; /* keyword */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-accent-scan);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE RANGE SLIDER
+ *
+ * Historical rules for the removed native range slider. No current component
+ * emits these selectors: `components/MapControls.tsx` now exposes compact
+ * plus/minus controls and the dial handles pinch. The rules remain isolated
+ * here pending a dedicated dead-style removal, rather than pretending an
+ * absent component still owns them.
+ *
+ * The TRACK is drawn at --fwm-space-1 and the THUMB at --fwm-touch-min, so the
+ * grab target is the touch floor even though the drawn rail is a hairline -
+ * the same trade the layer keys make with their ::before, reached the other
+ * way round because a native thumb IS its own hit area.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-range {
+  display: flex;
+  flex: none; /* keyword */
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  width: 100%;
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+}
+
+.fwm-sweep-range-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-sweep-range-eyebrow {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.2);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-sweep-range-value {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-accent-scan);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-sweep-range-input {
+  width: 100%;
+  height: var(--fwm-touch-min);
+  margin: 0;
+  padding: 0;
+  background: transparent; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-sweep-range-input::-webkit-slider-runnable-track {
+  height: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-2);
+}
+
+.fwm-sweep-range-input::-moz-range-track {
+  height: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-2);
+}
+
+.fwm-sweep-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-4);
+  margin-top: calc((var(--fwm-space-4) - var(--fwm-space-1)) / -2);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+}
+
+.fwm-sweep-range-input::-moz-range-thumb {
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+}
+
+.fwm-sweep-range-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-instrument);
+}
+
+/* Not wired in this build: the drawn control desaturates so it cannot be
+ * mistaken for a live one. Colour only -- an inert control must not change the
+ * geometry, or the panel would reflow depending on which handlers a build
+ * happens to pass. */
+.fwm-sweep-range[data-fwm-sweep-range-disabled="true"] .fwm-sweep-range-value {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-sweep-range[data-fwm-sweep-range-disabled="true"] .fwm-sweep-range-input::-webkit-slider-thumb {
+  background: var(--fwm-text-disabled);
+}
+
+.fwm-sweep-range[data-fwm-sweep-range-disabled="true"] .fwm-sweep-range-input::-moz-range-thumb {
+  background: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * RANGE KEYS
+ *
+ * Historical rules for the removed fixed-step key row. No current component
+ * emits them; the active range control is `components/MapControls.tsx`. They
+ * remain isolated here pending the same dead-style cleanup as the slider.
+ *
+ * The treatment is the design's OWN key row, borrowed wholesale from
+ * `.fwm-sweep-key` above rather than invented, including the transparent
+ * ::before that lifts a 36px key to the 44px touch floor and v2's 8px radius.
+ * Four keys instead of two, so they share the row evenly.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-zoom {
+  display: flex;
+  gap: var(--fwm-space-2);
+  width: 100%;
+}
+
+.fwm-sweep-zoom-key {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--fwm-sweep-key-h);
+  padding: 0 var(--fwm-space-2);
+  border: var(--fwm-sweep-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-3);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* Same 4px overhang as the layer keys: the drawn height stays, the hit area
+ * reaches --fwm-touch-min. See docs/gaps-inbox/README.md#touch-target-floor. */
+.fwm-sweep-zoom-key::before {
+  content: ""; /* keyword */
+  position: absolute;
+  inset-inline: 0;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-sweep-key-h)) / -2);
+  background: transparent; /* keyword */
+}
+
+.fwm-sweep-zoom-key[aria-checked="true"] {
+  border-color: var(--fwm-accent-scan);
+  background: var(--fwm-tint-scan);
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-sweep-zoom-key:disabled {
+  border-color: var(--fwm-line);
+  color: var(--fwm-text-disabled);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * THE CAMERA CONTACT
+ *
+ * The implementation once used U+1F4F7 U+FE0E, then replaced it with the drawn
+ * circle in `components/SweepDial.tsx` because mobile platforms still rendered
+ * the character as a colour emoji. The contact grows and fades with distance;
+ * the plasma ramp supplies its colour. Reticles and rings were also removed so
+ * overlapping contacts do not become a thicket of broken arcs.
+ *
+ * The SIZE and OPACITY are attributes on the element, not values here: they are
+ * measurements, one per camera, like cx/cy/r on a marker.
+ *
+ * The BLEND is eleven attribute-matched rules rather than one interpolated
+ * value, because a continuous value would need an inline style and the scope's
+ * own test asserts it emits none. Both endpoints stay tokens -- the v2 token
+ * pass moved the eleven `color-mix()` steps into `tokens.css` as
+ * `--fwm-blend-0` .. `--fwm-blend-10`, which is the only file allowed to hold a
+ * colour function -- so a theme mode that remaps a hue remaps the whole ramp
+ * with it.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-dot-contact {
+  /* The default, for a camera outside the blend window entirely. */
+  fill: var(--fwm-alert-approaching);
+  /* The contact is the control's face; the hit circle underneath takes the tap. */
+  pointer-events: none; /* keyword */
+}
+
+/* A muted camera keeps its size and its place - the mute removes the alert,
+   never the record - and loses only its hue, exactly as the drawn marker does. */
+.fwm-sweep-dot[data-fwm-sweep-muted="true"] .fwm-sweep-dot-contact {
+  fill: var(--fwm-text-muted);
+}
+
+/* A ghost is another driver and never gets a camera glyph, but a camera whose
+   fix aged out is drawn grey rather than in a state hue it can no longer
+   justify. */
+.fwm-sweep-dot[data-fwm-sweep-hue="no-gps"] .fwm-sweep-dot-contact {
+  fill: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE ALERT THRESHOLD, ON THE DIAL
+ *
+ * Merged into RADAR, the threshold is no longer a separate ring on a separate
+ * screen - it is one of this dial's rings, lit in the state hue. A driver
+ * reads "am I clear" off the same circle that tells them how far things are,
+ * instead of holding two pictures in their head.
+ *
+ * Heavier than a range ring and dashed, so it never reads as a distance
+ * gradation: it is a line the product drew, not a measurement.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-threshold {
+  fill: none; /* keyword */
+  /* Thin. It was the scope's heaviest stroke and it is the least urgent thing
+   * on it -- a boundary, not a contact. */
+  stroke-width: var(--fwm-sweep-rule-w);
+  stroke: var(--fwm-alert-clear);
+}
+
+/* The true radius, dim; and the pair either side of it, dimmer, which is what
+ * fades the band into the lattice instead of stopping at an edge. */
+.fwm-sweep-threshold[data-fwm-sweep-threshold-step="core"] {
+  opacity: 0.42;
+}
+
+.fwm-sweep-threshold[data-fwm-sweep-threshold-step="edge"] {
+  opacity: 0.16;
+}
+
+.fwm-sweep-threshold[data-fwm-sweep-threshold="clear"] {
+  stroke: var(--fwm-alert-clear);
+}
+.fwm-sweep-threshold[data-fwm-sweep-threshold="approaching"] {
+  stroke: var(--fwm-alert-approaching);
+}
+.fwm-sweep-threshold[data-fwm-sweep-threshold="in_range"] {
+  stroke: var(--fwm-alert-in-range);
+}
+.fwm-sweep-threshold[data-fwm-sweep-threshold="multiple"] {
+  stroke: var(--fwm-alert-multiple);
+}
+/* A muted or fixless dial still draws the line - the threshold has not moved -
+   but never in a hue that reads as an alert. */
+.fwm-sweep-threshold[data-fwm-sweep-threshold="muted"],
+.fwm-sweep-threshold[data-fwm-sweep-threshold="no_gps"] {
+  stroke: var(--fwm-text-disabled);
+}
+
+/* The threshold's own label, on the ring rather than in the centre: merged
+   into RADAR the centre belongs to the vehicle, and the threshold is one ring
+   among several. Same hue as its ring, so the two read as one statement. */
+.fwm-sweep-threshold-label {
+  fill: var(--fwm-text-disabled);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  text-anchor: middle; /* keyword */
+}
+
+.fwm-sweep-threshold-label[data-fwm-sweep-threshold-label="clear"] {
+  fill: var(--fwm-alert-clear);
+}
+.fwm-sweep-threshold-label[data-fwm-sweep-threshold-label="approaching"] {
+  fill: var(--fwm-alert-approaching);
+}
+.fwm-sweep-threshold-label[data-fwm-sweep-threshold-label="in_range"] {
+  fill: var(--fwm-alert-in-range);
+}
+.fwm-sweep-threshold-label[data-fwm-sweep-threshold-label="multiple"] {
+  fill: var(--fwm-alert-multiple);
+}
+
+/* =============================================================================
+ * THE FULL-BLEED VARIANT - the scope as the screen's ground, not an object on it.
+ * =============================================================================
+ * The design draws a 343px puck: a circle with `overflow: hidden` and a
+ * `border-radius: 999px`, sitting in a column with the readouts above it.
+ *
+ * On the merged RADAR that hard constraint fights the screen. The scope is the
+ * subject, and boxing it into a 343px disc with a crisp rim in the middle of a
+ * black phone reads as a widget dropped onto the page rather than as the thing
+ * the page is about.
+ *
+ * Bleeding it changes three things and nothing else:
+ *
+ *   FULL WIDTH   the `min(100%, 343.2px)` cap is lifted, so the scope is as
+ *                wide as the surface. It stays SQUARE -- `aspect-ratio: 1` is
+ *                untouched -- because every dot position in `geometry.ts` is
+ *                computed in a square viewBox against a `farthest-corner`
+ *                radial reach. Stretching the box would put every camera in
+ *                the wrong place, silently.
+ *
+ *   NO HARD EDGE `overflow` and `border-radius` are dropped. The circular clip
+ *                is what made it an object; without it the only edge is the one
+ *                the mask draws, which is a fade.
+ *
+ *   BEHIND       negative block margins pull the readout above and the card
+ *                below back over the scope, so the lattice runs underneath
+ *                them. The content stays in flow and stays tappable; only the
+ *                spacing changes.
+ *
+ * The layers take `--fwm-mask-scope-bleed` instead of the design's vignette --
+ * a longer, lower fade with no cut at the end. See the token.
+ * ========================================================================== */
+
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] {
+  /* SIZED BY THE SPACE LEFT, NOT BY THE WIDTH OF THE SCREEN.
+   *
+   * It was `width: 132%` with `aspect-ratio: 1`, which sets the height from the
+   * width -- and on a phone that square is taller than the room between the
+   * hero readout and the dock. The column overflowed, the screen scrolled, and
+   * a driver could push the entire instrument off the top.
+   *
+   * `flex: 1` takes whatever height the column has left after the fixed rows,
+   * `min-height: 0` lets it actually shrink to that (a flex child defaults to
+   * refusing), and `aspect-ratio` then derives the WIDTH. The scope is as big
+   * as it can be and never one pixel bigger, at any screen size, with no
+   * scrolling anywhere.
+   *
+   * It still bleeds: on a phone the leftover height is greater than the width,
+   * so the square runs off both sides and the column clips it -- which is the
+   * effect the fixed 132% was reaching for, arrived at by measuring instead of
+   * guessing.
+   */
+  flex: 1;
+  min-height: 0;
+  /* NOT STRETCHED. A flex column stretches its children across the cross axis
+   * by default, which would set the width from the column and the height from
+   * `flex`, leaving a rectangle -- and every ring on this scope is a circle
+   * drawn by a CSS gradient that would become an ellipse while the SVG inside
+   * letterboxed to a different shape. The two halves of the instrument would
+   * disagree about where a bearing is. `align-self` lets `aspect-ratio` derive
+   * the width from the height and keeps it square at every screen size. */
+  align-self: center;
+  width: auto;
+  height: auto;
+
+  /* AND CENTRED, WHICH `align-self` ALONE DOES NOT DO HERE.
+   *
+   * The scope is deliberately WIDER than the column it sits in -- that is what
+   * bleeding is -- and alignment does not centre a flex item bigger than its
+   * line. The browser clamps it to the start edge and lets the whole overhang
+   * fall on one side, which put the vehicle 44px right of the screen's middle
+   * on a 393px phone: measured, dial box 16..466 against a centre of 196.5.
+   *
+   * `left: 50%` moves it half the COLUMN's width; `translateX(-50%)` pulls it
+   * back half its OWN width. That lands the centre on the column's centre at
+   * any size, oversized or not. */
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+
+  /* WAS: a fixed 132% of the column. See above.
+   *
+   * The design's 343px puck left the scope sitting in the middle of a phone
+   * with dead space around it. At full bleed the scope IS the screen, so it is
+   * drawn wider than the viewport and the sides run off the edge -- there is no
+   * boundary to see because the boundary is outside the phone.
+   *
+   * Still square (`aspect-ratio: 1` untouched): every camera position is
+   * computed in a square viewBox, and stretching the box would move them all.
+   * The overflow is clipped by the column, which is why that column now says
+   * `overflow-x: hidden` -- without it this is a horizontal scrollbar. */
+  max-width: none; /* keyword */
+  /* No circular clip and no fill: the only edge left is the one the field's
+   * mask fades out, and the layer below shows through. */
+  border-radius: var(--fwm-radius-0);
+  overflow: visible; /* keyword */
+  background: transparent; /* keyword */
+  /* NO NEGATIVE MARGIN. It had one to pull the lattice down behind the zone
+   * CARD that used to sit at the bottom of this column. That card became a row
+   * of text in the dock chrome and left the column entirely, so the margin had
+   * nothing left to overlap -- all it did was make the dial 24px taller than
+   * its own slot, which the column then clipped. */
+  margin-block: 0;
+}
+
+/* ONLY THE FIELD BLEEDS. THE INSTRUMENT DOES NOT.
+ *
+ * The first attempt bled every layer, and it was wrong in a way worth writing
+ * down: the tick and axis layers are radial patterns sized to the dial's box,
+ * so growing that box stretched them into long straight spokes running to the
+ * screen corners. The scope stopped reading as an instrument and started
+ * reading as a starburst.
+ *
+ * The dot lattice is the thing that should run off the edges -- it is texture,
+ * it has no scale to misread, and thinning it into the dark is exactly the
+ * "ground" the screen wants. The rings, ticks, axes and beam carry MEANING at
+ * a size: a ring is 500 ft, a tick is a bearing. They stay where they were
+ * drawn.
+ *
+ * The field is inset NEGATIVELY to paint well outside the dial's own box --
+ * possible because the bleed variant drops `overflow: hidden`. */
+/* THE LATTICE IS TURNED DOWN AT FULL BLEED.
+ *
+ * It is drawn at the same value it was designed for in a 343px puck, where it
+ * covers a small circle. Run to the screen edges it covers everything, and
+ * everything on the scope is then read THROUGH it: the street names, the ring
+ * numbers and the cluster counts all sit on a field of dots at the same
+ * brightness as their own strokes, and none of them are legible.
+ *
+ * 15 % off. The texture survives -- it is what makes the scope feel like a
+ * screen rather than a black rectangle -- and the type on top of it stops
+ * competing with it. */
+/* THE DOT LATTICE IS GONE AT FULL BLEED.
+ *
+ * It was the scope's texture when the scope was a 343px puck, where it covered
+ * a small circle and read as the surface of an instrument. Run to the screen
+ * edges it covers EVERYTHING, and everything else is then read through it: the
+ * street names, the ring numbers, the cluster counts and the camera blips all
+ * sit on a field of dots at their own scale. Turning it down 15% helped and did
+ * not fix it, because the problem was never its brightness -- it was that a
+ * texture over the whole screen competes with every mark on the screen.
+ *
+ * The scope has plenty of ground without it: the range rings, the bearing
+ * ticks, the roads and the beam. The rule is kept rather than deleted so the
+ * inset variant still draws it, which is what the design specified.
+ */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-field {
+  display: none; /* keyword */
+
+  opacity: 0.85;
+
+  /* Reaching far past the dial so the mask's tail runs out of opacity long
+   * before the layer runs out of box. That is what "you cannot tell where it
+   * stops" means in practice: the lattice must be invisible BEFORE its edge,
+   * not clipped AT its edge. */
+  inset: -110%;
+  -webkit-mask: var(--fwm-mask-scope-bleed);
+  mask: var(--fwm-mask-scope-bleed);
+}
+
+/* The range key clears the card below it.
+ *
+ * The bleed variant pulls the dial's box down behind the zone card by
+ * `--fwm-space-6`, so a key pinned to the dial's own bottom edge would print
+ * over the card's top. It rides up by the same amount it was pulled down. */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-range-key {
+  bottom: calc(var(--fwm-space-6) + var(--fwm-sweep-telemetry-inset));
+}
+
+/* THE READOUTS SIT ABOVE THE LATTICE.
+ *
+ * The bleed field paints outside the dial's box, and the dial comes AFTER the
+ * readouts in the column -- so with everything at the default stacking level,
+ * a later sibling wins and the dot lattice was stippled straight through the
+ * 80px hero digits. `1.5` came out looking like a halftone print.
+ *
+ * Raising the readouts rather than lowering the field on purpose: `z-index:-1`
+ * on the field would drop it behind `.fwm-radar`'s own background fill and
+ * disappear entirely. The text is what needs to be in front, so the text is
+ * what is promoted.
+ *
+ * Scoped to the bleed variant. In the design's inset puck nothing overlaps and
+ * nothing needs a stacking order. */
+.fwm-radar:has(.fwm-sweep-dial[data-fwm-sweep-bleed="true"]) .fwm-radar-readout,
+.fwm-radar:has(.fwm-sweep-dial[data-fwm-sweep-bleed="true"]) .fwm-radar-strip,
+.fwm-radar:has(.fwm-sweep-dial[data-fwm-sweep-bleed="true"]) .fwm-radar-gps,
+.fwm-radar:has(.fwm-sweep-dial[data-fwm-sweep-bleed="true"]) .fwm-radar-zone {
+  position: relative;
+  z-index: 1;
+}
+
+/* =============================================================================
+ * DIALLING THE BLEED BACK - fewer lines, and every edge a fade.
+ * =============================================================================
+ * The first bleed put the whole instrument on the screen at full strength and
+ * it read as a starburst: twelve tick spokes and two axes running edge to edge
+ * over a lattice, with a hard rim where the mask stopped.
+ *
+ * What the scope actually needs to say is: here is a field, here is a sweep,
+ * here is where you are, here is the line the alert fires on. Everything else
+ * is line-work competing with the four camera dots that matter.
+ *
+ * So at full bleed:
+ *   · the tick layers are held back hard -- they are a bearing scale, legible
+ *     when looked for and not shouting when not
+ *   · the axes go entirely. The vehicle marker already says where centre is and
+ *     the heading is printed in the strip above in words and degrees
+ *   · nothing has a hard edge. Every remaining layer takes the long fade.
+ * ========================================================================== */
+
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-axis {
+  display: none; /* keyword */
+}
+
+/* THE TICKS ARE A RIM BAND, NOT SPOKES.
+ *
+ * The tick layers are a radial pattern filling the whole square, and the design
+ * clipped that square to a circle -- so what read as short marks around a rim
+ * was really a full starburst with its middle and corners hidden. Remove the
+ * clip for the bleed and the starburst is what you get: twelve lines running to
+ * the screen edges, straight over the camera dots.
+ *
+ * Masked to an annulus instead, they are what they always looked like: a
+ * bearing scale around the edge of the scope. Both edges of the band are soft,
+ * so the marks fade in and out rather than being cut. */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-ticks {
+  -webkit-mask: var(--fwm-mask-scope-rim);
+  mask: var(--fwm-mask-scope-rim);
+}
+
+/* THE RINGS KEEP THEIR OWN BAND MASKS.
+ *
+ * They took the long bleed fade for a while, on the reasoning that a soft edge
+ * reads better than a drawn circle. What it actually did was spread each ring's
+ * dot lattice across the ENTIRE scope: four overlapping full-screen dot fields
+ * that read as one uniform pixel overlay with the rings lost inside it, and
+ * every label, road and blip drawn on top of it.
+ *
+ * A band mask is what makes a ring a ring. Only the BEAM keeps the long fade --
+ * it is a moving wedge and a hard edge on it is a strobe.
+ */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-beam {
+  -webkit-mask: var(--fwm-mask-scope-bleed);
+  mask: var(--fwm-mask-scope-bleed);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE FORMER RAILS. No current component emits these selectors: range moved to
+ * `components/MapControls.tsx` and threshold moved to SETTINGS.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-rail {
+  position: absolute;
+  display: flex;
+  gap: var(--fwm-space-1);
+}
+
+/* ON THE BOARD, OVERLAPPING THE HOLE.
+ *
+ * The rails sat at the top and bottom of the dial's BOX, and the aperture is
+ * only about 69 % of that box across -- so each rail left a dead band between
+ * itself and the edge of the scope, and the two of them together ate more
+ * vertical space than the controls occupy.
+ *
+ * The hole's top edge is at 50 % - 34.295 % = 15.7 % of the box. Sitting the
+ * rails just inside that puts them ON the board, overlapping the aperture's rim
+ * by a few pixels, which is where a control that belongs to an instrument goes.
+ * The dead bands are gone and the space goes to the map. */
+.fwm-sweep-rail[data-fwm-sweep-rail="range"] {
+  top: 12%;
+  right: var(--fwm-space-3);
+  left: var(--fwm-space-3);
+  flex-direction: column;
+}
+
+/* A mirror of the range rail: same dots, same three labels, same order, at the
+ * other end of the scope. Inset from the bottom rather than pinned to it --
+ * the dial is pulled down behind the chrome below, so a rail at `bottom: 0`
+ * has its dot row clipped off the screen. */
+.fwm-sweep-rail[data-fwm-sweep-rail="threshold"] {
+  right: var(--fwm-space-3);
+  bottom: 12%;
+  left: var(--fwm-space-3);
+  flex-direction: column;
+}
+
+.fwm-sweep-rail-blocks {
+  display: flex;
+}
+
+/* A ROW OF SMALL DOTS, WELL SPACED.
+ *
+ * These were chunky blocks of varying height. At a rail's width that is a wall
+ * of bars competing with the scope for attention -- the control shouted and the
+ * instrument whispered, which is backwards.
+ *
+ * `space-between` rather than a gap: the dots spread to fill whatever width the
+ * rail has, so the row reads as a scale across the whole travel instead of a
+ * cluster at one end. */
+.fwm-sweep-rail-blocks[data-fwm-sweep-rail-orientation="horizontal"] {
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: var(--fwm-space-3);
+}
+
+/* One dot. Small and round, at a fixed size -- the ramp only touches opacity
+ * now, so the row keeps its shape without any dot being big enough to shout. */
+.fwm-sweep-rail-block {
+  flex: none; /* keyword */
+  width: var(--fwm-space-1);
+  height: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+}
+
+/* The value. The only dot on the rail at full strength, and the only one drawn
+ * bigger -- everything else on the rail is the same small dot, so growing this
+ * one is what makes it findable at a glance. */
+.fwm-sweep-rail-block[data-fwm-sweep-block="active"] {
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  background: var(--fwm-text);
+  opacity: 1;
+}
+
+/* THE TWO RAMPS, AS EIGHT STEPS EACH.
+ *
+ * The removed rail quantised two curves into eight presentation steps. Density
+ * is an opacity -- `█▓▒░` -- and extent is a length across the rail's depth --
+ * `▆▅▃▂▁`. Both are heaviest at the ends and lightest in the middle, so the
+ * rail states its limits and recedes through its travel.
+ *
+ * The numbers are the ramps, not design values: there is no token for "three
+ * eighths of the way down a shading ramp", and inventing one would be a token
+ * that means nothing anywhere else. */
+.fwm-sweep-rail-block[data-fwm-sweep-density="0"] {
+  opacity: 0.16;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="1"] {
+  opacity: 0.28;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="2"] {
+  opacity: 0.4;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="3"] {
+  opacity: 0.52;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="4"] {
+  opacity: 0.64;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="5"] {
+  opacity: 0.76;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="6"] {
+  opacity: 0.88;
+}
+
+.fwm-sweep-rail-block[data-fwm-sweep-density="7"] {
+  opacity: 1.0;
+}
+
+
+/* The real control, transparent over the drawn one. A native range input draws
+ * a platform thumb that does not belong on this scope; this keeps the platform
+ * behaviour -- drag, keyboard, screen reader -- and none of the platform paint.
+ * `opacity: 0` rather than `visibility: hidden`, which would take the input out
+ * of the accessibility tree along with the picture. */
+.fwm-sweep-rail-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: var(--fwm-touch-min);
+  margin: 0;
+  opacity: 0;
+  cursor: pointer; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: none; /* keyword */
+}
+
+.fwm-sweep-rail-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-sweep-rail-now {
+  color: var(--fwm-text);
+}
+
+/* THE RAILS STAY ON THE SCREEN, NOT ON THE DIAL.
+ *
+ * The bleed scope is drawn 132% of the column and hangs 16% off each side, so a
+ * rail pinned to the dial's own edges hangs off with it: the range rail's end
+ * labels -- `1000 FT` and `25 MI`, the two numbers that say what the travel
+ * covers -- were cut in half by the screen, and the threshold readout with
+ * them.
+ *
+ * The rails are inset by the overhang so they sit against the VIEWPORT's edges
+ * while still belonging to the scope. Same 16% the dial hangs by, so the two
+ * can never drift apart. */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-rail[data-fwm-sweep-rail="range"] {
+  right: calc(16% + var(--fwm-space-3));
+  left: calc(16% + var(--fwm-space-3));
+}
+
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-rail[data-fwm-sweep-rail="threshold"] {
+  right: calc(16% + var(--fwm-space-3));
+  left: calc(16% + var(--fwm-space-3));
+}
+
+/* ---------------------------------------------------------------------------
+ * The marker's digit: proximity for a single camera, a count for a cluster.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-dot-score {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  /* Reads against the marker's own fill, which runs the whole blend ramp from
+   * amber to crimson -- so the digit takes the page ground rather than a fixed
+   * light or dark, and stays legible at every step of it. */
+  fill: var(--fwm-bg);
+  pointer-events: none; /* keyword */
+}
+
+/* A cluster's count is the more important number of the two: it is the only
+ * thing saying that marker is nine cameras and not one. */
+.fwm-sweep-dot-score[data-fwm-sweep-count="1"] {
+  fill: var(--fwm-bg);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE NODE - a glowing thing, not a flat disc.
+ *
+ * Three circles per contact and no filters: the halo, the node, and (for a
+ * cluster) the edge. `feGaussianBlur` would be the obvious way to glow and is a
+ * per-node raster on every frame of a continuous sweep -- the same cost that
+ * made the emoji markers lag.
+ * ------------------------------------------------------------------------ */
+
+.fwm-sweep-dot-glow {
+  pointer-events: none; /* keyword */
+}
+
+/* The gradient stops. A stop cannot inherit the colour of the shape using the
+ * gradient -- `currentColor` inside `<defs>` resolves against the defs element
+ * -- so there is one gradient per blend step and its stops are coloured here,
+ * from the same tokens the node itself takes. */
+
+/* A cluster's count, tucked against the blip.
+ *
+ * SIZED IN USER UNITS, NOT IN A TYPE TOKEN. Inside the SVG a `font-size` is in
+ * viewBox units, and the dial is scaled up from 343 units to roughly 520px --
+ * so `--fwm-text-micro` at 10 rendered near 15px on screen, which is bigger
+ * than the type in the header. These are footnotes on a marker; 6 units lands
+ * around 9px, which is legible and does not compete with the blip it labels.
+ *
+ * GAP: no token can express this. A design token is a CSS length and this is a
+ * coordinate in another space. */
+/* THE CLUSTER CONSTELLATION.
+ *
+ * Replaces the count digit. A cluster is drawn as its members, where they
+ * actually are, joined to the centre by hairlines -- so the marker says "these
+ * are several cameras over that patch of ground" instead of saying "8" and
+ * then opening one arbitrary camera's card when tapped.
+ *
+ * Both parts are quiet. They are a texture that qualifies the blip they sit
+ * on, not a second set of markers competing with it: the edges are barely
+ * there, and the member dots are small enough to read as grain inside the
+ * bloom rather than as contacts of their own. */
+/* THE COVERAGE FIELD.
+ *
+ * `object-fit: cover` is the CSS spelling of the SVG's own `slice`, so the
+ * canvas covers exactly the box the map covers -- it is a replaced element, so
+ * this applies to it. It sits in a `foreignObject` inside the panned group,
+ * which is what makes it pan and zoom with the map rather than alongside it.
+ *
+ * `screen` blending, so the field lightens the ground it sits on instead of
+ * painting over the roads: a corridor of cameras should read as weather ON the
+ * map, not as a lid over it. */
+.fwm-sweep-heat {
+  display: block; /* keyword */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* keyword */
+  mix-blend-mode: screen; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-sweep-cluster-edge {
+  fill: none; /* keyword */
+  stroke-width: var(--fwm-sweep-cluster-edge-w);
+  stroke-linecap: round; /* keyword */
+  opacity: 0.55;
+  pointer-events: none; /* keyword */
+}
+
+.fwm-sweep-cluster-node {
+  opacity: 0.9;
+  pointer-events: none; /* keyword */
+}
+
+/* THE PLASMA RAMP, BY DISTANCE. Step 0 is on you, step 10 is the scope's edge.
+ * The node, its halo's gradient stops and a cluster's edge all take the same
+ * step, so a contact is one colour throughout and the whole marker moves along
+ * the ramp together as it approaches. */
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="0"] {
+  fill: var(--fwm-plasma-0);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="1"] {
+  fill: var(--fwm-plasma-1);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="2"] {
+  fill: var(--fwm-plasma-2);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="3"] {
+  fill: var(--fwm-plasma-3);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="4"] {
+  fill: var(--fwm-plasma-4);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="5"] {
+  fill: var(--fwm-plasma-5);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="6"] {
+  fill: var(--fwm-plasma-6);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="7"] {
+  fill: var(--fwm-plasma-7);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="8"] {
+  fill: var(--fwm-plasma-8);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="9"] {
+  fill: var(--fwm-plasma-9);
+}
+
+.fwm-sweep-dot-contact[data-fwm-sweep-plasma="10"] {
+  fill: var(--fwm-plasma-10);
+}
+
+.fwm-sweep-plasma-stop-0 {
+  stop-color: var(--fwm-plasma-0);
+}
+
+.fwm-sweep-plasma-stop-1 {
+  stop-color: var(--fwm-plasma-1);
+}
+
+.fwm-sweep-plasma-stop-2 {
+  stop-color: var(--fwm-plasma-2);
+}
+
+.fwm-sweep-plasma-stop-3 {
+  stop-color: var(--fwm-plasma-3);
+}
+
+.fwm-sweep-plasma-stop-4 {
+  stop-color: var(--fwm-plasma-4);
+}
+
+.fwm-sweep-plasma-stop-5 {
+  stop-color: var(--fwm-plasma-5);
+}
+
+.fwm-sweep-plasma-stop-6 {
+  stop-color: var(--fwm-plasma-6);
+}
+
+.fwm-sweep-plasma-stop-7 {
+  stop-color: var(--fwm-plasma-7);
+}
+
+.fwm-sweep-plasma-stop-8 {
+  stop-color: var(--fwm-plasma-8);
+}
+
+.fwm-sweep-plasma-stop-9 {
+  stop-color: var(--fwm-plasma-9);
+}
+
+.fwm-sweep-plasma-stop-10 {
+  stop-color: var(--fwm-plasma-10);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE INSTRUMENT DOES NOT PAN. THE WORLD DOES.
+ *
+ * These layers -- the dot lattice, the four range rings, the bearing ticks, the
+ * sweep beam -- used to translate with the pan, on the reasoning that the whole
+ * scope should move together like a map. Held in the hand it is obviously
+ * wrong: a thumb drags the entire instrument off the screen, and the rings stop
+ * meaning anything because a ring is a distance FROM THE VEHICLE and the
+ * vehicle went with it.
+ *
+ * A radar scope is a fixed reticle that the world passes under. So the rings,
+ * the lattice and the vehicle stay exactly where they are drawn, and panning
+ * moves only what is ON the map: the roads and the camera blips. That is done
+ * inside the SVG -- see the panned group in `SweepDial.tsx` -- and needs no
+ * rule here at all.
+ * ------------------------------------------------------------------------ */
+
+/* =============================================================================
+ * THE SWEEP REVEAL - a contact is LIT when the beam crosses it.
+ * =============================================================================
+ * The dial has had a rotating beam since the first version and the beam did
+ * nothing: it passed over the contacts and they were exactly as bright behind
+ * it as in front. That is a decoration pretending to be an instrument.
+ *
+ * On a real scope a return is painted by the sweep and decays until the sweep
+ * comes round again, which is why the picture reads as ACTIVE rather than as a
+ * static chart. This is that, and it is one animation:
+ *
+ *   every contact runs the same 2.4 s cycle -- the beam's own period, so they
+ *   can never drift apart -- offset by a NEGATIVE delay equal to its own
+ *   bearing. A marker at 90 degrees starts a quarter of the way through its
+ *   cycle, so its flash lands exactly as the beam reaches it.
+ *
+ * ONLY THE CONTACTS. The roads, the lattice and the rings hold steady: a map
+ * that breathes is a map you cannot read, and the point of the effect is that
+ * the thing being revealed is the thing that matters.
+ *
+ * The decay floor is deliberately well above zero. A camera that vanished for
+ * two seconds at a time would be a safety problem, not an aesthetic -- a driver
+ * glancing down in the dark half of the cycle must still see every contact.
+ * ========================================================================== */
+
+/* THE DELAYS ARE SCOPED TO THE SAME SELECTOR THE ANIMATION IS.
+ *
+ * They were not, and every contact flashed in unison -- one sweep lighting the
+ * whole scope at once, which is the opposite of the effect. The `animation`
+ * shorthand in the rule below sets `animation-delay: 0s` as part of expanding,
+ * and that rule (`.fwm-sweep-dial[...] .fwm-sweep-dot`) outranks a bare
+ * `.fwm-sweep-dot[data-...]`, so the shorthand kept winning and resetting the
+ * offset to nothing.
+ *
+ * Measured: 31 contacts across 19 distinct bearings, all with the same computed
+ * `animation-delay`. Matching the selector is what makes them 19 again. */
+
+@keyframes fwmBlipReveal {
+  0% {
+    opacity: 1;
+  }
+  12% {
+    opacity: 0.92;
+  }
+  45% {
+    opacity: 0.68;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot {
+  /* The same easing the beam itself takes -- see the rule for
+   * `.fwm-sweep-beam`. A contact's decay and the sweep that causes it must run
+   * on one curve or the flash drifts off the beam over a few rotations. */
+  animation: fwmBlipReveal var(--fwm-sweep-dur) var(--fwm-ease-linear, var(--fwm-ease-mech))
+    infinite;
+}
+
+/* A scope that is not scanning -- no fix, or a stale one -- holds every contact
+ * at full strength. The reveal says "this is live"; running it over a frozen
+ * picture would say the opposite of the truth. */
+.fwm-sweep-dial[data-fwm-sweep-scanning="false"] .fwm-sweep-dot {
+  animation: none; /* keyword */
+}
+
+/* Somebody who has asked their phone to stop animating things has asked for
+ * this too. The contacts are all there, at full strength, permanently. */
+@media (prefers-reduced-motion: reduce) {
+  .fwm-sweep-dial .fwm-sweep-dot {
+    animation: none; /* keyword */
+  }
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="0"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.0);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="1"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.0417);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="2"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.0833);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="3"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.125);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="4"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.1667);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="5"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.2083);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="6"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.25);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="7"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.2917);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="8"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.3333);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="9"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.375);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="10"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.4167);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="11"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.4583);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="12"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.5);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="13"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.5417);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="14"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.5833);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="15"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.625);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="16"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.6667);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="17"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.7083);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="18"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.75);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="19"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.7917);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="20"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.8333);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="21"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.875);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="22"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.9167);
+}
+
+.fwm-sweep-dial[data-fwm-sweep-scanning="true"] .fwm-sweep-dot[data-fwm-sweep-phase="23"] {
+  animation-delay: calc(var(--fwm-sweep-dur) * -0.9583);
+}
+
+/* THE RING NUMBERS ARE NOT DRAWN AT FULL BLEED.
+ *
+ * `1 / 0.5 / 0.3 / 0.1` stacked up the vertical axis, through the middle of the
+ * scope, over the vehicle and over whatever contacts sit on that line. They
+ * were the scale when the scale was not stated anywhere else -- and the range
+ * rail across the top now says exactly what the scope is showing, in words,
+ * with its unit, at the top of the screen where it is read once.
+ *
+ * So they are four numbers repeating information, printed over the busiest part
+ * of the instrument. The rings themselves still carry the scale; a driver
+ * needing the figure has it on the rail.
+ */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-ring-label {
+  display: none; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * RECENTRE - shown only while the scope is displaced.
+ *
+ * A panned scope is a lied-to scope: the vehicle is not in the middle, so every
+ * ring measures from somewhere the driver is not. Pressing RADAR has always
+ * fixed it and nothing on screen said so, which left a driver who displaced the
+ * map by accident with no way back that they could see.
+ *
+ * It is absent the rest of the time. A permanent button for an occasional state
+ * is one more thing in the way of the instrument.
+ * ------------------------------------------------------------------------ */
+.fwm-sweep-recentre {
+  position: absolute;
+  top: var(--fwm-space-8);
+  left: 50%;
+  z-index: 2;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-1) var(--fwm-space-4);
+  transform: translateX(-50%);
+  border: var(--fwm-sweep-rule-w) solid var(--fwm-accent-scan);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-card-over);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-accent-scan);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* =============================================================================
+ * THE BOARD. Everything is clipped to the hole.
+ * =============================================================================
+ * The scope is a hole cut in a board laid over a map: you see the map through
+ * it, and nothing exists outside it. The board does the hiding.
+ *
+ * These layers were drawn to the dial's SQUARE and faded out with a mask, which
+ * is not the same thing at all -- a fade still paints, so the lattice, the
+ * bearing ticks and the sweep beam all carried on into the corners past the
+ * outermost ring. Content bleeding onto the board.
+ *
+ * 34.295 % is the outermost ring as a share of the dial box: `MASK_REACH`
+ * (343 / sqrt 2) times `RING_MASK_PCT`'s last stop, 0.485, over 343. It is
+ * derived from the same two numbers `geometry.ts` places every camera with, so
+ * the drawn edge and the placed dots cannot disagree about where the scope
+ * ends. The SVG side cuts the identical circle -- see `fwm-scope-aperture`.
+ *
+ * The RAILS are deliberately not clipped: they are the board's controls, not
+ * what is seen through the hole.
+ * ========================================================================== */
+/* SUPERSEDED: these layers are not drawn at full bleed at all now -- see "NO
+ * RADAR GRAPHIC" at the end of this file. The clip is left in place because it
+ * is still correct for any surface that draws the board, and removing a rule
+ * that guards a thing is how the thing comes back wrong. */
+
+/* =============================================================================
+ * NO RADAR GRAPHIC.
+ * =============================================================================
+ * The dot lattice, the four range rings, the bearing ticks, the axes and the
+ * sweep beam are all gone at full bleed. What is left is the map: roads, camera
+ * blips, the vehicle.
+ *
+ * They were the reason this screen never behaved like a map. Every one of them
+ * is drawn in the scope's own polar frame, so they had to be reconciled with a
+ * map at every turn -- clipped to an aperture, masked to bands, held still
+ * while the world panned, faded at the edges, hidden at some zooms and not
+ * others. Each fix was real and none of them addressed that a map and a gauge
+ * were being drawn on the same surface.
+ *
+ * A map with data on it does not need a gauge over it. The range is stated on
+ * the rail, the alert threshold on its own rail, the state in words above, and
+ * where things are is shown by where they are.
+ * ========================================================================== */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-field,
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-band,
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-ticks,
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-axis,
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-beam {
+  display: none; /* keyword */
+}
+
+/* The rings that were drawn in the SVG go with them: the threshold band, the
+ * ring around the vehicle, and the scale labels. The vehicle arrow stays -- it
+ * is where you are, not decoration. */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-threshold,
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-threshold-label,
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] .fwm-sweep-ego-ring {
+  display: none; /* keyword */
+}
+
+/* =============================================================================
+ * THE MAP FILLS ITS SLOT.
+ * =============================================================================
+ * The dial was square -- `aspect-ratio: 1` -- because it was a round gauge, and
+ * a square is the smallest box a circle fits in. With the gauge gone the square
+ * is just a shape the map is trapped in: on a tall phone it left a band of
+ * black above and below the data, which is the empty space on screen.
+ *
+ * A map fills the frame it is given. The SVG viewBox stays square -- every
+ * camera position is computed in it and stretching it would move them all --
+ * and `preserveAspectRatio="xMidYMid slice"` scales that square to COVER the
+ * rectangle instead of fitting inside it. Uniform scale, no distortion, the
+ * overflow simply cropped, which is what every map does at the edge of a
+ * viewport.
+ * ========================================================================== */
+.fwm-sweep-dial[data-fwm-sweep-bleed="true"] {
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+  align-self: stretch;
+  left: auto;
+  transform: none; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * THE MAP'S CONTROLS - bottom right, on the map, out of the way.
+ *
+ * Where every map puts them. They replaced two full-width rails that took a
+ * band off the top and the bottom of the screen permanently for two controls
+ * that are touched rarely.
+ * ------------------------------------------------------------------------ */
+
+.fwm-map-controls {
+  position: absolute;
+  right: var(--fwm-space-3);
+  bottom: var(--fwm-space-4);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--fwm-space-2);
+}
+
+/* RE-CENTER - bottom left, opposite the zoom keys.
+ *
+ * A pill with the vehicle's own arrow on it. It appears only while the view is
+ * displaced, because that is the only time it does anything, and it is the ONLY
+ * way back: there is no automatic re-centring, by request. */
+.fwm-map-recenter {
+  position: absolute;
+  left: var(--fwm-space-3);
+  bottom: var(--fwm-space-4);
+  z-index: 2;
+  display: flex;
+  gap: var(--fwm-space-2);
+  align-items: center;
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: 0; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-card-over);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.06);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-map-recenter-arrow {
+  width: var(--fwm-text-body);
+  height: var(--fwm-text-body);
+  fill: var(--fwm-text);
+}
+
+.fwm-map-range {
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card-over);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-map-zoom {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-card-over);
+  overflow: hidden; /* keyword */
+}
+
+.fwm-map-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fwm-touch-min);
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: none; /* keyword */
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-label);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* RECENTRE is a word, not a glyph, so it needs its own width and its own
+ * ground -- it sits outside the zoom pair. */
+.fwm-map-controls > .fwm-map-key {
+  width: auto;
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-card-over);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-map-key:disabled {
+  color: var(--fwm-text-disabled);
+}
+
+/* THE CONSTELLATION TAKES ITS MEMBERS' OWN COLOURS.
+ * An edge drawn in a neutral grey read as a spike stuck through the blip --
+ * reported, accurately, as ugly. Each edge is the colour of the camera it
+ * leads to, so the constellation is made of the same material as the rest of
+ * the scope instead of being scaffolding laid over it. */
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="0"] {
+  stroke: var(--fwm-plasma-0);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="0"] {
+  fill: var(--fwm-plasma-0);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="1"] {
+  stroke: var(--fwm-plasma-1);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="1"] {
+  fill: var(--fwm-plasma-1);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="2"] {
+  stroke: var(--fwm-plasma-2);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="2"] {
+  fill: var(--fwm-plasma-2);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="3"] {
+  stroke: var(--fwm-plasma-3);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="3"] {
+  fill: var(--fwm-plasma-3);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="4"] {
+  stroke: var(--fwm-plasma-4);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="4"] {
+  fill: var(--fwm-plasma-4);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="5"] {
+  stroke: var(--fwm-plasma-5);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="5"] {
+  fill: var(--fwm-plasma-5);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="6"] {
+  stroke: var(--fwm-plasma-6);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="6"] {
+  fill: var(--fwm-plasma-6);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="7"] {
+  stroke: var(--fwm-plasma-7);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="7"] {
+  fill: var(--fwm-plasma-7);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="8"] {
+  stroke: var(--fwm-plasma-8);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="8"] {
+  fill: var(--fwm-plasma-8);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="9"] {
+  stroke: var(--fwm-plasma-9);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="9"] {
+  fill: var(--fwm-plasma-9);
+}
+
+.fwm-sweep-cluster-edge[data-fwm-sweep-plasma="10"] {
+  stroke: var(--fwm-plasma-10);
+}
+
+.fwm-sweep-cluster-node[data-fwm-sweep-plasma="10"] {
+  fill: var(--fwm-plasma-10);
+}

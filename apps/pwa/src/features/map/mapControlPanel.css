@@ -1,0 +1,295 @@
+/* THE MAP CONTROL PANEL - what the map draws, and what it is drawn on.
+ *
+ * =============================================================================
+ * WHY THESE RULES ARE `fwm-drive-*` IN A `map/` FILE
+ * =============================================================================
+ * The panel is DRIVE's: it is positioned in `.fwm-drive`'s coordinate space,
+ * against `.fwm-drive-rail`'s own arithmetic, and it is meaningless anywhere
+ * else. The COMPONENT lives beside the map because everything it controls does
+ * - `layers.ts` owns the swatch hues and `app/mapView.ts` owns the flavours -
+ * so the class names follow the screen and the file follows the subject.
+ *
+ * =============================================================================
+ * IT DOES NOT SPAN THE MAP, AND IT DOES NOT COVER ITS OWN OPENER
+ * =============================================================================
+ * `drive.css`'s governing rule is that nothing covers the map that is not a
+ * control. This is a control, and it still keeps its width bounded so the road
+ * stays visible while a driver taps through it - the whole value of choosing an
+ * owner class here is watching the dots change as you choose.
+ *
+ * It is also inset from the RIGHT by the width of the rail rather than sitting
+ * on `--fwm-space-4` like the rail does. The panel is later in the DOM than the
+ * rail, so a panel flush to the edge would paint over the very key that opens
+ * and closes it, and "press it again to dismiss" would be dead under a pane.
+ */
+
+.fwm-drive-panel {
+  /* The rail's own top: `--fwm-space-4` down from the edge, plus the gear
+     (`--fwm-space-12`) and the gap under it. Written once and read three
+     times below, because these three offsets must move together. */
+  --fwm-drive-panel-top: calc(var(--fwm-space-4) + var(--fwm-space-12) + var(--fwm-space-2));
+
+  position: absolute;
+  top: var(--fwm-drive-panel-top);
+  /* Clear of the rail: the edge inset, the 48px key, and a gap. */
+  right: calc(var(--fwm-space-4) + var(--fwm-space-12) + var(--fwm-space-2));
+  width: calc(var(--fwm-space-12) * 5);
+  /* Never the whole width, whatever the phone. Two key-widths and an inset are
+     held back so there is always map to the left of it. */
+  max-width: calc(100% - var(--fwm-space-12) - var(--fwm-space-12) - var(--fwm-space-4));
+  /* Clear of the dock and of the closest card's top edge. */
+  max-height: calc(100% - var(--fwm-drive-panel-top) - var(--fwm-dock-h) - var(--fwm-space-12));
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border); /* keyword */
+  border-radius: var(--fwm-radius-5);
+  background-color: var(--fwm-surface-glass);
+  /* The same material as the rail keys and the closest card. See the block in
+     `drive.css` for what the read-back costs and why it is affordable. */
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+  overflow-y: auto; /* keyword */
+  /* Still scrollable on a short landscape viewport, but without the bright
+     browser scrollbar cutting a second vertical rail through the glass. */
+  scrollbar-width: none; /* keyword */
+  /* A flick that runs out of panel must not then scroll the map underneath. */
+  overscroll-behavior: contain; /* keyword */
+  opacity: 0;
+  transform: translateX(var(--fwm-space-4));
+  /* VISIBILITY, NOT `display`, and that is what makes the close animate.
+     `visibility` interpolates discretely but honours the duration: it flips to
+     `visible` immediately on open and holds until the end of the transition on
+     close. It also takes the rows out of the tab order and out of the
+     accessibility tree while the panel is shut, which `opacity: 0` alone does
+     not - a driver tabbing into invisible controls is a real defect. */
+  visibility: hidden; /* keyword */
+  transition:
+    opacity var(--fwm-dur-fast) var(--fwm-ease-mech),
+    transform var(--fwm-dur-fast) var(--fwm-ease-mech),
+    visibility var(--fwm-dur-fast) var(--fwm-ease-mech);
+}
+
+.fwm-drive-panel::-webkit-scrollbar {
+  display: none; /* keyword */
+}
+
+.fwm-drive-panel[data-fwm-open="true"] {
+  opacity: 1;
+  transform: none; /* keyword */
+  visibility: visible; /* keyword */
+}
+
+/* The slide is decoration; the appearance is not. Matching `drive.css`'s own
+   reduced-motion block, the panel still arrives, it just arrives at once. */
+@media (prefers-reduced-motion: reduce) {
+  .fwm-drive-panel {
+    transform: none; /* keyword */
+    transition: none; /* keyword */
+  }
+}
+
+.fwm-drive-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-drive-panel-kicker {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-accent-scan);
+}
+
+/* NAMES THE DENOMINATOR, exactly as Look up's count line does. The figures on
+   these rows are what this phone holds, not what exists, and a number in a
+   filter reads as a total unless something says otherwise. */
+.fwm-drive-panel-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* THE EMPTY RESULT. Amber rather than muted: a driver who has just emptied the
+   map needs to know it was their filter and not a fault, and a grey line under
+   six grey rows is not read at all. Same hue the docs screen uses for a caution
+   about the product's own state. */
+.fwm-drive-panel-empty {
+  margin: var(--fwm-space-2) 0 0;
+  padding: var(--fwm-space-2);
+  border-left: var(--fwm-space-1) solid var(--fwm-alert-approaching);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-notice-wash);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.45;
+  color: var(--fwm-text-2);
+}
+
+/* Look up's chip idiom, laid out as rows rather than a strip. */
+.fwm-drive-panel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-1) var(--fwm-space-3);
+  /* TRANSPARENT, NOT ABSENT. The pressed row is ringed in the scan accent, and
+     the ring has to be a border rather than an `inset` box-shadow: a raw shadow
+     is a design value this repo does not let a component author (there is no
+     ring token to reach for), and adding the border only when pressed would
+     shift every row by a hairline as the selection moved. Same edge the panel
+     itself draws at the top of this file. */
+  border: var(--fwm-hairline) solid transparent; /* keyword */
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-drive-panel-row[aria-pressed="true"] {
+  border-color: var(--fwm-accent-scan);
+  background: var(--fwm-tint-scan);
+  color: var(--fwm-text);
+}
+
+/* MAP VIEW stays available without owning the panel. The current value is in
+   the closed summary so collapsing it does not hide state, only controls. */
+.fwm-drive-panel-disclosure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-drive-panel-disclosure-key {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-2);
+  border-top: var(--fwm-hairline) solid var(--fwm-line);
+  list-style: none; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-drive-panel-disclosure-key::-webkit-details-marker {
+  display: none; /* keyword */
+}
+
+.fwm-drive-panel-disclosure-value {
+  margin-left: auto; /* keyword */
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-drive-panel-disclosure-chevron {
+  font-size: var(--fwm-text-subtitle);
+  line-height: 1;
+  color: var(--fwm-text-muted);
+  transform: rotate(0deg);
+  transition: transform var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+.fwm-drive-panel-disclosure[open] .fwm-drive-panel-disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+/* A cartography row carries its reason under its name, so the stack replaces
+   the row. `MAP_VIEW_NOTES` was written for this and had nowhere to be read. */
+.fwm-drive-panel-view {
+  flex-direction: column;
+  align-items: flex-start; /* keyword */
+  justify-content: center; /* keyword */
+  gap: 0;
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+}
+
+/* THE LABEL YIELDS, THE COUNT NEVER DOES.
+ *
+ * A flex child defaults to `min-width: auto`, which means it refuses to shrink
+ * below its content. `INTER-AGENCY SHARED` is wider than this panel's column, so
+ * the row grew past the panel and pushed the count out through the right edge -
+ * the number was rendered, laid out, and clipped, on the one control whose whole
+ * job is to show you how many of each kind are on the phone.
+ *
+ * `min-width: 0` lets the label shrink and `overflow-wrap` lets it take a second
+ * line. The row has a `min-height` and no fixed height, so it simply grows. The
+ * count keeps `flex: none` and is now unclippable. */
+.fwm-drive-panel-row-label {
+  margin-right: auto; /* keyword */
+  min-width: 0;
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-drive-panel-row-note {
+  font-size: var(--fwm-text-micro);
+  font-weight: 400;
+  color: var(--fwm-text-muted);
+}
+
+/* The selected row remains on the theme's glass rather than flashing white. */
+.fwm-drive-panel-row[aria-pressed="true"] .fwm-drive-panel-row-note {
+  color: var(--fwm-text-2);
+}
+
+.fwm-drive-panel-row-count {
+  flex: none; /* keyword */
+  font-weight: 700;
+}
+
+/* THE SWATCH IS THE MAP'S OWN LANGUAGE.
+ *
+ * These five hues are `cameraLayer`'s `circle-color` match expression, verbatim
+ * (`layers.ts`). They are deliberately NOT Look up's dot colours, which collapse
+ * police with inter-agency and HOA with private: this panel controls the map, so
+ * a swatch that did not match the dot on the map would be a legend for a picture
+ * that is not on the screen. That the two disagree at all is recorded in
+ * `docs/gaps-inbox/map-owner-filter.md`.
+ */
+.fwm-drive-panel-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+}
+
+.fwm-drive-panel-dot[data-fwm-owner="police"] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-drive-panel-dot[data-fwm-owner="inter_agency"] {
+  background: var(--fwm-alert-multiple);
+}
+
+.fwm-drive-panel-dot[data-fwm-owner="hoa"] {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-drive-panel-dot[data-fwm-owner="private"] {
+  background: var(--fwm-plasma-6);
+}
+
+/* ALL OWNERS IS NOT A CLASS, so it is not given a class's colour. An outline
+   rather than a fill: nothing is being singled out. */
+.fwm-drive-panel-dot[data-fwm-owner="all"] {
+  border: var(--fwm-hairline) solid var(--fwm-line-strong); /* keyword */
+  background: transparent; /* keyword */
+}
+
+/* THE SENTENCE THAT MAKES THE FILTER HONEST. Always drawn, whatever is
+   selected - a filter that only explains itself once it is active has already
+   hidden something without saying so. */
+.fwm-drive-panel-note {
+  font-size: var(--fwm-text-micro);
+  line-height: 1.45;
+  color: var(--fwm-text-2);
+}
+
+.fwm-drive-panel-note[data-fwm-quiet="true"] {
+  color: var(--fwm-text-muted);
+}

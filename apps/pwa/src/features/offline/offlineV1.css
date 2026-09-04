@@ -1,0 +1,139 @@
+/* OFFLINE - v1. A capability list, not an apology.
+ *
+ * The question here is never "am I offline" - the phone already said so - it
+ * is "what still works". So the screen is a list of answers, and the states
+ * are read from live counts rather than asserted.
+ */
+
+.fwm-offlinev1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-offlinev1-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-offlinev1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+  margin-right: auto;
+}
+
+.fwm-offlinev1-net {
+  padding: var(--fwm-space-1) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-full);
+  border: var(--fwm-rule-w) solid var(--fwm-alert-in-range);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-offlinev1-net[data-fwm-online='true'] {
+  border-color: var(--fwm-alert-clear);
+  color: var(--fwm-alert-clear);
+}
+
+/* THE REASSURANCE, filled, because it is the point of the screen: the alerting
+   never needed a network and somebody arriving here is worried that it did. */
+.fwm-offlinev1-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-tint-scan);
+}
+
+.fwm-offlinev1-headline {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--fwm-text);
+}
+
+.fwm-offlinev1-body {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-offlinev1-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-offlinev1-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-offlinev1-row-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+}
+
+.fwm-offlinev1-row-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-offlinev1-row-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* FIVE STATES, and UNKNOWN is one of them. A row the product cannot answer for
+   must not borrow the colour of one that works. */
+.fwm-offlinev1-state {
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-muted);
+  flex: none; /* keyword */
+}
+
+.fwm-offlinev1-state[data-fwm-state='WORKING'] {
+  border-color: var(--fwm-alert-clear);
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-offlinev1-state[data-fwm-state='QUEUED'],
+.fwm-offlinev1-state[data-fwm-state='CACHED'],
+.fwm-offlinev1-state[data-fwm-state='NOT CHECKED'] {
+  border-color: var(--fwm-alert-approaching);
+  color: var(--fwm-alert-approaching);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-offlinev1 > * {
+  flex-shrink: 0;
+}

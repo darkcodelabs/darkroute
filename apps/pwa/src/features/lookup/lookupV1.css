@@ -1,0 +1,249 @@
+/* LOOK UP - v1. A field, chips, a count, a list. */
+
+.fwm-lookupv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-lookupv1-header {
+  display: flex;
+  align-items: center;
+  /* Room for the back key beside the title. Same gap MISUSE and INTEL use. */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-lookupv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-lookupv1-field {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-lookupv1-input {
+  flex: 1;
+  min-width: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+.fwm-lookupv1-input::placeholder {
+  color: var(--fwm-text-muted);
+}
+
+/* THE CLAIM, painted in the product's word for "this part is live". */
+.fwm-lookupv1-badge {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-lookupv1-filters {
+  display: flex;
+  gap: var(--fwm-space-2);
+  overflow-x: auto; /* keyword */
+  padding-bottom: var(--fwm-space-1);
+}
+
+.fwm-lookupv1-chip {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-lookupv1-chip[data-fwm-selected='true'] {
+  background: var(--fwm-text);
+  color: var(--fwm-bg);
+}
+
+.fwm-lookupv1-count {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-lookupv1-count-figure {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-lookupv1-count-body,
+.fwm-lookupv1-empty {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-lookupv1-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-lookupv1-result,
+.fwm-lookupv1-plate {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE OWNER, as a dot, in the hue the rest of the product gives that class.
+   An unrecorded owner is grey - not the unverified colour, because absent and
+   unverified are different facts. */
+.fwm-lookupv1-dot {
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+  flex: none; /* keyword */
+}
+
+.fwm-lookupv1-dot[data-fwm-owner='police'],
+.fwm-lookupv1-dot[data-fwm-owner='inter_agency'] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-lookupv1-dot[data-fwm-owner='hoa'],
+.fwm-lookupv1-dot[data-fwm-owner='private'] {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-lookupv1-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+  min-width: 0;
+}
+
+.fwm-lookupv1-place {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-lookupv1-owner,
+.fwm-lookupv1-dist {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-lookupv1-dist {
+  flex: none; /* keyword */
+}
+
+.fwm-lookupv1-chevron {
+  font-size: var(--fwm-text-subtitle);
+  color: var(--fwm-text-muted);
+}
+
+
+/* --- the plate hand-off --------------------------------------------------- */
+
+.fwm-lookupv1-plate-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-lookupv1-plate-heading {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-lookupv1-plate-body,
+.fwm-lookupv1-plate-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-lookupv1-plate-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-lookupv1-plate-field-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-lookupv1-plate-field .fwm-lookupv1-input {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-lookupv1-plate-go {
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-accent-scan);
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+  touch-action: manipulation;
+}
+
+.fwm-lookupv1-plate-outcome {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-clear);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-lookupv1 > * {
+  flex-shrink: 0;
+}

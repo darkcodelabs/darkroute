@@ -1,0 +1,253 @@
+/* ONBOARDING - v1.
+ *
+ * Headline, lede, three permission rows, one key.
+ *
+ * =============================================================================
+ * THE DOCK IS OVER THIS SCREEN, AND THIS FILE USED TO SAY IT WAS NOT
+ * =============================================================================
+ * The note here read "the one screen with no dock under it". That stopped
+ * being true: `App.tsx` draws the dock whenever the surface is not a watch,
+ * which includes onboarding. Nothing failed loudly - the screen simply ended
+ * below the dock and could not be scrolled to.
+ *
+ * That was the whole bug. `min-height: 100%` plus `margin-top: auto` on the
+ * permission list makes the content exactly one viewport tall: the auto margin
+ * swallows every pixel of slack, so there is no overflow, so `overflow-y: auto`
+ * has nothing to scroll and START WATCHING BACK sits under the dock
+ * permanently, unreachable at any scroll position.
+ *
+ * Reserving the dock's height as padding INSIDE the scroll container fixes both
+ * halves at once: the key is lifted clear, and the content is now taller than
+ * the viewport, so the screen scrolls to its own end. It is the same
+ * reservation `.fwm-safe-dock-gutter` makes and that intelV1 hand-rolls, and it
+ * has to be padding on the scrolling element rather than a margin outside it -
+ * a margin just moves the clipping outwards.
+ */
+
+.fwm-onboardingv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-4);
+  min-height: 100%;
+  padding: var(--fwm-space-12) var(--fwm-space-6)
+    calc(var(--fwm-dock-h) + var(--fwm-space-8) + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-onboardingv1-headline {
+  font-size: var(--fwm-text-readout);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+.fwm-onboardingv1-lede {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-onboardingv1-permissions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  /* Pushes the key to the bottom on a tall phone and lets the list scroll on a
+     short one, with no breakpoint either way. */
+  margin-top: auto;
+  list-style: none; /* keyword */
+}
+
+.fwm-onboardingv1-permission {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE RULE DOWN THE SIDE CARRIES THE STATE, which is the one thing worth
+   seeing at a glance on this screen: what is still being asked for. */
+.fwm-onboardingv1-rule {
+  flex: none; /* keyword */
+  width: var(--fwm-mark-w);
+  height: var(--fwm-space-8);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+[data-fwm-state='ALLOW'] .fwm-onboardingv1-rule {
+  background: var(--fwm-accent-scan);
+}
+
+[data-fwm-state='GRANTED'] .fwm-onboardingv1-rule {
+  background: var(--fwm-alert-clear);
+}
+
+[data-fwm-state='DENIED'] .fwm-onboardingv1-rule {
+  background: var(--fwm-alert-in-range);
+}
+
+[data-fwm-state='OPTIONAL'] .fwm-onboardingv1-rule {
+  background: var(--fwm-alert-approaching);
+}
+
+/* CHECKING has no block on purpose, here and for the word below: the defaults
+   are already the neutral pair, and a row that has not been read yet must not
+   wear a state hue. See the tone table in onboarding.css. */
+
+.fwm-onboardingv1-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+}
+
+.fwm-onboardingv1-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-onboardingv1-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-onboardingv1-word {
+  flex: none; /* keyword */
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+[data-fwm-state='ALLOW'] .fwm-onboardingv1-word {
+  border-color: var(--fwm-accent-scan);
+  color: var(--fwm-accent-scan);
+}
+
+[data-fwm-state='GRANTED'] .fwm-onboardingv1-word {
+  border-color: var(--fwm-alert-clear);
+  color: var(--fwm-alert-clear);
+}
+
+[data-fwm-state='DENIED'] .fwm-onboardingv1-word {
+  border-color: var(--fwm-alert-in-range);
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-onboardingv1-denied {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-onboardingv1-start {
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-accent-scan);
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+  touch-action: manipulation;
+}
+
+.fwm-onboardingv1-fineprint {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-onboardingv1 > * {
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+   THE PERMISSION ROWS ARE SWITCHES
+   =============================================================================
+   They were pill-shaped words - ALLOW, GRANTED, DENIED - which named the state
+   correctly and afforded nothing. A tester reported that "none of the buttons
+   work" on this screen, and the buttons were firing: what was missing was any
+   sign that a press had been received or that a row was pressable at all.
+
+   Geometry copied from `.fwm-handle-track` in onboarding.css rather than
+   re-derived, so the two switches on this flow are the same object. See the
+   note there for why the track is decoration on a row-sized target: 56x30 is
+   under the touch floor and this is a one-handed screen.
+
+   THE STATE HUE STAYS ON THE RULE down the left edge, which already carries
+   ALLOW / GRANTED / DENIED / OPTIONAL. The track only answers on or off, so
+   nothing here has to restate what the rule says. */
+.fwm-onboardingv1-track {
+  position: relative;
+  flex: none; /* keyword */
+  width: var(--fwm-space-12);
+  height: var(--fwm-space-8);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+  transition: background var(--fwm-dur-base);
+}
+
+.fwm-onboardingv1-knob {
+  position: absolute;
+  top: calc((var(--fwm-space-8) - var(--fwm-space-6)) / 2);
+  left: calc((var(--fwm-space-8) - var(--fwm-space-6)) / 2);
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text);
+  transition: transform var(--fwm-dur-base);
+}
+
+.fwm-onboardingv1-permission[aria-checked='true'] .fwm-onboardingv1-track {
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-onboardingv1-permission[aria-checked='true'] .fwm-onboardingv1-knob {
+  background: var(--fwm-bg);
+  transform: translateX(
+    calc(var(--fwm-space-12) - var(--fwm-space-6) - (var(--fwm-space-8) - var(--fwm-space-6)))
+  );
+}
+
+/* GRANTED IS NOT GREYED OUT. It is on, it is correct, and it is the state this
+   screen is asking for - dimming it would read as "this failed". Only the
+   pointer changes, because pressing it does nothing; the sub-line under the
+   label is what says where it CAN be changed. */
+.fwm-onboardingv1-permission[aria-disabled='true'][aria-checked='true'] {
+  cursor: default; /* keyword */
+}
+
+/* REFUSED AND UNSUPPORTED ARE DIMMED, because those rows really are inert and
+   the driver should stop trying. The sub-line carries the reason. */
+.fwm-onboardingv1-permission[aria-disabled='true'][aria-checked='false'] {
+  cursor: default; /* keyword */
+  opacity: 0.6;
+}
+
+/* Nothing slides for somebody who asked for stillness. The knob still moves -
+   it has to, it is the state - it simply arrives rather than travels. */
+@media (prefers-reduced-motion: reduce) {
+  .fwm-onboardingv1-track,
+  .fwm-onboardingv1-knob {
+    transition: none; /* keyword */
+  }
+}

@@ -1,0 +1,12 @@
+# pnpm workspace layout.
+#
+#   apps/pwa           the product: React + TypeScript + Vite PWA
+#   apps/android       buildable Gradle Trusted Web Activity (not a Node package)
+#   packages/core      pure geo + alert engine, zero platform dependencies
+#   packages/api-client reserved placeholder; no OpenAPI contract exists yet
+#
+# The curation tools and the undeployed TypeScript
+# gateway. It has no package manifest, so its tests run from the root scripts.
+packages:
+  - 'apps/*'
+  - 'packages/*'

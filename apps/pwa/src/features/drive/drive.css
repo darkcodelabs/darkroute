@@ -1,0 +1,879 @@
+/* DRIVE - v1. A map with things floating on it.
+ *
+ * SOURCE: the `isDrive` block. The design's own geometry, expressed in tokens:
+ * a 42px round control, a 999px pill, a 26px card, an 18px tile, chrome inset
+ * 16px from the edges, cards inset 14px.
+ *
+ * =============================================================================
+ * NOTHING SPANS THE MAP
+ * =============================================================================
+ * Every rule in this file positions from an EDGE. Not one uses `inset: 0` on
+ * anything a finger can hit, and that is load-bearing rather than tidy: the
+ * first version of this screen made focus mode a full-screen button, which ate
+ * every pinch, pan and zoom on the map underneath it. A driver could not zoom
+ * out to see what was ahead.
+ *
+ * The map is the screen. These are controls ON it.
+ */
+
+.fwm-drive {
+  position: relative;
+  height: 100%;
+  overflow: hidden; /* keyword */
+}
+
+/* THE ONLY inset-0 IN THE FILE, and it is the map itself. */
+.fwm-drive-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* --- shared control chrome ------------------------------------------------ */
+
+/* THE TINT, on everything that floats. One place, so the transparency setting
+   reaches all of it at once. */
+.fwm-drive-round,
+.fwm-drive-speed,
+.fwm-drive-closest,
+.fwm-drive-empty {
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background-color: var(--fwm-surface-glass);
+}
+
+/* =============================================================================
+ * WHERE THE BLUR IS ALLOWED, AND WHY IT IS NOT EVERYWHERE
+ * =============================================================================
+ * `backdrop-filter` is not a paint, it is a READ-BACK: the compositor copies
+ * the pixels behind the element and blurs them, every frame, per element. Under
+ * these was a MapLibre canvas that repaints continuously, and there were ten of
+ * them - the pill, four rail keys, the speed plate, the closest card and three
+ * tiles. Ten full read-and-blur passes per frame over a live GL surface, which
+ * is a phone that gets hot in the hand and a battery that empties on a drive.
+ *
+ * THE CARDS WERE CUT FROM THIS LIST, AND ARE NOW BACK. Two of the three
+ * reasons for cutting them turned out to be wrong, and the record is worth
+ * keeping straight:
+ *
+ *   "the blur reads as a flat wash at that size"  WAS TRUE OF THE OLD
+ *     MATERIAL, which was a blur and a flat tint. A blur alone desaturates,
+ *     so on a big panel it really did read as grey mud. The material now
+ *     carries saturate, brightness and a specular rim, and those are MORE
+ *     visible on a wide pane, not less - a rim is a rim at any size.
+ *
+ *   "ten read-backs are what makes the phone hot"  WAS A GUESS, and the
+ *     measurement said otherwise: the alert engine was running its full
+ *     camera pass sixty times a second off an unguarded store subscription.
+ *     That is fixed, and the budget it was eating is real.
+ *
+ * WHAT IS STILL TRUE is that the closest card is the single biggest element on
+ * the screen and therefore the most expensive read-back in the app. It is not
+ * free and it is not pretended to be. It is affordable now, it is the thing
+ * the material is actually for, and a driver who disagrees has the OFF switch
+ * one screen away - which, since `--fwm-glass-filter` resolves to `none`
+ * there, removes the whole cost rather than the visible half of it.
+ * ========================================================================== */
+/* FLAT KEYS. The sheen is a gloss highlight, and on a 48px circle it reads as a
+   bevel rather than as glass - the thing it is for is a wide pane. The blur
+   stays: that is what separates a key from the road under it. */
+.fwm-drive-round,
+.fwm-drive-speed,
+.fwm-drive-closest,
+.fwm-drive-empty {
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+}
+
+/* --- the top bar ---------------------------------------------------------- */
+
+.fwm-drive-top {
+  position: absolute;
+  top: var(--fwm-space-4);
+  left: var(--fwm-space-4);
+  right: var(--fwm-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+}
+
+/* Directly under the gear, which is the top of this same column. */
+.fwm-drive-rail {
+  position: absolute;
+  right: var(--fwm-space-4);
+  top: calc(var(--fwm-space-4) + var(--fwm-space-12) + var(--fwm-space-2));
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+/* --- the status pill and the round keys ----------------------------------- */
+
+/* NO PILL. The counts are a reading, not a control - nothing about them is
+   tappable - and a bordered, blurred capsule around a mark and two numbers was
+   chrome for its own sake. It also removes one of the blur layers. */
+.fwm-drive-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  /* MIN, NOT FIXED. The height was pinned when this row held an 11px caption.
+     A title-sized word inside a fixed box clips at any larger text scale, and
+     text scale is a setting on this app - so the row grows instead. */
+  min-height: var(--fwm-space-12);
+}
+
+/* "we are running" as a heartbeat rather than a word. */
+.fwm-drive-live {
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alert-clear);
+  animation: fwm-drive-blink var(--fwm-drive-blink) var(--fwm-ease-mech) infinite;
+}
+
+.fwm-drive {
+  --fwm-drive-blink: calc(var(--fwm-dur-alert) * 5);
+}
+
+@keyframes fwm-drive-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fwm-drive-live {
+    animation: none; /* keyword */
+  }
+}
+
+/* THE LOGO, at the one size in the app where the halftone still works.
+ *
+ * It was the mesh hexagon at 16px, which is a different mark entirely and the
+ * wrong one for a status pill that is saying what THIS app is watching.
+ *
+ * Twice the height - 16px to 32px, not the 24 an earlier pass used - and the
+ * full wide render. The dither needs about 30px of
+ * band before its dots stop averaging into a flat grey - below that it is a
+ * smudge, which is why every smaller surface masks `darkroute-mark.png` instead
+ * and why that solid reduction exists at all. The pill has the room.
+ *
+ * Width is not square: the logo is 2.32:1 and `contain` on a square box would
+ * letterbox it to a third of the height it was given. */
+.fwm-drive-mark {
+  flex: none; /* keyword */
+  /* THIS IS THE `<h1>`, AND THE BUTTON IS INSIDE IT - see
+     `components/nav/ReloadTitle.tsx`. The chrome reset that used to be here
+     (appearance, border, background, padding, font-family, cursor,
+     touch-action and the 44px minimum) went with it into `.fwm-reloadtitle`,
+     because it was never anything specific to DRIVE: it was what a title has to
+     do to be a control, and thirteen other pages need exactly the same of it.
+     What is left below is what DRIVE's wordmark is and the others are not.
+
+     `font: inherit` on the button is what carries all of this down. */
+  /* SIZED BY THE WORD, not by the image it replaced. The old rule pinned a
+     2.32:1 box because the mask needed one; text has its own metrics and a
+     fixed box would clip or letterbox it at any other text scale. */
+  color: var(--fwm-text);
+  /* THE SAME SIZE AS EVERY OTHER SCREEN'S TITLE. `--fwm-text-title` at weight
+     800 is what `.fwm-exposure-title` and its siblings use, so the name reads as
+     this screen's heading rather than as a caption on a status pill - which is
+     what 11px micro made it. No letter-spacing, because the other titles have
+     none and the point is to match them. */
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap; /* keyword */
+  /* READABLE OVER A MAP THAT IS NOT A CONSTANT COLOUR.
+   *
+   * A white halftone over a night basemap sits on roads, water and park fill by
+   * turns, and the mark's own dither means half of what is under it shows
+   * through. It disappeared over pale roads.
+   *
+   * A drop shadow rather than a plate: the mark is a mask over a flat fill, so
+   * drop-shadow follows the ALPHA and outlines each dot individually instead of
+   * drawing a box around the whole thing. See `--fwm-mark-shadow`. */
+  filter: var(--fwm-mark-shadow);
+}
+
+/* CLIPPED, NOT REMOVED. The pill reads as a mark and two numbers, and an
+   unlabelled group of numerals is unusable to a screen reader. */
+.fwm-drive-pill-word {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden; /* keyword */
+  clip-path: inset(50%);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-drive-pill-count {
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-drive-spacer {
+  flex: 1;
+}
+
+/* A REAL TARGET. The design's 42px is under the 44px floor every other control
+   in this product respects, on the one screen used while driving. */
+.fwm-drive-round {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center;
+  width: var(--fwm-space-12);
+  height: var(--fwm-space-12);
+  border-radius: var(--fwm-radius-full);
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+/* A round key that is CURRENTLY DOING SOMETHING carries the scan hue, which is
+   this product's word for "this part is live". */
+.fwm-drive-round[data-fwm-drive-on='true'] {
+  color: var(--fwm-accent-scan);
+}
+
+/* A rail key that is ON fills, rather than just tinting its glyph: FOCUS is a
+   mode you are in, and a coloured 24px stroke does not say so. */
+.fwm-drive-round[aria-pressed='true'] {
+  background-color: var(--fwm-accent-scan);
+  border-color: transparent;
+  color: var(--fwm-text-on-alert);
+}
+
+.fwm-drive-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+}
+
+/* --- the speed pill ------------------------------------------------------- */
+
+ /* IN THE FLOW, and left-aligned rather than stretched.
+    It was positioned from the bottom by a GUESSED card height, so the closest
+    card grew over it and covered it completely - the posted limit was on the
+    screen and unreadable. A flow child cannot be covered by its own sibling. */
+/* UNDER THE WORDMARK, top left.
+ *
+ * This was `align-self: flex-start` inside `.fwm-drive-cards` at the bottom of
+ * the screen. It is pinned to the top left now by owner decision: your speed
+ * and the posted limit are a heads-up reading, and the bottom of the screen
+ * belongs to the card that grows and shrinks.
+ *
+ * THE OFFSET IS `.fwm-drive-rail`'S, MIRRORED. That rule already places the
+ * control column directly under the gear on the right using
+ * `--fwm-space-4` (the top bar's own inset) + `--fwm-space-12` (the pill's
+ * min-height) + `--fwm-space-2` (the gap), so reusing the same arithmetic on
+ * `left` puts this under the wordmark at exactly the height the rail starts on
+ * the other side. Written out rather than shared through a token because the
+ * two are the same by construction - both are "the row below the top bar" -
+ * and a token would hide which row that is.
+ *
+ * `--fwm-space-12` tracks the PILL's minimum, not its actual height: a large
+ * text scale grows the wordmark and the pill with it. The plate can then sit
+ * closer than the gap intends, which is why this is `top` and not a fixed
+ * band - it cannot overlap, because the pill's own box ends above it. */
+.fwm-drive-speed {
+  position: absolute;
+  top: calc(var(--fwm-space-4) + var(--fwm-space-12) + var(--fwm-space-2));
+  left: var(--fwm-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-1) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-drive-speed-now {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fwm-alert-clear);
+}
+
+/* OVER THE LIMIT is amber, and only when BOTH numbers are known -
+   `speedPlateState` refuses to colour a speed against a limit it does not
+   have. */
+.fwm-drive-speed[data-fwm-drive-over='true'] .fwm-drive-speed-now {
+  color: var(--fwm-alert-approaching);
+}
+
+/* TWO LINES, AND NEITHER OF THEM WRAPS. The plate is a fixed pair of readings;
+   letting "45 LIMIT" break to a third line makes the pill change height under
+   a thumb. */
+.fwm-drive-speed-unit {
+  font-size: var(--fwm-text-micro);
+  line-height: 1.15;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.06);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* --- the cards ------------------------------------------------------------ */
+
+/* CLEAR OF THE DOCK, which floats over the screen now rather than sitting in a
+   row of its own. When it had a row, anchoring to the bottom of the screen slot
+   was correct; now that the map runs under it, the same rule puts the card
+   behind the bar. `--fwm-dock-h` plus the safe-area inset is the space it
+   actually occupies. */
+.fwm-drive-cards {
+  position: absolute;
+  left: var(--fwm-space-3);
+  right: var(--fwm-space-3);
+  bottom: calc(var(--fwm-dock-h) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-drive-empty {
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-5);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* THE CLOSEST CARD, hued by the ENGINE'S state rather than by `inRange`.
+   `clear` is the common case - the nearest camera is simply the nearest one,
+   not a warning - and it gets the hairline, not a colour. */
+/* POSITIONED, so the size toggle stays in the card.
+ *
+ * It was not, and `.fwm-drive-card-size` is `position: absolute` - so the
+ * toggle resolved against `.fwm-drive`, which is the whole screen, and rendered
+ * as an invisible 44px target at the TOP RIGHT with `z-index: 1` over the gear.
+ * A transparent button on top of another button is the worst kind of layout
+ * bug: nothing looks wrong and the wrong thing happens. */
+.fwm-drive-closest {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  /* A DRAWN FRAME, not a hairline. Half a pixel disappeared on the one card
+     whose border is carrying the state.
+
+     THE BORDER IS ALWAYS THERE AND IT MEANS DISTANCE. It used to be the near-
+     invisible glass line until a camera was close enough to warn about, so the
+     card had no frame at all almost all of the time. `data-fwm-near` bands the
+     distance against the driver's OWN threshold, so the colour says the same
+     thing whatever radius they set. */
+  border-width: var(--fwm-rule-w);
+  border-color: var(--fwm-plasma-9);
+}
+
+/* THE BANDS ARE A COLORMAP NOW. See `--fwm-plasma-0..10` in tokens.css for why
+   a perceptually-uniform ramp and not four hues somebody liked: the old
+   sequence ran green, CYAN, amber, red, and cyan reads cooler than the green
+   before it, so the middle of the ramp went backwards.
+
+   THESE ARE THE SHARED STOPS, NOT PRIVATE ONES. The map, the radar and the
+   sweep heat layer read the same scale, so a camera cannot be one distance on
+   the map and a different one in this frame - and the light and e-ink themes
+   override that scale, which a private ramp would not have inherited.
+
+   Stop 0 is ON YOU and 10 is the edge, so these count DOWN as things get
+   closer. Far is 9 rather than 10 to leave the coolest stop to the map, which
+   draws a wider range than one card ever does. */
+.fwm-drive-closest[data-fwm-near='far'] {
+  border-color: var(--fwm-plasma-9);
+}
+
+/* Nothing to measure is the only state with no distance to colour. */
+.fwm-drive-closest[data-fwm-near='none'] {
+  border-color: var(--fwm-line-strong);
+}
+
+.fwm-drive-closest[data-fwm-near='near'] {
+  border-color: var(--fwm-plasma-6);
+}
+
+.fwm-drive-closest[data-fwm-near='approaching'],
+.fwm-drive-closest[data-fwm-state='approaching'] {
+  border-color: var(--fwm-plasma-3);
+}
+
+/* As close as the SCALE goes: yellow is plasma's top, and this is the last
+   band before the driver's own threshold. */
+.fwm-drive-closest[data-fwm-near='closing'] {
+  border-color: var(--fwm-plasma-1);
+}
+
+/* INSIDE THE THRESHOLD, AND OFF THE RAMP. Not "hotter" - a different kind of
+   statement, in the colour this product uses for one. */
+.fwm-drive-closest[data-fwm-near='in-range'],
+.fwm-drive-closest[data-fwm-state='in-range'],
+.fwm-drive-closest[data-fwm-state='multiple'] {
+  border-color: var(--fwm-alert-in-range);
+}
+
+/* The whole readout opens the camera; the two keys below are their own
+   targets and are deliberately OUTSIDE it, so a thumb aiming at MUTE cannot
+   open a card instead. */
+/* THE TEXT COLUMN AND THE PICTURE, on one row.
+   The opener takes the space that is left (`min-width: 0` so a long street
+   line wraps instead of pushing the picture off the card) and the map is
+   `flex: none` in `miniMap.css`, so the square never shrinks into a smear.
+   `align-items: flex-start` keeps the picture level with the kicker, which is
+   the corner the design put it in. */
+.fwm-drive-closest-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-drive-closest-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  flex: 1;
+  min-width: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  padding: 0;
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE PICTURE IS THE COLOUR OF THE WARNING, exactly as the opened card is.
+   `intelV1.css` points `--fwm-minimap-hue` at the camera's alert state for the
+   same reason: a mark drawn in the accent while the frame around it is red
+   would be two answers to "how close is this". */
+.fwm-drive-closest-map {
+  position: relative;
+  display: flex;
+  flex: none; /* keyword */
+}
+
+/* THE TAP TARGET OVER THE PICTURE. Transparent and exactly the picture's size,
+   so what looks pressable is pressable. `inset: 0` rather than a width and a
+   height: the square changes size between the mini and full card, and a target
+   that had to be kept in step with it would eventually stop being. */
+.fwm-drive-closest-maplink {
+  position: absolute;
+  inset: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: none; /* keyword */
+  padding: 0;
+  touch-action: manipulation;
+}
+
+[data-fwm-state='approaching'] .fwm-drive-closest-map .fwm-minimap {
+  --fwm-minimap-hue: var(--fwm-alert-approaching);
+}
+
+[data-fwm-state='in-range'] .fwm-drive-closest-map .fwm-minimap,
+[data-fwm-state='multiple'] .fwm-drive-closest-map .fwm-minimap {
+  --fwm-minimap-hue: var(--fwm-alert-in-range);
+}
+
+.fwm-drive-closest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-drive-closest-kicker {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-2);
+}
+
+[data-fwm-state='approaching'] .fwm-drive-closest-kicker {
+  color: var(--fwm-alert-approaching);
+}
+
+[data-fwm-state='in-range'] .fwm-drive-closest-kicker,
+[data-fwm-state='multiple'] .fwm-drive-closest-kicker {
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-drive-closest-owner {
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border: var(--fwm-hairline) solid var(--fwm-text-muted);
+  border-radius: var(--fwm-radius-full);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+}
+
+[data-fwm-state='approaching'] .fwm-drive-closest-owner {
+  border-color: var(--fwm-alert-approaching);
+  color: var(--fwm-alert-approaching);
+}
+
+[data-fwm-state='in-range'] .fwm-drive-closest-owner,
+[data-fwm-state='multiple'] .fwm-drive-closest-owner {
+  border-color: var(--fwm-alert-in-range);
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-drive-closest-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--fwm-space-3);
+  /* The chip is the last thing on this line and the line can run out of room
+     on a 320px screen, so it wraps rather than squeezing the figure. */
+  flex-wrap: wrap; /* keyword */
+}
+
+/* The design's 56px figure. The one number on the screen meant to be read
+   without looking directly at it. */
+.fwm-drive-closest-figure {
+  font-size: var(--fwm-drive-figure);
+  font-weight: 800;
+  line-height: 0.8;
+  color: var(--fwm-text);
+}
+
+.fwm-drive {
+  --fwm-drive-figure: calc(var(--fwm-text-readout) * 1.4);
+}
+
+.fwm-drive-closest-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding-bottom: var(--fwm-space-1);
+  min-width: 0;
+}
+
+.fwm-drive-closest-unit {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-drive-closest-where {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-drive-closest-keys {
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-drive-key {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-4);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  touch-action: manipulation;
+}
+
+/* The filled key, in the state's own hue. Neutral until there is a state
+   worth colouring: the accent, which is this product's "this is the action".
+
+   TWO LINES, the design's own shape: a label and the consequence under it. */
+.fwm-drive-key[data-fwm-key='primary'] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-color: transparent;
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+}
+
+[data-fwm-state='approaching'] .fwm-drive-key[data-fwm-key='primary'] {
+  background: var(--fwm-alert-approaching);
+}
+
+[data-fwm-state='in-range'] .fwm-drive-key[data-fwm-key='primary'],
+[data-fwm-state='multiple'] .fwm-drive-key[data-fwm-key='primary'] {
+  background: var(--fwm-alert-in-range);
+}
+
+/* --- the three ahead ------------------------------------------------------ */
+
+/* --- what the map draws, said inside the card ------------------------------ */
+
+/* THE DISCLOSURE ROW. A label, the current selection, and - only while a class
+   is hidden - the sentence saying the hiding is a picture.
+
+   It is a full-width row rather than a key beside MUTE because it is not an
+   action on the camera in the figure above it; it is a statement about the
+   map, and putting it in the key row would give a cosmetic setting the same
+   weight as the two things the card exists to offer. Full touch height all the
+   same: it opens the panel. */
+.fwm-drive-draws {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--fwm-space-1) var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  background: none; /* keyword */
+  padding: 0;
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+/* Kicker weight and tracking, matching THEN on the row below it: the two are
+   the same kind of thing, a label naming what the rest of the row is. */
+.fwm-drive-draws-label {
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-drive-draws-value {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-2);
+}
+
+/* THE SCAN HUE MEANS "THIS PART IS LIVE" everywhere else on this screen - the
+   rail keys use it for exactly this. The value is what changed, so the value is
+   what carries it, rather than tinting the whole row and competing with the
+   card's own state border. */
+.fwm-drive-draws[data-fwm-drive-on='true'] .fwm-drive-draws-value {
+  color: var(--fwm-accent-scan);
+}
+
+/* Spans both columns, under the pair it explains. Text-2 rather than muted:
+   this is the sentence the feature turns on, and it is only ever on screen
+   when something is actually hidden, so it is never noise to be dimmed. Amber
+   is deliberately not used - that is the pierced-mute line's colour and means
+   the engine is overriding the driver, which this is not. */
+.fwm-drive-draws-note {
+  grid-column: 1 / -1;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.4;
+  color: var(--fwm-text-2);
+}
+
+/* --- the queue, inside the card ------------------------------------------- */
+
+/* The 1px rule the design draws between the actions and the queue. */
+.fwm-drive-rule {
+  display: block;
+  height: var(--fwm-hairline);
+  background: var(--fwm-line);
+}
+
+.fwm-drive-then {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  background: none; /* keyword */
+  padding: 0;
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-drive-then-label {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-drive-then-ticks {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+  overflow: hidden; /* keyword */
+}
+
+.fwm-drive-tick {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-1);
+}
+
+/* THE DOT IS THE BAND, on the same ladder as the card's own border. */
+.fwm-drive-tick-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-plasma-9);
+}
+
+[data-fwm-near='near'] .fwm-drive-tick-dot {
+  background: var(--fwm-plasma-6);
+}
+
+[data-fwm-near='approaching'] .fwm-drive-tick-dot {
+  background: var(--fwm-plasma-3);
+}
+
+[data-fwm-near='closing'] .fwm-drive-tick-dot {
+  background: var(--fwm-plasma-1);
+}
+
+[data-fwm-near='in-range'] .fwm-drive-tick-dot {
+  background: var(--fwm-alert-in-range);
+}
+
+[data-fwm-near='none'] .fwm-drive-tick-dot,
+[data-fwm-drive-muted='true'] .fwm-drive-tick-dot {
+  background: var(--fwm-text-muted);
+}
+
+.fwm-drive-tick-dist {
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+}
+
+.fwm-drive-then-more {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-drive-queue {
+  display: flex;
+  flex-direction: column;
+  list-style: none; /* keyword */
+}
+
+.fwm-drive-queue-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  background: none; /* keyword */
+  padding: 0;
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-drive-queue-dist {
+  flex: none; /* keyword */
+  min-width: var(--fwm-space-12);
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-drive-queue-label {
+  flex: 1;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.3;
+  color: var(--fwm-text-muted);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+
+/* --- the card, at two sizes ------------------------------------------------
+ *
+ * The closest card is the largest object on the screen and it sits on top of
+ * the map a driver is reading ahead on. Shrinking it keeps the two facts that
+ * are the reason to look - how far, and whose camera - and drops the buttons,
+ * the street line and the queue.
+ *
+ * IT SHRINKS, IT DOES NOT CLOSE. A card that can be dismissed is a camera that
+ * can go unnoticed, and this product's whole job is the opposite of that. The
+ * control is a size toggle and it says so.
+ * ------------------------------------------------------------------------ */
+
+.fwm-drive-card-size {
+  position: absolute;
+  top: var(--fwm-space-2);
+  right: var(--fwm-space-2);
+  display: grid;
+  place-items: center;
+  width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+  border: 0;
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-muted);
+  touch-action: manipulation; /* keyword */
+  z-index: 1;
+}
+
+/* The mini card. Not a different component - the same one with its lower half
+   removed, so nothing can drift between the two states. */
+.fwm-drive-closest[data-fwm-card="mini"] {
+  padding-bottom: var(--fwm-space-3);
+}
+
+/* The street line is the first thing to go: it is the longest text in the card
+   and the least useful at a glance, because a driver looking at the map can
+   already see where the thing is. */
+.fwm-drive-closest[data-fwm-card="mini"] .fwm-drive-closest-where {
+  display: none; /* keyword */
+}
+
+/* The figure stays big. It is the one number the card exists for, and shrinking
+   it to save a few more pixels would defeat the point of keeping the card. */
+.fwm-drive-closest[data-fwm-card="mini"] .fwm-drive-closest-open {
+  padding-bottom: 0;
+}
+
+/* THE PICTURE SHRINKS WITH THE CARD, and is the one thing here that does.
+   The collapsed card exists to give the map behind it back to the driver, so a
+   112px square that stayed 112px would have eaten most of what the collapse
+   just freed. Two thirds: still large enough that the cone reads as a
+   direction, small enough that the card is a strip again.
+
+   THE CAPTION STAYS AT BOTH SIZES. `GROUND_NOTE` carries the ODbL credit, and
+   the credit is a condition of drawing the tiles, not a decoration on a card
+   that has room for it - the collapsed card draws the same tiles, so it owes
+   the same attribution. It is also what says "no ground here" in a dead zone,
+   which is the state a driver most needs the small card to be honest about. */
+.fwm-drive-closest[data-fwm-card="mini"] .fwm-minimap {
+  --fwm-minimap-size: calc(var(--fwm-space-12) + var(--fwm-space-8));
+}
+
+/* Room for the collapse control, which is absolutely positioned at the card's
+   top right. The reservation moved from the head to the BODY when the picture
+   took that corner: the head is only the kicker now, and it was the map -- not
+   the text -- that would otherwise have been drawn under a 44px target. */
+.fwm-drive-closest-body {
+  padding-right: var(--fwm-touch-min);
+}
+
+/* THE PIERCED-MUTE LINE. Amber, because the product's amber means "something is
+   happening you should know about" - which is exactly this: the driver muted a
+   camera and the engine is overriding them on purpose. */
+.fwm-drive-pierced {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.4;
+  color: var(--fwm-alert-approaching);
+}
+
+/* The button that was pressed says so too, so the explanation and the control
+   are not in two unrelated places. */
+.fwm-drive-key[data-fwm-pierced="true"] {
+  border-color: var(--fwm-alert-approaching);
+  color: var(--fwm-alert-approaching);
+}

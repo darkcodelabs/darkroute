@@ -1,0 +1,110 @@
+/* THE ALERT - v1. The full-screen takeover.
+ *
+ * The one surface in the product designed to be read at a glance from a
+ * driving position. Everything about it is bigger and quieter than the rest of
+ * the app: one figure, one line, one key.
+ */
+
+.fwm-alertv1 {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-4);
+  height: 100%;
+  padding: var(--fwm-space-8) var(--fwm-space-6) var(--fwm-space-6);
+  /* OPAQUE, NEVER GLASS. Everything under this loses; a translucent takeover
+     would put the screen it interrupted back into the driver's eye. */
+  background: var(--fwm-bg);
+}
+
+.fwm-alertv1-eyebrow {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-text-muted);
+}
+
+/* Centred in whatever room is left, so the figure lands where the eye goes
+   rather than where the content happens to stop. */
+.fwm-alertv1-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--fwm-space-3);
+  flex: 1;
+  padding: var(--fwm-space-6);
+  border: var(--fwm-rule-w) solid var(--fwm-alert-in-range);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-alertv1-figure {
+  font-size: var(--fwm-text-hero);
+  font-weight: 800;
+  line-height: 0.8;
+  color: var(--fwm-alert-in-range);
+}
+
+/* The state carries the hue, exactly as it does everywhere else in the
+   product. A takeover raised while APPROACHING is amber, not crimson. */
+.fwm-alertv1[data-fwm-state='approaching'] .fwm-alertv1-figure {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-alertv1[data-fwm-state='approaching'] .fwm-alertv1-body {
+  border-color: var(--fwm-alert-approaching);
+}
+
+.fwm-alertv1-headline {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-alertv1-detail {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-alertv1-keys {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-alertv1-key {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-alert-in-range);
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+  touch-action: manipulation;
+}
+
+.fwm-alertv1[data-fwm-state='approaching'] .fwm-alertv1-key {
+  background: var(--fwm-alert-approaching);
+}
+
+/* THE WHOLE SURFACE IS THE DISMISS TARGET, behind the key rather than over it:
+   a thumb that lands anywhere silences, and a thumb that lands on the key does
+   the same thing deliberately. */
+.fwm-alertv1-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+}
+
+.fwm-alertv1-hint {
+  position: relative;
+  z-index: 1;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}

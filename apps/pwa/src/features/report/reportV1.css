@@ -1,0 +1,404 @@
+/* REPORT - v1. A bottom sheet on glass.
+ *
+ * The one surface in the product raised over whatever the driver was doing, so
+ * it is the one that most needs to look like it is ON something rather than
+ * replacing it.
+ */
+
+.fwm-reportv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-2) var(--fwm-space-4) var(--fwm-space-6);
+  border-top: var(--fwm-rule-w) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-5) var(--fwm-radius-5) var(--fwm-radius-0) var(--fwm-radius-0);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-reportv1-grabber {
+  align-self: center;
+  width: var(--fwm-space-8);
+  height: var(--fwm-mark-w);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line-strong);
+  margin: var(--fwm-space-1) 0;
+}
+
+.fwm-reportv1-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-reportv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+  margin-right: auto;
+}
+
+/* The close key moved to components/overlay/overlayClose.css, unchanged, so
+ * every sheet and modal draws this exact target rather than its own near-copy
+ * of it. .fwm-reportv1-header still lays it out. */
+
+/* --- mode ----------------------------------------------------------------- */
+
+.fwm-reportv1-modes {
+  display: flex;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-reportv1-mode {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  touch-action: manipulation;
+}
+
+.fwm-reportv1-mode[data-fwm-selected='true'] {
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+}
+
+/* Inert, and visibly so. See the comment on the disabled condition. */
+.fwm-reportv1-mode:disabled {
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-reportv1-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- position ------------------------------------------------------------- */
+
+.fwm-reportv1-position {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+/* GREEN ONLY WITH A FIX. The dot is the one glanceable answer to "does it know
+   where I am", and a green dot over a missing coordinate would be the sheet
+   claiming a position it does not have. */
+.fwm-reportv1-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+.fwm-reportv1-position[data-fwm-fix='true'] .fwm-reportv1-dot {
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-reportv1-position-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-reportv1-position-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-reportv1-coords {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-reportv1-facing-block {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-4);
+}
+
+/* The design's 96px disc. */
+.fwm-reportv1-dial {
+  flex: none; /* keyword */
+  width: var(--fwm-reportv1-dial-size);
+  height: var(--fwm-reportv1-dial-size);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-sunk);
+  touch-action: manipulation;
+}
+
+.fwm-reportv1 {
+  --fwm-reportv1-dial-size: calc(var(--fwm-space-12) * 2);
+}
+
+.fwm-reportv1-dial-ring {
+  fill: none; /* keyword */
+  stroke: var(--fwm-line);
+  stroke-width: 1;
+}
+
+/* THE ARC, in the scan hue: this is a value the driver is setting, not an
+   alert state, and painting it crimson would read as a warning. */
+.fwm-reportv1-dial-wedge {
+  fill: var(--fwm-tint-scan-soft);
+  stroke: none; /* keyword */
+}
+
+.fwm-reportv1-dial-centre {
+  fill: var(--fwm-text);
+  stroke: none; /* keyword */
+}
+
+.fwm-reportv1-facing-readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-width: 0;
+}
+
+.fwm-reportv1-facing-heading {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-reportv1-facing-label,
+.fwm-reportv1-facing-hint {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* --- submit --------------------------------------------------------------- */
+
+.fwm-reportv1-status {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-reportv1-status-dot {
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+  flex: none; /* keyword */
+}
+
+.fwm-reportv1-status[data-fwm-report-status='blocked'] {
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='blocked'] .fwm-reportv1-status-dot {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='queued'] {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='queued'] .fwm-reportv1-status-dot {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-reportv1-submit {
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-accent-scan);
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+  touch-action: manipulation;
+}
+
+.fwm-reportv1-submit:disabled {
+  background: var(--fwm-line);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-reportv1-hold {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}
+
+/* --- mounts --------------------------------------------------------------- */
+
+.fwm-reportv1-mounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-reportv1-mount {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-reportv1-mount[data-fwm-selected='true'] {
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+}
+
+/* --- one photograph -------------------------------------------------------- */
+
+/* THE STATE LIVES ON THE WRAPPER, not on the tile: `attached` replaces the tile
+   with a thumbnail row, so there is no one element present in all four states
+   to hang it on. See the component. */
+.fwm-reportv1-photo-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+/* The full-width tile, drawn in the same sunk-surface idiom as a mount chip
+   rather than as a second submit key. Attaching a photo is optional; a control
+   painted in the accent would read as the next required step. */
+.fwm-reportv1-photo {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-rule-w) dashed var(--fwm-line); /* keyword */
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text-muted);
+  touch-action: manipulation;
+}
+
+/* PREPARING is the only disabled state a driver reaches by pressing, so it must
+   not look identical to an inert control. It keeps the tile's own colour and
+   loses the dashed edge, which reads as "working" rather than "off". */
+.fwm-reportv1-photo:disabled {
+  border-style: solid; /* keyword */
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-reportv1-photo-attached {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+/* A fixed square, cropped. The prepared JPEG is up to 1600 px on its long edge
+   and any aspect ratio the phone was held at; letting it set its own height
+   would move the make-and-model field under the driver's thumb between one
+   report and the next. */
+.fwm-reportv1-photo-thumb {
+  flex: none; /* keyword */
+  width: var(--fwm-reportv1-thumb-size);
+  height: var(--fwm-reportv1-thumb-size);
+  border-radius: var(--fwm-radius-3);
+  object-fit: cover; /* keyword */
+}
+
+.fwm-reportv1 {
+  --fwm-reportv1-thumb-size: calc(var(--fwm-space-12) + var(--fwm-space-4));
+}
+
+.fwm-reportv1-photo-facts {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-reportv1-photo-remove {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-glass);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+/* --- make and model ------------------------------------------------------- */
+
+.fwm-reportv1-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-reportv1-field-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-reportv1-input {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+.fwm-reportv1-input[data-fwm-report-make-model='plate-shaped'] {
+  border-color: var(--fwm-alert-in-range);
+}
+
+.fwm-reportv1-issue {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-in-range-text);
+}
+
+/* THE PROMISE. Quiet, and directly under the key that acts on it. See the
+   component header for why this sentence is load-bearing. */
+.fwm-reportv1-promise {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-reportv1 > * {
+  flex-shrink: 0;
+}

@@ -1,0 +1,251 @@
+name: Infrastructure audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cloudflare:
+    name: Read Cloudflare posture
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query Pages, R2, Access, and DNS without exposing credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          R2_CAMERA_BUCKET: ${{ secrets.R2_CAMERA_BUCKET }}
+          CF_ACCESS_SERVICE_CLIENT_ID: ${{ secrets.CF_ACCESS_SERVICE_CLIENT_ID }}
+          CF_ACCESS_SERVICE_CLIENT_SECRET: ${{ secrets.CF_ACCESS_SERVICE_CLIENT_SECRET }}
+          FWM_NEWS_API_KEY: ${{ secrets.FWM_NEWS_API_KEY }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+
+          require() {
+            if [ -z "${!1:-}" ]; then
+              echo "missing required secret $1" >&2
+              exit 1
+            fi
+          }
+          require CLOUDFLARE_API_TOKEN
+          require CLOUDFLARE_ACCOUNT_ID
+          require CLOUDFLARE_ZONE_ID
+          require R2_CAMERA_BUCKET
+
+          {
+            echo '## Operational secret presence'
+            echo '```json'
+            jq -n \
+              --arg access_id "$CF_ACCESS_SERVICE_CLIENT_ID" \
+              --arg access_secret "$CF_ACCESS_SERVICE_CLIENT_SECRET" \
+              --arg news "$FWM_NEWS_API_KEY" \
+              --arg neon_key "$NEON_API_KEY" \
+              --arg neon_project "$NEON_PROJECT_ID" \
+              '{
+                accessServiceToken: (($access_id | length) > 0 and ($access_secret | length) > 0),
+                newsApi: (($news | length) > 0),
+                neon: (($neon_key | length) > 0 and ($neon_project | length) > 0)
+              }'
+            echo '```'
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          api() {
+            curl --fail-with-body --silent --show-error \
+              --proto '=https' --tlsv1.2 \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              --header 'Content-Type: application/json' \
+              "https://api.cloudflare.com/client/v4/$1"
+          }
+
+          pages="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/darkroute")"
+          jq -e '.success == true' <<<"$pages" >/dev/null
+
+          {
+            echo '## Cloudflare infrastructure audit'
+            echo
+            echo '### Pages project'
+            echo '```json'
+            jq '.result | {
+              name,
+              subdomain,
+              domains,
+              production_branch,
+              source: (if .source == null then null else {
+                type: .source.type,
+                config: {
+                  owner: .source.config.owner,
+                  repo_name: .source.config.repo_name,
+                  production_branch: .source.config.production_branch,
+                  deployments_enabled: .source.config.deployments_enabled,
+                  production_deployments_enabled: .source.config.production_deployments_enabled,
+                  preview_deployment_setting: .source.config.preview_deployment_setting,
+                  pr_comments_enabled: .source.config.pr_comments_enabled
+                }
+              } end),
+              latest_deployment: (if .latest_deployment == null then null else {
+                id: .latest_deployment.id,
+                environment: .latest_deployment.environment,
+                url: .latest_deployment.url,
+                created_on: .latest_deployment.created_on,
+                stage: .latest_deployment.latest_stage
+              } end),
+              production: {
+                compatibility_date: .deployment_configs.production.compatibility_date,
+                compatibility_flags: .deployment_configs.production.compatibility_flags,
+                fail_open: .deployment_configs.production.fail_open,
+                placement: .deployment_configs.production.placement,
+                environment_variable_keys: ((.deployment_configs.production.environment_variables // {}) | keys),
+                r2_buckets: ((.deployment_configs.production.r2_buckets // {}) | with_entries(.value = {name: .value.name})),
+                d1_databases: ((.deployment_configs.production.d1_databases // {}) | keys),
+                kv_namespaces: ((.deployment_configs.production.kv_namespaces // {}) | keys)
+              },
+              preview: {
+                compatibility_date: .deployment_configs.preview.compatibility_date,
+                compatibility_flags: .deployment_configs.preview.compatibility_flags,
+                fail_open: .deployment_configs.preview.fail_open,
+                placement: .deployment_configs.preview.placement,
+                environment_variable_keys: ((.deployment_configs.preview.environment_variables // {}) | keys),
+                r2_buckets: ((.deployment_configs.preview.r2_buckets // {}) | with_entries(.value = {name: .value.name})),
+                d1_databases: ((.deployment_configs.preview.d1_databases // {}) | keys),
+                kv_namespaces: ((.deployment_configs.preview.kv_namespaces // {}) | keys)
+              }
+            }' <<<"$pages"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Optional probes report permissions or absence without making the
+          # authoritative Pages result disappear. Their output is whitelisted:
+          # never print binding values, policy include rules, or credentials.
+          if r2="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${R2_CAMERA_BUCKET}/cors" 2>/dev/null)"; then
+            {
+              echo
+              echo '### Camera R2 CORS'
+              echo '```json'
+              jq '{success, result}' <<<"$r2"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nCamera R2 CORS probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # Find the public basemap bucket by its already-public custom domain;
+          # never guess that it is the separately bound camera bucket.
+          if buckets="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets" 2>/dev/null)"; then
+            basemap_report='[]'
+            while IFS= read -r bucket; do
+              if domains="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${bucket}/domains/custom" 2>/dev/null)"; then
+                matches="$(jq '[.result.domains[]? | select(.domain == "tiles.darkroute.ai") | {domain, enabled, status, minTLS, zoneName}]' <<<"$domains")"
+                if [ "$(jq 'length' <<<"$matches")" -gt 0 ]; then
+                  cors_rules='null'
+                  if basemap_cors="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${bucket}/cors" 2>/dev/null)"; then
+                    cors_rules="$(jq '.result' <<<"$basemap_cors")"
+                  fi
+                  basemap_report="$(
+                    jq --arg bucket "$bucket" --argjson domains "$matches" --argjson cors "$cors_rules" \
+                      '. + [{bucket: $bucket, domains: $domains, cors: $cors}]' <<<"$basemap_report"
+                  )"
+                fi
+              fi
+            done < <(jq -r '.result.buckets[]?.name' <<<"$buckets")
+            {
+              echo
+              echo '### Public basemap R2 binding'
+              echo '```json'
+              jq . <<<"$basemap_report"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nR2 bucket/domain inventory unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if apps="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/access/apps" 2>/dev/null)"; then
+            {
+              echo
+              echo '### Access applications'
+              echo '```json'
+              jq '[.result[] | {id, name, domain, type, session_duration, policy_count: ((.policies // []) | length)}]' <<<"$apps"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nAccess-app probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # Service tokens are account-scoped for Zero Trust even when an
+          # older zone-scoped compatibility route also exists. Probe both so
+          # the audit does not report a false negative from the legacy route.
+          # Only the count is emitted; client IDs and secrets never reach logs.
+          if account_service_tokens="$(api "accounts/${CLOUDFLARE_ACCOUNT_ID}/access/service_tokens?per_page=1000" 2>/dev/null)"; then
+            {
+              echo
+              echo '### Account-scoped Access service-token capability'
+              echo '```json'
+              jq '{reachable: (.success == true), count: ((.result // []) | length)}' <<<"$account_service_tokens"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nAccount-scoped Access service-token probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # Pages/Access applications created against a zone can be absent from
+          # the account-scoped collection. Probe the exact zone separately and
+          # report only non-secret application posture.
+          if zone_apps="$(api "zones/${CLOUDFLARE_ZONE_ID}/access/apps?per_page=1000" 2>/dev/null)"; then
+            {
+              echo
+              echo '### Zone-scoped Access applications'
+              echo '```json'
+              jq '[.result[] | {id, name, domain, type, session_duration, policy_count: ((.policies // []) | length)}]' <<<"$zone_apps"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nZone-scoped Access-app probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # A count-only probe establishes whether the existing API token can
+          # manage the service-token prerequisite without exposing client IDs,
+          # names, or secrets in Actions output.
+          if service_tokens="$(api "zones/${CLOUDFLARE_ZONE_ID}/access/service_tokens?per_page=1000" 2>/dev/null)"; then
+            {
+              echo
+              echo '### Zone-scoped Access service-token capability'
+              echo '```json'
+              jq '{reachable: (.success == true), count: ((.result // []) | length)}' <<<"$service_tokens"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nZone-scoped Access service-token probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if zones="$(api 'zones?name=darkroute.ai' 2>/dev/null)"; then
+            {
+              echo
+              echo '### darkroute.ai zone (cost-patrol input)'
+              echo '```json'
+              jq '[.result[] | {id, name, status, paused, type, name_servers}]' <<<"$zones"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\ndarkroute.ai zone probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if zones="$(api 'zones?name=darkroute.ai' 2>/dev/null)"; then
+            {
+              echo
+              echo '### darkroute.ai zone'
+              echo '```json'
+              jq '[.result[] | {id, name, status, paused, type, name_servers, original_name_servers}]' <<<"$zones"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\ndarkroute.ai zone probe unavailable with this token.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # The same deliberately whitelisted report is printed so an operator
+          # using `gh run view --log` can audit it without the GitHub web UI.
+          cat "$GITHUB_STEP_SUMMARY"

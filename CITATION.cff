@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "DarkRoute"
+abstract: >-
+  An offline-capable, account-free progressive web app that warns drivers about
+  automatic licence plate readers. Camera locations come from OpenStreetMap
+  under ODbL; plate values stay in the encrypted on-device vault and are never
+  sent to or queried against a remote service.
+version: "0.1.0"
+date-released: "2026-09-01"
+url: "https://github.com/darkcodelabs/darkroute"
+repository-code: "https://github.com/darkcodelabs/darkroute"
+authors:
+  - family-names: "Kennedy"
+    given-names: "Corian"
+    affiliation: "DarkCode Labs"
+license: GPL-3.0-only
+keywords:
+  - alpr
+  - surveillance
+  - privacy
+  - openstreetmap
+  - meshtastic

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.darkroute.app",
+      "sha256_cert_fingerprints": [
+        "E4:3B:38:50:9A:F9:6E:2E:1F:83:96:14:A1:A3:2D:28:80:30:0D:AF:18:AA:E0:3D:49:76:69:D8:B9:A8:B1:47"
+      ]
+    }
+  }
+]

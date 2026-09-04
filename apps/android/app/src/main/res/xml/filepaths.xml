@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The splash image is handed to Chrome through a FileProvider; this is the
+    one directory it may read. Same as the upstream twa-basic demo.
+-->
+<paths>
+    <files-path path="twa_splash/" name="twa_splash" />
+</paths>
