@@ -15,8 +15,8 @@ importers:
         specifier: '3'
         version: 3.1116.0(@aws-sdk/client-s3@3.1116.0)
       '@cloudflare/workers-types':
-        specifier: 4.20250109.0
-        version: 4.20250109.0
+        specifier: 5.20260901.1
+        version: 5.20260901.1
       '@mapbox/vector-tile':
         specifier: 3.0.0
         version: 3.0.0
@@ -52,7 +52,7 @@ importers:
         version: 4.1.11(@types/node@26.2.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@1.21.7)(terser@5.50.0))
       wrangler:
         specifier: 4.128.0
-        version: 4.128.0(@cloudflare/workers-types@4.20250109.0)
+        version: 4.128.0(@cloudflare/workers-types@5.20260901.1)
 
   apps/pwa:
     dependencies:
@@ -811,8 +811,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20250109.0':
-    resolution: {integrity: sha512-Y1zgSaEOOevl9ORpzgMcm4j535p3nK2lrblHHvYM2yxR50SBKGh+wvkRFAIxWRfjUGZEU+Fp6923EGioDBbobA==}
+  '@cloudflare/workers-types@5.20260901.1':
+    resolution: {integrity: sha512-m1rNbR3UYC1pgaEyXkSlwLFLDB11QziYUlY0z/nqjwuYtg5dw9zBrgDudoSfYM6ebbPDKU81ogBQAzLp6h1y4w==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1244,8 +1244,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@jsr/meshtastic__protobufs@2.7.26':
-    resolution: {integrity: sha512-NxqJDr8kRgeFv0YzkIn97n9zLQYz75lMZAxTFQKFI4NcFH11ijVczQXRRmbNlj9gtXKQAnuGKJIaFm6nODiS6g==, tarball: https://npm.jsr.io/~/11/@jsr/meshtastic__protobufs/2.7.26.tgz}
+  '@jsr/meshtastic__protobufs@2.8.0':
+    resolution: {integrity: sha512-FiyUe1AYhD4Plt0hiewx8s+Q+icZA58MZyTWLwOusb5yNWQHX5oJ7EK8EQt82N7hrgSYU0MZyPyYliQuTUkLaw==, tarball: https://npm.jsr.io/~/11/@jsr/meshtastic__protobufs/2.8.0.tgz}
 
   '@mapbox/geojson-rewind@0.5.2':
     resolution: {integrity: sha512-tJaT+RbYGJYStt7wI3cq4Nl4SXxG8W7JDG5DMJu97V25RnbNg3QtQtf+KD+VLjNpWKYsRvXDNmNrBgEETr1ifA==}
@@ -4619,7 +4619,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260831.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20250109.0': {}
+  '@cloudflare/workers-types@5.20260901.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -4917,7 +4917,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@jsr/meshtastic__protobufs@2.7.26':
+  '@jsr/meshtastic__protobufs@2.8.0':
     dependencies:
       '@bufbuild/protobuf': 2.14.0
 
@@ -4961,7 +4961,7 @@ snapshots:
   '@meshtastic/js@2.6.0-0':
     dependencies:
       '@bufbuild/protobuf': 2.14.0
-      '@meshtastic/protobufs': '@jsr/meshtastic__protobufs@2.7.26'
+      '@meshtastic/protobufs': '@jsr/meshtastic__protobufs@2.8.0'
       crc: 4.3.2
       ste-simple-events: 3.0.11
       tslog: 4.11.0
@@ -7502,7 +7502,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260831.1
       '@cloudflare/workerd-windows-64': 1.20260831.1
 
-  wrangler@4.128.0(@cloudflare/workers-types@4.20250109.0):
+  wrangler@4.128.0(@cloudflare/workers-types@5.20260901.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260831.1)
@@ -7513,7 +7513,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260831.1
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20250109.0
+      '@cloudflare/workers-types': 5.20260901.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
