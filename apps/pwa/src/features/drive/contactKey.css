@@ -1,0 +1,77 @@
+/* A RAIL SHEET. See `RailSheet.tsx`, and `contactWays.ts` for why the first of
+ * these is on the map at all.
+ *
+ * The sheet opens to the LEFT of the rail, not below it: the rail is against
+ * the right edge and already runs most of the height, so anything opening
+ * downward would be off the screen on a short phone and under the card on a
+ * tall one.
+ *
+ * `.fwm-contact` USED TO BE HERE, one per key, `position: relative`, so a sheet
+ * was positioned from the key that opened it. There is no per-key wrapper any
+ * more: the rail is `features/chrome/Rail.tsx`, five circles in one grid, and
+ * the sheet is a sibling of that grid inside `.fwm-drive-rail` -- which is
+ * `position: absolute` in `drive.css` and is therefore the containing block.
+ * The sheet is level with the TOP of the rail now rather than with its own key.
+ * That is a change and it is deliberate: the alternative is a wrapper per key,
+ * which is the second rail the brief just removed. */
+.fwm-contact-sheet {
+  position: absolute;
+  top: 0;
+  /* Clear of the rail's own column, which is one touch target wide. */
+  right: calc(var(--fwm-touch-min) + var(--fwm-space-2));
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-width: var(--fwm-space-12);
+  padding: var(--fwm-space-2);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* The specular edge. See --fwm-glass-rim: no read-back, no per-frame cost. */
+  box-shadow: var(--fwm-glass-rim);
+  /* Above the map and its controls, below an alert - nothing here outranks a
+     camera warning. */
+  z-index: 2;
+}
+
+/* EVERY ROW LEFT, WHATEVER ELEMENT IT IS.
+   The sheet holds a mix of <a> (a destination outside the app) and <button>
+   (a screen inside it), and a button centres its text by default while an
+   anchor does not. The result was a list where some rows were left and some
+   were centred with no pattern a reader could infer - it looked like a
+   rendering fault because it was one.
+
+   `align-items` handles the flex column, `text-align` handles the button's own
+   default, and `font: inherit` stops the button rendering in the browser's UI
+   face beside anchors in the app's. All three are needed; any two leave a
+   visible difference between the two kinds of row. */
+.fwm-contact-way {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fwm-space-1);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  justify-content: center;
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: 0;
+  border-radius: var(--fwm-radius-3);
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  text-align: left; /* keyword */
+  text-decoration: none; /* keyword */
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-contact-way-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+}
+
+.fwm-contact-way-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}

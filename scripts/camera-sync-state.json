@@ -1,0 +1,19 @@
+{
+  "stream": "hour",
+  "lastAppliedSeq": 122652,
+  "lastAppliedTimestamp": "2026-09-09T19:00:00.000Z",
+  "versionsKnown": true,
+  "lastRun": "2026-09-09T19:13:35.824Z",
+  "basePointer": {
+    "schema": "darkroute-camera-pointer/v1",
+    "slot": "b",
+    "generation": "1221119a4ef6d87e3823c2f3c5df95a477a08343201151fe63d3eac9682f0d1e",
+    "manifestSha256": "a4309af0ee2a30ab4a81f92099a79e1c6a17a08632105228c439fdc8890bbb66",
+    "previous": {
+      "slot": "a",
+      "generation": "d91bec12c8e6249e1447e0a4e26a3c2a13a56b70a4bc7eb317541329b5785b02",
+      "manifestSha256": "436e4fb497a59bd07d7bd0d50f79d6b5fe41ff726ea4b4b5fd13992a57b4f61b"
+    },
+    "updatedAt": "2026-09-09T18:58:14.061Z"
+  }
+}

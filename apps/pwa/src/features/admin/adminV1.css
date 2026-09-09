@@ -1,0 +1,145 @@
+/* ADMIN - v1. Tools listed, queues not invented.
+ *
+ * The design draws a console with live queue depths. There is no moderation
+ * backend, so every count is an em dash and the rows are inert until an
+ * identity says otherwise. See AdminV1Screen for why a number here would be
+ * the one lie this product cannot afford.
+ */
+
+.fwm-adminv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-adminv1-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-adminv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+  margin-right: auto;
+}
+
+.fwm-adminv1-state {
+  padding: var(--fwm-space-1) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-full);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-adminv1-state[data-fwm-state='admin'] {
+  border-color: var(--fwm-alert-clear);
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-adminv1-state[data-fwm-state='not-admin'] {
+  border-color: var(--fwm-alert-approaching);
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-adminv1-gate,
+.fwm-adminv1-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-adminv1-who {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+.fwm-adminv1-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-adminv1-tool {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-1);
+  opacity: 0.55;
+}
+
+/* Only a real moderator sees these at full strength, and even then the counts
+   stay dashed: signing in does not conjure a backend. */
+.fwm-adminv1-tool[data-fwm-enabled='true'] {
+  opacity: 1;
+}
+
+.fwm-adminv1-tool-where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin-right: auto;
+}
+
+.fwm-adminv1-tool-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+.fwm-adminv1-tool-sub,
+.fwm-adminv1-tool-count {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-adminv1 > * {
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+ * THE MATERIAL, which the tool rows were the last thing on this screen to
+ * refuse.
+ * =============================================================================
+ * They were `--fwm-surface-1` and a radius: no hairline, no backdrop, no
+ * specular rim. That is not a quieter material, it is the absence of one - and
+ * the back key at the top of this same screen wears all three, so the four
+ * material controls in SETTINGS moved the key and left the rows underneath
+ * looking identical through every combination of them.
+ *
+ * One rule rather than a change to each row, and the same four declarations
+ * MORE, MESH, MISUSE and EXPOSURE already carry, so this screen cannot drift
+ * from them: the tint, the hairline, the optics and the specular rim all come
+ * from the tokens, and the OFF switch resolves `--fwm-glass-filter` to `none`,
+ * which removes the read-back entirely rather than the visible half.
+ *
+ * THE DIMMING ABOVE IS UNTOUCHED and stays where it is. `opacity` fades the
+ * whole row including the glass under it, which is the right answer: a row
+ * nobody may press should look inert in the material it would have if it were
+ * live, not in a different one.
+ * ========================================================================== */
+.fwm-adminv1-tool {
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}

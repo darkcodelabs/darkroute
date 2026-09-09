@@ -1,0 +1,585 @@
+/* INTEL - v1. The camera modal.
+ *
+ * SOURCE: `the_rest_of_the_app.dc.html`, section B, the left-hand frame. This
+ * file is a transcription of that frame's own inline styles: every number below
+ * is written there, and every number that is not written there is not here.
+ *
+ * =============================================================================
+ * IT IS 342px OF GLASS OVER A LIVE MAP, WHERE IT USED TO BE THE WHOLE SCREEN
+ * =============================================================================
+ * The old sheet was `--fwm-bg`, top-rounded, full-bleed, with its own scroll.
+ * A driver tapped a dot on the map to ask what that camera was, and the answer
+ * covered the place they had asked about. Brief 4 anchors a card above the dock
+ * instead and leaves the map behind it.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE SCALE
+ * =============================================================================
+ * `scripts/check-design-values.mjs` fails the build on a raw length as hard as
+ * on a raw hex, so `height: 44px` cannot be written even though 44 is the
+ * spec's number. Geometry is `calc(var(--fwm-space-1) * n)` off the 4px step -
+ * the idiom `features/chrome/menu.css` and `dock.css` already use - with the
+ * spec's own pixel beside each one.
+ *
+ * `--fwm-space-4` is NEVER read here: two skins cut it to 12. `--fwm-space-1`
+ * (4), `--fwm-space-2` (8), `--fwm-space-3` (12), `--fwm-rule-w` (1),
+ * `--fwm-radius-full` (999) and `--fwm-card-track-tight` (-0.01em) are declared
+ * once on `:root` and re-cut by nobody, so the geometry is exact on all
+ * seventeen skins.
+ *
+ * =============================================================================
+ * FIVE VALUES THE SPEC DRAWS HAVE NO TOKEN, and each resolves to the nearest
+ * PUBLISHED one with the delta recorded beside it. Minting a colour is the one
+ * thing a component file may not do; `menu.css` sets that rule and this follows
+ * it. The two VERDICT hues are the exception and they were minted in
+ * `tokens.css`, where raw values live - see the note there for why the alert
+ * scale could not carry them.
+ *
+ *   modal lift    spec `0 16px 44px rgba(0,0,0,.55)`  -> `--dr-lift`
+ *                                                        (0 10px 30px /.5)
+ *   primary fill  spec `rgba(47,212,212,.15)`         -> `--dr-accent-fill`
+ *                                                        (.13)
+ *   segment fill  spec `rgba(47,212,212,.14)`         -> `--dr-accent-fill`
+ *   mono id       spec `#6e7881`                      -> `--dr-ink-faint`
+ *                                                        (#737d87)
+ *   close key     spec 40px circle                    -> `--fwm-touch-min` (44)
+ *
+ * The last one is a deliberate refusal rather than a near-miss: brief 2's own
+ * close key is 44 everywhere in the product, `overlayClose.css` says why in as
+ * many words, and shrinking the one control a driver reaches for at speed to
+ * 40 to match a mock would put it under this app's own touch minimum.
+ * ========================================================================== */
+
+.fwm-intelv1 {
+  /* --- geometry, all of it, in one place ---------------------------------- */
+
+  /* The card's inset from the frame. 390 - 24 - 24 = 342, which is the width
+     brief 4 states; on a 320px phone the same inset gives 272, which is what a
+     card anchored to the screen rather than to a mock does. */
+  --fwm-intelv1-side: calc(var(--fwm-space-1) * 6); /* 24 */
+  /* THE ONE LENGTH THAT IS NOT THE SPEC'S NUMBER, and it is not a change.
+     The spec anchors the card at `bottom: 172` inside a frame whose bottom
+     150 is the dock reserve - so 22 is the air between the card and the dock.
+     `--fwm-dock-h` is re-cut by `global.css` to 147 browsing, 168 driving and
+     288 expanded, and the reserve is whichever of those is mounted; writing the
+     mock's flat 150 would be wrong in two states out of three. */
+  --fwm-intelv1-lift: calc(var(--fwm-space-1) * 5.5); /* 22, over the reserve */
+  --fwm-intelv1-radius: calc(var(--fwm-space-1) * 5.5); /* 22 */
+  --fwm-intelv1-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-intelv1-gap: var(--fwm-space-1); /* 4 */
+
+  /* the head row: the ident column, 11 of air, then the 62px picture */
+  --fwm-intelv1-head-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-intelv1-head-inset: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-intelv1-head-pad: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-intelv1-dot: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-intelv1-dot-gap: calc(var(--fwm-space-1) * 1.75); /* 7 */
+  --fwm-intelv1-place-gap: calc(var(--fwm-space-1) * 1.25); /* 5 */
+  --fwm-intelv1-readout-gap: calc(var(--fwm-space-1) * 0.75); /* 3 */
+  --fwm-intelv1-inset: calc(var(--fwm-space-1) * 15.5); /* 62 */
+  --fwm-intelv1-inset-radius: calc(var(--fwm-space-1) * 3.25); /* 13 */
+
+  /* the three controls under it */
+  --fwm-intelv1-primary-h: calc(var(--fwm-space-1) * 11.5); /* 46 */
+  --fwm-intelv1-primary-radius: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-intelv1-primary-glyph: calc(var(--fwm-space-1) * 4.25); /* 17 */
+  --fwm-intelv1-verdict-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-intelv1-verdict-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-intelv1-key-radius: var(--fwm-space-3); /* 12 */
+  --fwm-intelv1-row-h: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-intelv1-row-pad: var(--fwm-space-3); /* 12 */
+  --fwm-intelv1-row-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-intelv1-row-glyph: calc(var(--fwm-space-1) * 3.75); /* 15 */
+
+  /* THE HEADLINE'S SIZE, DERIVED EXACTLY. 19px is not on the type scale and the
+     nearest steps are 17 and 24, either of which would be a different design.
+     `--fwm-text-plate` is 12px on every skin - unlike `--fwm-text-micro` and
+     `--fwm-text-body`, which the two watch surfaces raise - so 12 x 19/12 is 19
+     on all seventeen. Same trick as menu.css's tracking, same reason. */
+  --fwm-intelv1-place-size: calc(var(--fwm-text-plate) / 12 * 19); /* 19 */
+
+  /* TRACKING, DERIVED, NOT MINTED. There are three letter-spacing tokens in the
+     product and none of these is one of them, so each is an exact multiple of
+     `--fwm-card-track-tight` (-0.01em) - the trick `dock.css` uses for its own
+     -0.02em. The arithmetic is exact, not near. */
+  --fwm-intelv1-track-caps: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+  --fwm-intelv1-track-place: var(--fwm-card-track-tight); /* -0.01em */
+  --fwm-intelv1-track-distance: calc(var(--fwm-card-track-tight) * 2); /* -0.02em */
+
+  /* THE CARD'S ONE ACCENT, resolved from `data-fwm-owner` below. Neutral here,
+     which is the answer for a record nobody has classified. */
+  --fwm-intelv1-owner: var(--fwm-line-strong);
+  /* And the tag's ink. See the owner block for why absence stays muted. */
+  --fwm-intelv1-owner-ink: var(--dr-ink-muted);
+  /* THE READER'S PIXEL, WRITTEN BY THE COMPONENT. Declared here at zero so the
+     names resolve for the design gate and for a layer that has never been
+     anchored; `IntelViewV1` overwrites both inline whenever it has a position,
+     and `data-fwm-anchored` is what says whether these mean anything. */
+  --fwm-intelv1-x: 0px;
+  --fwm-intelv1-y: 0px;
+
+  /* THE LAYER IS THE VIEWPORT AND THE CARD IS 318px OF IT.
+     `.fwm-shell-layer` is `position: absolute; inset: 0`, so this fills it and
+     positions the two things inside: the scrim over the whole map, and the card
+     above the dock. */
+  position: absolute;
+  inset: 0;
+  font-family: var(--fwm-font-ui);
+  color: var(--dr-ink);
+}
+
+/* =============================================================================
+   THE CARD IS THE COLOUR OF THE DOT THAT OPENED IT
+   =============================================================================
+   A driver taps a camera on the map and this comes up. That dot was painted by
+   `cameraLayer`'s `circle-color` match expression, and the filter panel's
+   swatches restate the same five hues so the legend agrees with the map. A
+   card that ignored them would answer a tap with a different-looking camera.
+
+   UNVERIFIED IS PURPLE NOW, and it is the only one of the five that moved.
+   Cyan is `system positive / active selection` everywhere else in the product -
+   the live tab, the chosen route, an armed toggle - so a card that also spent
+   it on "nobody has checked this" broke the one-hue-one-meaning rule in the one
+   place a reader would notice. Owner decision, 2026-09-08; `tokens.css` carries
+   the reasoning and the value.
+
+   IT LEAVES THE MAP DISAGREEING FOR NOW, AND THAT IS WORTH SAYING OUT LOUD.
+   `features/map/layers.ts` still paints an unverified dot with
+   `--fwm-accent-scan`, and brief 4's own note says the four surfaces that spend
+   this hue - the Lookup chips, this modal, the map markers and the Layers menu
+   - have to move together. Section B is one of the four. Until the other three
+   land, a driver who taps a cyan dot gets a purple tag.
+
+   AN ABSENT OWNER STAYS NEUTRAL, and that is the whole safety argument for
+   doing this with an attribute rather than a default. `unverified` is a class
+   somebody asserted; absence is the absence of an assertion, and absence is the
+   COMMON case -- OSM's ALPR nodes usually carry no owner at all. A card that
+   fell through to a hue would tell a driver a camera is police when nobody
+   knows who owns it. `features/map/ownerFilter.ts` refuses the same conflation
+   for the same reason, and `unknown` here is that refusal made visible.
+
+   THE DOT CARRIES THE HUE. THE WORDS MOSTLY DO NOT. `--fwm-alert-in-range` is a
+   FILL hue - the tokens file keeps a separate `--fwm-alert-in-range-text`
+   precisely because the saturated version is not a reading colour - and body
+   text whose contrast depended on who owned the camera would be a legibility
+   lottery played at the roadside. Unverified is the exception, because it is
+   the one owner class with a published READING step
+   (`--dr-owner-unverified-text`) and it is the case the spec actually draws. */
+.fwm-intelv1[data-fwm-owner='police'] {
+  --fwm-intelv1-owner: var(--dr-owner-police);
+}
+
+.fwm-intelv1[data-fwm-owner='inter_agency'] {
+  --fwm-intelv1-owner: var(--dr-owner-flock);
+}
+
+.fwm-intelv1[data-fwm-owner='hoa'] {
+  --fwm-intelv1-owner: var(--dr-owner-hoa);
+}
+
+.fwm-intelv1[data-fwm-owner='private'] {
+  --fwm-intelv1-owner: var(--dr-owner-private);
+}
+
+.fwm-intelv1[data-fwm-owner='unverified'] {
+  --fwm-intelv1-owner: var(--dr-owner-unverified);
+  --fwm-intelv1-owner-ink: var(--dr-owner-unverified-text);
+}
+
+/* --- the scrim ------------------------------------------------------------ */
+
+/* THE MAP, STILL VISIBLE, AND STILL WORTH TOUCHING.
+ *
+ * It paints NOTHING - no wash, no border, no fill. Brief 4's whole argument for
+ * this redesign is that the map stays visible behind the card, and a scrim that
+ * darkened it would take back most of what the change bought.
+ *
+ * It is a control anyway, because the layer above the card swallows every touch
+ * whether or not anything is drawn there (`.fwm-shell-layer` is `inset: 0` with
+ * no `pointer-events` rule of its own). Given that the tap is going to be
+ * eaten, the honest thing is for it to mean what the driver meant by it: not
+ * this camera. See INTEL_V1_SCRIM in the component. */
+.fwm-intelv1-scrim {
+  position: absolute;
+  inset: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  touch-action: manipulation;
+}
+
+/* --- the card ------------------------------------------------------------- */
+
+.fwm-intelv1-card {
+  position: absolute;
+  right: var(--fwm-intelv1-side);
+  left: var(--fwm-intelv1-side);
+  /* ABOVE THE DOCK, IN WHICHEVER STATE THE DOCK IS IN. See the note on
+     `--fwm-intelv1-lift`: the reserve is a live token, not the mock's 150. */
+  bottom: calc(var(--fwm-dock-h) + var(--fwm-intelv1-lift));
+  /*
+   * OVER THE DOT THAT OPENED IT, WHEN THE DOT IS ON SCREEN.
+   *
+   * The owner pointed at DeFlock: "see how deflock has the modal above the
+   * camera, well that's what we need". A card that appears over the reader a
+   * driver just tapped is a card about THAT reader; a sheet at the bottom is a
+   * card about something. `IntelViewV1` publishes the reader's pixel in this
+   * layer's coordinates as `--fwm-intelv1-x/-y` and sets `data-fwm-anchored`;
+   * the rule below takes over from the sheet placement above whenever it does,
+   * and the sheet placement is what remains when the reader is off screen or
+   * the card was opened from LOOK UP with no map behind it.
+   *
+   * The card is narrower than the sheet -- 300, the same column the pill menus
+   * take -- because a popover that spans the phone reads as a sheet again. It
+   * centres on the dot and is clamped inside the side inset, so a reader at
+   * the edge gets a card that stays on screen rather than one that points at
+   * it and hangs off. `--fwm-intelv1-anchor-gap` is the air between the card's
+   * foot and the dot, enough that the dot is not covered.
+   */
+  /* 300 was DeFlock's width and it cut "Metcalf Ave & W 108th St" to
+     "Metcalf Ave ...". The card takes the width the phone has, up to 360, and
+     its two text lines wrap instead of clipping: "I can't see the full data
+     available" -- owner, 2026-09-09. */
+  --fwm-intelv1-anchor-w: min(calc(var(--fwm-space-1) * 90), calc(100% - var(--fwm-space-4) * 2)); /* 360 */
+  --fwm-intelv1-anchor-gap: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  display: grid;
+  gap: var(--fwm-intelv1-gap);
+  padding: var(--fwm-intelv1-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-intelv1-radius);
+  /* THE GLASS, which is brief 2's surface exactly: the thin 0.72 fill, the
+     one-pixel grain that gives it something to catch the light with, and the
+     22px blur. This is one of the three surfaces in brief 4 allowed to blur at
+     all, because it is the only kind that has a map behind it. */
+  background-color: var(--dr-surface-thin);
+  background-image: var(--dr-grain);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+}
+
+/* --- the head row --------------------------------------------------------- */
+
+.fwm-intelv1[data-fwm-anchored='true'] .fwm-intelv1-card {
+  right: auto; /* keyword */
+  width: var(--fwm-intelv1-anchor-w);
+  left: clamp(
+    var(--fwm-intelv1-side),
+    calc(var(--fwm-intelv1-x) - var(--fwm-intelv1-anchor-w) / 2),
+    calc(100% - var(--fwm-intelv1-side) - var(--fwm-intelv1-anchor-w))
+  );
+  bottom: calc(100% - var(--fwm-intelv1-y) + var(--fwm-intelv1-anchor-gap));
+  /* Never past the top of the layer either: a reader near the top of the map
+     gets a card whose top edge stays inside the phone. The layer is the shell,
+     so this is measured from its top, not the map's. */
+  max-height: calc(var(--fwm-intelv1-y) - var(--fwm-intelv1-anchor-gap) - var(--fwm-intelv1-side));
+  overflow-y: auto; /* keyword */
+}
+
+/* NO SCRIM WHEN ANCHORED. DeFlock draws none, and the whole point of anchoring
+   is that the map around the dot stays legible; the scrim still exists as the
+   tap-outside-to-dismiss target, it just paints nothing. */
+.fwm-intelv1[data-fwm-anchored='true'] .fwm-intelv1-scrim {
+  background: transparent;
+}
+
+.fwm-intelv1-head {
+  display: flex;
+  align-items: flex-start; /* keyword */
+  gap: var(--fwm-intelv1-head-gap);
+  min-width: 0;
+  padding: 0 var(--fwm-intelv1-head-inset) var(--fwm-intelv1-head-pad);
+}
+
+.fwm-intelv1-ident {
+  flex: 1;
+  min-width: 0;
+}
+
+.fwm-intelv1-owner {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-intelv1-dot-gap);
+  min-width: 0;
+}
+
+.fwm-intelv1-owner-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-intelv1-dot);
+  height: var(--fwm-intelv1-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-intelv1-owner);
+}
+
+/* ONE LINE, ELLIPSISED, because it is a name of unknown length in a 342px card
+   and the two lines under it are the ones that must never be cut. */
+.fwm-intelv1-owner-tag {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-intelv1-track-caps); /* 0.12em */
+  color: var(--fwm-intelv1-owner-ink);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-intelv1-place {
+  margin-top: var(--fwm-intelv1-place-gap); /* 5 */
+  font-size: var(--fwm-intelv1-place-size); /* 19 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-intelv1-track-place); /* -0.01em */
+  color: var(--dr-ink);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-intelv1-readout {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-intelv1-dot-gap); /* 7 */
+  min-width: 0;
+  margin-top: var(--fwm-intelv1-readout-gap); /* 3 */
+}
+
+.fwm-intelv1-distance {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-title); /* 24 */
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-intelv1-track-distance); /* -0.02em */
+  color: var(--dr-ink);
+}
+
+.fwm-intelv1-summary {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-forecast); /* 13 */
+  color: var(--dr-ink-muted);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE 62px PICTURE.
+ *
+ * `--fwm-minimap-size` is the mini map's OWN geometry - 112px, derived as
+ * 2 x 48 + 16 - and it is shared with the deep sheet and with anything else
+ * that draws one. This overrides it for this one instance rather than editing
+ * the component's token, which would shrink every picture in the app.
+ *
+ * The frame takes the owner's hue, which is what the spec draws: its mock
+ * camera is unverified and the frame is that purple at 30%. Generalised to
+ * whichever owner this record has, and neutral when it has none.
+ *
+ * THE CAPTION IS NOT SUPPRESSED. `MiniMap` prints "© OpenStreetMap" under the
+ * picture, and it is the licence condition for drawing the tiles rather than
+ * decoration. It has a `credited` prop for surfaces that carry the attribution
+ * already - DRIVE's card does, because the scope behind it draws MapLibre's own
+ * control - and this modal deliberately does not use it: `openIntelCard` is
+ * called from LOOK UP and from EXPOSURE as well as from the map, and on those
+ * two there is no attributed map behind this card to inherit. The caption also
+ * says "no map cached here" in a dead zone, which is the one thing a driver
+ * looking at a bare square needs it to say. */
+.fwm-intelv1-inset {
+  flex: none; /* keyword */
+  /* THE MARK IS THE OWNER'S HUE, which is what the spec draws: its mock camera
+     is unverified and both the dot and the cone in the inset are that purple.
+     It used to be the ALERT state - amber approaching, crimson in range - and
+     that restated, in the smallest picture on the card, the one thing the
+     driver had just been told by the screen they opened it from. */
+  --fwm-minimap-hue: var(--fwm-intelv1-owner);
+}
+
+/* THE OVERRIDE HAS TO LAND ON THE FIGURE ITSELF, NOT ON THIS WRAPPER.
+ *
+ * `miniMap.css` declares `--fwm-minimap-size` ON `.fwm-minimap`, and a custom
+ * property set on an element beats one inherited from its parent whatever the
+ * parent's specificity - so setting it on the wrapper resolved to nothing and
+ * the picture came out at its own 112. Measured in a browser at 390px: the
+ * inset was 112x112 and the head row 122 tall, which is 35px of card nobody
+ * asked for. Same element, one class more specific, and it takes. */
+.fwm-intelv1-inset .fwm-minimap {
+  --fwm-minimap-size: var(--fwm-intelv1-inset); /* 62 */
+}
+
+.fwm-intelv1-inset .fwm-minimap-canvas {
+  border-color: var(--fwm-intelv1-owner);
+  border-radius: var(--fwm-intelv1-inset-radius); /* 13 */
+}
+
+/* --- the primary ---------------------------------------------------------- */
+
+/* GO TO THIS CAMERA. Full width, first, and the only action here that is about
+   the drive rather than about the record. */
+.fwm-intelv1-primary {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-space-2); /* 8 */
+  height: var(--fwm-intelv1-primary-h); /* 46 */
+  border: var(--fwm-rule-w) solid var(--dr-accent-line);
+  border-radius: var(--fwm-intelv1-primary-radius); /* 13 */
+  background: var(--dr-accent-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-body); /* 15 */
+  font-weight: 700;
+  color: var(--dr-accent);
+  touch-action: manipulation;
+}
+
+.fwm-intelv1-primary-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-intelv1-primary-glyph); /* 17 */
+  height: var(--fwm-intelv1-primary-glyph);
+}
+
+/* --- the two verdicts ----------------------------------------------------- */
+
+.fwm-intelv1-verdicts {
+  display: flex;
+  gap: var(--fwm-intelv1-verdict-gap); /* 6 */
+}
+
+.fwm-intelv1-verdict {
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-intelv1-verdict-h); /* 44 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-intelv1-key-radius); /* 12 */
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE TWO ANSWERS, IN THE TWO COLOURS THEY MEAN. See `--dr-verdict-*` in
+   tokens.css for why these are not the alert scale. */
+.fwm-intelv1-verdict[data-fwm-key='confirm'] {
+  border-color: var(--dr-verdict-keep-line);
+  background: var(--dr-verdict-keep-fill);
+  color: var(--dr-verdict-keep);
+}
+
+.fwm-intelv1-verdict[data-fwm-key='dispute'] {
+  border-color: var(--dr-verdict-drop-line);
+  background: var(--dr-verdict-drop-fill);
+  color: var(--dr-verdict-drop);
+}
+
+.fwm-intelv1-verdict:disabled {
+  opacity: 0.5;
+}
+
+/* --- the row into the record ---------------------------------------------- */
+
+/* THE ONE NAVIGATE ROW, in brief 4's row shape: 40 high, radius 12, a word on
+   the left, the value on the right, a chevron after it. It carries no fill at
+   rest - the spec gives it a hover ground and nothing else, and this is a
+   touch-first product where hover never fires. `check-design-values.mjs`
+   rejects `:hover` outright, so the state is dropped rather than translated
+   into an `:active` the spec does not draw. Same call `menu.css` made. */
+.fwm-intelv1-row {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-intelv1-row-gap); /* 10 */
+  min-width: 0;
+  height: var(--fwm-intelv1-row-h); /* 40 */
+  padding: 0 var(--fwm-intelv1-row-pad); /* 12 */
+  border: none; /* keyword */
+  border-radius: var(--fwm-intelv1-key-radius); /* 12 */
+  background: none; /* keyword */
+  font-family: inherit; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-intelv1-row-label {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-forecast); /* 13 */
+  font-weight: 500;
+  color: var(--dr-ink-3);
+}
+
+/* THE OSM ID, IN MONO AND ON THE RIGHT. `.fwm-data` carries the typeface; this
+   carries the size and the tier. Ellipsised rather than wrapped: it is a
+   fifteen-digit key in a row 40px tall. */
+.fwm-intelv1-row-value {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-plate); /* 12 */
+  color: var(--dr-ink-faint);
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-intelv1-row-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-intelv1-row-glyph); /* 15 */
+  height: var(--fwm-intelv1-row-glyph);
+  color: var(--dr-ink-muted);
+}
+
+/* --- what just happened --------------------------------------------------- */
+
+.fwm-intelv1-outcome {
+  padding: 0 var(--fwm-intelv1-head-inset);
+  font-size: var(--fwm-text-micro); /* 11 */
+  color: var(--dr-verdict-keep);
+}
+
+.fwm-intelv1-outcome[data-fwm-failed='true'] {
+  color: var(--dr-verdict-drop);
+}
+
+/* --- no camera selected --------------------------------------------------- */
+
+/* THE COLD DEEP LINK, which is a SCREEN and not a modal: there is no camera for
+   a card to stand beside. It keeps the opaque ground brief 4 gives every
+   screen, the 56px title track and the dock reserve. */
+.fwm-intelv1-blank {
+  --fwm-intelv1-track: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-intelv1-blank-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: 0 var(--fwm-intelv1-blank-pad) var(--fwm-dock-h);
+  background: var(--dr-screen);
+}
+
+.fwm-intelv1-blank-header {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  min-height: var(--fwm-intelv1-track); /* 56 */
+}
+
+.fwm-intelv1-blank-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--dr-ink);
+  margin-right: auto;
+}
+
+.fwm-intelv1-empty {
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-ink-muted);
+}
+
+/* ANCHORED, THE TEXT WRAPS. The full-screen reader can afford an ellipsis
+   because Details is one press away; a card over the map is the reader for
+   most taps and the name is the point of it. */
+.fwm-intelv1[data-fwm-anchored] .fwm-intelv1-place,
+.fwm-intelv1[data-fwm-anchored] .fwm-intelv1-distance {
+  white-space: normal; /* keyword */
+  overflow: visible; /* keyword */
+  text-overflow: clip; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+}

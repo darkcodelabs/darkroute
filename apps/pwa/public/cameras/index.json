@@ -1,0 +1,171 @@
+{
+  "zoom": 11,
+  "generatedAt": "2026-09-09T19:13:35.824Z",
+  "source": "OpenStreetMap (ODbL), direct retained-response capture using DeFlock-derived queries",
+  "baseUpstream": "2026-09-09T13:33:59.000Z",
+  "upstream": "2026-09-09T19:00:00.000Z",
+  "cameraSource": {
+    "schema": "darkroute-camera-source/v2",
+    "generator": "darkroute/fetch-cameras-deflock",
+    "territories": [
+      "US",
+      "PR"
+    ],
+    "source": {
+      "country": "us",
+      "build": "f4ae16f8d5a8b152",
+      "capturedAt": "2026-09-09T13:49:07.616Z",
+      "total": 140503,
+      "rawDataset": {
+        "path": "scripts/data/deflock-us-source.geojson.gz",
+        "format": "geojson",
+        "compression": "gzip",
+        "bytes": 3545333,
+        "sha256": "a0a4c1369868c311cb4d918535ce218308a81dcb2836e54abfdfaae837cb5675",
+        "decodedBytes": 41352009,
+        "decodedSha256": "f4ae16f8d5a8b1521f146bd8db2ddfb5821491824b369d105988b0886538b7ab",
+        "featureCount": 140503
+      }
+    },
+    "review": {
+      "sha256": "1b3816b60d5e3404525f93f924e1f7ff7ee9f161a6f2cc9545ee8511b6aa944d",
+      "receipt": {
+        "schema": "darkroute-deflock-source-review/v3",
+        "repository": "flockhopper3/deflock-data",
+        "headSha": "8d156b24db7090e870af3f007b0caece9b3c0951",
+        "territories": [
+          "US",
+          "PR"
+        ],
+        "captureImplementation": {
+          "files": [
+            {
+              "path": "scripts/capture-deflock-source.mjs",
+              "bytes": 37304,
+              "sha256": "b85430d3bbec31b29dfeeddd2e5ee11d69c9c62d3e9e2199fd55e11dab8733f4"
+            },
+            {
+              "path": "scripts/deflock-capture.mjs",
+              "bytes": 69389,
+              "sha256": "3d445be898da4d36bd9c387a0d77b1664635570aaedacf057048acde80c2efd2"
+            }
+          ]
+        },
+        "releaseInputs": {
+          "geofence": {
+            "path": "scripts/data/us-counties.geojson",
+            "bytes": 3216816,
+            "sha256": "e540149b7525e71ee6b6cab6dea2a95205f11e0c3e7374d27a7c9c47ea96e8c0",
+            "featureCount": 3221
+          },
+          "predecessor": {
+            "path": "scripts/data/camera-predecessor.json",
+            "bytes": 3218287,
+            "sha256": "9476fb4a6ccaf185914996f34ed3f18218bcafd1ce0d2d3e79ce39c57e4843d4",
+            "mode": "legacy-flat-root",
+            "liveCount": 139921,
+            "liveIdsSha256": "d730e0c9d6401f21edaeed1d6a1a2b8834bcbe2bdb5edc9a671530343fe930b2",
+            "deployment": {
+              "provider": "cloudflare-r2",
+              "accountId": "e6349dbcdb770bb290126cfef5e6c2df",
+              "bucket": "darkroute-cameras"
+            }
+          },
+          "tombstones": {
+            "path": "scripts/data/deflock-us-baseline-tombstones.json",
+            "bytes": 314536,
+            "sha256": "cd59d877c54c143a96f7afb1f48c64c62bf49cbe0bdfbe174c046dd5294d6110",
+            "count": 3650
+          }
+        },
+        "expectedSource": {
+          "country": "us",
+          "build": "f4ae16f8d5a8b152",
+          "capturedAt": "2026-09-09T13:49:07.616Z",
+          "total": 140503,
+          "rawDataset": {
+            "path": "scripts/data/deflock-us-source.geojson.gz",
+            "format": "geojson",
+            "compression": "gzip",
+            "bytes": 3545333,
+            "sha256": "a0a4c1369868c311cb4d918535ce218308a81dcb2836e54abfdfaae837cb5675",
+            "decodedBytes": 41352009,
+            "decodedSha256": "f4ae16f8d5a8b1521f146bd8db2ddfb5821491824b369d105988b0886538b7ab",
+            "featureCount": 140503
+          }
+        },
+        "expectedTransformation": {
+          "sourceFeatures": 140503,
+          "excludedUnsupportedElements": 0,
+          "excludedTerritory": 890,
+          "wayCentroids": 18,
+          "tombstonesBlocked": 0,
+          "tombstonesCleared": 6,
+          "outputElements": 139613,
+          "elementsSha256": "c43f762187e64cde8dc85bf1b217a6d16a20a259b0090f9c0ed1cf420f8c3f74",
+          "outputTombstones": 3644,
+          "publishedLiveSha256": "d2d5c2eb04a70a04871f49983bebf462c5a216ac0cf29690ddf2644a41065364",
+          "publishedTombstonesSha256": "a992f8393d10b3abf58b8cab3b17d0929a30c1fbab389b33930c64bb3238d741"
+        },
+        "sourceWatermark": {
+          "status": "approved",
+          "captureId": "c9f55ffe-e58d-4863-ad00-467815a86e12",
+          "minimumOsmBase": "2026-09-09T13:33:59.000Z",
+          "responseLedger": {
+            "schema": "deflock-overpass-response-ledger/v2",
+            "path": "scripts/data/deflock-us-overpass-response-ledger.json",
+            "bytes": 234666,
+            "sha256": "725da319834d85329c8a9b575bd62cfc6192902c942f70c0155b510d387f9670",
+            "responseCount": 224,
+            "roleCounts": {
+              "count": 124,
+              "data": 100,
+              "subtraction": 0
+            },
+            "endpoints": [
+              "https://overpass-api.de/api/interpreter",
+              "https://overpass.deflock.org/api/interpreter"
+            ],
+            "responseBundle": {
+              "path": "scripts/data/deflock-us-overpass-responses.bundle.gz",
+              "compression": "gzip",
+              "bytes": 3473682,
+              "sha256": "357144392262bfeca27f8cb15256b3d7da364b3560f94d0b33e64ed41ccfa07c",
+              "responseCount": 224
+            }
+          }
+        },
+        "replicationFloor": {
+          "stream": "hour",
+          "sequence": 122646,
+          "timestamp": "2026-09-09T13:00:00.000Z",
+          "stateUrl": "https://osm-planet-us-west-2.s3.amazonaws.com/planet/replication/hour/000/122/646.state.txt"
+        }
+      }
+    },
+    "transformation": {
+      "sourceFeatures": 140503,
+      "excludedUnsupportedElements": 0,
+      "excludedTerritory": 890,
+      "wayCentroids": 18,
+      "tombstonesBlocked": 0,
+      "tombstonesCleared": 6,
+      "outputElements": 139613,
+      "elementsSha256": "c43f762187e64cde8dc85bf1b217a6d16a20a259b0090f9c0ed1cf420f8c3f74",
+      "outputTombstones": 3644,
+      "publishedLiveSha256": "d2d5c2eb04a70a04871f49983bebf462c5a216ac0cf29690ddf2644a41065364",
+      "publishedTombstonesSha256": "a992f8393d10b3abf58b8cab3b17d0929a30c1fbab389b33930c64bb3238d741"
+    }
+  },
+  "attribution": "Map data © OpenStreetMap contributors",
+  "licence": "ODbL-1.0",
+  "licenceUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "cameras": 139613,
+  "tiles": 8740,
+  "bbox": {
+    "south": 17.5,
+    "west": -180,
+    "north": 72,
+    "east": 180
+  }
+}

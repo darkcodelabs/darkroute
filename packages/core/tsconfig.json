@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "@fwm/core is platform-free on purpose: `lib` drops DOM so a browser global cannot be referenced by accident, and `types` is empty so no ambient @types package leaks in.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": [],
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"]
+}

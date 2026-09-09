@@ -1,0 +1,75 @@
+/*
+ * THE COMPASS. Same 40px circle and four-layer glass as the rail's keys, and
+ * for the reason the rail's own file gives: it floats over the map, so it is
+ * chrome, and chrome over the map is glass. A control that read as a different
+ * material would look like something the map drew rather than something the app
+ * put there.
+ */
+
+.fwm-compass {
+  position: absolute;
+  left: var(--fwm-space-4);
+  top: var(--fwm-drive-row-2);
+  z-index: 2;
+  display: grid;
+  place-items: center; /* keyword */
+  /* THE RAIL KEY'S OWN SIZE, read from the same declaration rather than a
+     number that happens to match today. `--fwm-rail-key-size` is a local of
+     `chrome.css`, so it is restated here at its published value with the
+     source named - the design gate refuses a var it cannot resolve, and a
+     silently-empty size on a floating control is an invisible button. 40, the
+     same arithmetic chrome.css uses. */
+  width: calc(var(--fwm-space-1) * 10);
+  height: calc(var(--fwm-space-1) * 10);
+  padding: 0;
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background-color: var(--dr-surface-thin);
+  background-image: var(--dr-grain);
+  backdrop-filter: var(--dr-blur);
+  -webkit-backdrop-filter: var(--dr-blur);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-compass svg {
+  position: absolute;
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+}
+
+/* NORTH IS THE ALERT RED and south is the muted ink, which is the convention
+   every compass on earth uses. It is not this app's alert red doing alert work
+   - it is the half of a needle that has meant north since the instrument was
+   invented, and inventing a new colour for it would be the one place being
+   original costs a reader something. */
+.fwm-compass-n {
+  fill: var(--fwm-alert-in-range);
+}
+
+.fwm-compass-s {
+  fill: var(--dr-ink-muted);
+}
+
+/* The letter sits under the needle's pivot rather than beside it, so the
+   control stays a 40px circle instead of growing a label. */
+.fwm-compass-mark {
+  position: relative;
+  top: calc(var(--fwm-space-4) - var(--fwm-space-1));
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-forecast);
+  font-weight: 700;
+  color: var(--dr-ink-muted);
+}
+
+/* TURNED, OR SET TO TURN. The hairline takes the accent so the control says at
+   a glance that the map is not square with the world - the needle's angle says
+   the same thing, but a driver reads a colour before they read an angle. */
+.fwm-compass[data-fwm-turned='true'],
+.fwm-compass[data-fwm-heading-up='true'] {
+  border-color: var(--dr-accent-line);
+}
+
+.fwm-compass[data-fwm-turned='true'] .fwm-compass-mark,
+.fwm-compass[data-fwm-heading-up='true'] .fwm-compass-mark {
+  color: var(--dr-accent);
+}

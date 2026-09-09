@@ -1,0 +1,14 @@
+# The console's static responses. Pages does not apply this file to Function
+# responses, so the proxied API under /v1 and /api/v1 is unaffected - those
+# carry the canonical origin's own headers.
+#
+# connect-src names the two origins the console reads from: the public API on
+# the apex and the basemap host. The map style here is data-only (no glyphs, no
+# sprites, no tiles), so nothing else is fetched. worker-src blob: is MapLibre's
+# worker. style-src 'unsafe-inline' is MapLibre's injected styles, as in the app.
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; connect-src 'self' https://darkroute.ai https://tiles.darkroute.ai; font-src 'self'; img-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: accelerometer=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()

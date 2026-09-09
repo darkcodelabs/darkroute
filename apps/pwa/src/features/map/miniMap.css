@@ -1,0 +1,110 @@
+/* THE MINI MAP - a still picture of one camera. See `MiniMap.tsx`.
+ *
+ * Three layers in a fixed square: the GL canvas, an SVG mark pinned over its
+ * centre, and a caption under it saying what the ground is. */
+
+.fwm-minimap {
+  /* 112px, derived rather than typed: 2 x 48 + 16. Wide enough that the cone
+     reads as a direction at 3x, narrow enough to leave the distance readout
+     beside it a column at 320px, which is the narrowest screen this ships to.
+     `map.css` declares `--fwm-ego-scope` the same way and for the same reason:
+     a component's own geometry is derived from the spacing scale, never typed
+     as a raw pixel count. */
+  --fwm-minimap-size: calc(var(--fwm-space-12) * 2 + var(--fwm-space-4));
+  /* THE MARK'S HUE, overridable by whatever card the picture is standing in.
+     `intelV1.css` points it at the camera's alert state, so a card opened from
+     a live warning is marked in the colour of the warning. */
+  --fwm-minimap-hue: var(--fwm-accent-scan);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  flex: none; /* keyword */
+  width: var(--fwm-minimap-size);
+  /* IT IS A PICTURE. Nothing in here is a control, and a map inside a
+     scrolling card that captures a drag has broken the card. `interactive:
+     false` stops MapLibre attaching handlers; this stops the element being a
+     target at all, including for the browser's own text selection. */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-minimap-canvas {
+  position: relative;
+  width: 100%;
+  height: var(--fwm-minimap-size);
+  overflow: hidden; /* keyword */
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-4);
+  /* THE GROUND IS PAINTED EVEN WITH NO MAP UNDER IT.
+     A transparent box would show the card's own surface through the frame, and
+     "the tiles have not arrived" would look identical to "there is no picture
+     here". The earth token is what the scope paints its own background with,
+     so a bare card reads as a map with nothing on it - which is what it is. */
+  background: var(--fwm-map-earth);
+}
+
+/* CENTRED ON THE CAMERA, because the map is centred on the camera and cannot be
+   moved. The mark is DOM rather than a MapLibre marker precisely so it survives
+   a map that never built: see the note in `MiniMap.tsx`. */
+.fwm-minimap-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--fwm-minimap-size);
+}
+
+/* THE CONE IS AN APPROXIMATION AND IS DRAWN AS ONE.
+   `direction=90` says where the lens points; it says nothing about the field of
+   view. A hard-edged beam would claim a coverage the record does not carry, so
+   the wedge is a wash - present enough to read as a direction at a glance,
+   faint enough that nobody measures it. */
+.fwm-minimap-cone {
+  fill: var(--fwm-minimap-hue);
+  opacity: 0.28;
+}
+
+/* The camera itself. Ringed in the ground colour so it stays legible over a
+   road, a river or a park - the three things most likely to be under it. */
+.fwm-minimap-dot {
+  fill: var(--fwm-minimap-hue);
+  stroke: var(--fwm-map-earth);
+  stroke-width: var(--fwm-rule-w);
+}
+
+.fwm-minimap-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  /* The caption swaps between an attribution and an absence and must not
+     resize the card when it does. */
+  min-height: var(--fwm-text-micro);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* WHAT AN ABSENT GROUND LOOKS LIKE.
+ *
+ * Not an error, not a spinner: this app is used in dead zones on purpose, and a
+ * camera in one still has a position and a facing worth drawing. The frame goes
+ * dashed so the box reads as an empty plot rather than as a map that failed to
+ * paint, and the caption says which. */
+.fwm-minimap[data-fwm-ground='bare'] .fwm-minimap-canvas {
+  border-style: dashed; /* keyword */
+}
+
+/* THE GROUND FADES UP, FOR EVERYONE WHO HAS NOT ASKED IT NOT TO.
+ *
+ * The tiles land between one and four hundred milliseconds after the card
+ * opens, and a map snapping in at full contrast beside text somebody is already
+ * reading pulls the eye off the words. The transition is declared ONLY inside
+ * the no-preference query, so a reader who asked for less motion gets a canvas
+ * that has no transition to run rather than one that is animated and then
+ * overridden. */
+@media (prefers-reduced-motion: no-preference) {
+  .fwm-minimap .maplibregl-canvas {
+    transition: opacity var(--fwm-dur-base);
+  }
+
+  .fwm-minimap[data-fwm-ground='pending'] .maplibregl-canvas {
+    opacity: 0;
+  }
+}

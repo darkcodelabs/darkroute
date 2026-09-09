@@ -1,0 +1,37 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://darkroute.ai",
+          "https://www.darkroute.ai",
+          "https://dev.darkroute.ai",
+          "https://darkroute.pages.dev",
+          "https://darkroute-dev.pages.dev",
+          "http://localhost:4173",
+          "http://127.0.0.1:4173",
+          "http://localhost:4199",
+          "http://127.0.0.1:4199",
+          "http://localhost:5173",
+          "http://127.0.0.1:5173"
+        ],
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "headers": [
+          "Range",
+          "If-Match",
+          "If-None-Match"
+        ]
+      },
+      "exposeHeaders": [
+        "ETag",
+        "Content-Range",
+        "Accept-Ranges",
+        "Content-Length"
+      ],
+      "maxAgeSeconds": 86400
+    }
+  ]
+}

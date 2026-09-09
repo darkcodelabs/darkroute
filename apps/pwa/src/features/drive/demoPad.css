@@ -1,0 +1,156 @@
+/*
+ * THE DEMO PAD. Same four-layer glass as every other surface over the map -
+ * tint, crossed grain, blur, hairline - because it sits on the map beside the
+ * chrome and a control that does not read as part of the system reads as a
+ * bug. See `styles/tokens.css` for the recipe and why the tint is 0.72.
+ *
+ * IT SITS ABOVE THE DOCK'S SCRIM AND BELOW THE DOCK. The dock is the thing a
+ * demo is usually being run to show, so nothing here may cover it.
+ */
+
+/* RIGHT SIDE, BY OWNER DECISION - and it is the side that was always correct.
+   The left edge is where the map's own labels run and where a right-handed
+   thumb has to cross the screen to reach. The rail already owns the right edge,
+   so the pad joins the controls rather than competing with the cartography.
+   Items are right-aligned so the dial, the step row and the exit key share one
+   edge with the rail above them. */
+.fwm-demo-pad {
+  position: absolute;
+  right: var(--fwm-space-4);
+  bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  z-index: 3;
+  display: flex;
+  flex-direction: column; /* keyword */
+  align-items: flex-end; /* keyword */
+  gap: var(--fwm-space-2);
+  pointer-events: auto; /* keyword */
+}
+
+/* THE DIAL. A 3x3 grid with the four keys on the cross and the brake in the
+   middle, which is the arrangement every thumb already knows. */
+.fwm-demo-dial {
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--fwm-space-12) - var(--fwm-space-1)));
+  grid-template-rows: repeat(3, calc(var(--fwm-space-12) - var(--fwm-space-1)));
+  place-items: center; /* keyword */
+  padding: var(--fwm-space-1);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background-color: var(--dr-surface-thin);
+  background-image: var(--dr-grain);
+  backdrop-filter: var(--dr-blur);
+  -webkit-backdrop-filter: var(--dr-blur);
+}
+
+.fwm-demo-key {
+  grid-area: var(--fwm-demo-area);
+  display: grid;
+  place-items: center; /* keyword */
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  color: var(--dr-ink);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-demo-key[data-fwm-dir='up'] {
+  --fwm-demo-area: 1 / 2;
+}
+.fwm-demo-key[data-fwm-dir='left'] {
+  --fwm-demo-area: 2 / 1;
+}
+.fwm-demo-key[data-fwm-dir='right'] {
+  --fwm-demo-area: 2 / 3;
+}
+.fwm-demo-key[data-fwm-dir='down'] {
+  --fwm-demo-area: 3 / 2;
+}
+
+.fwm-demo-key svg {
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+}
+
+/* THE BRAKE, in the middle where the thumb rests. Filled rather than outlined:
+   it is the only key here that is not a direction, and a fifth chevron would
+   read as one. */
+.fwm-demo-halt {
+  grid-area: 2 / 2;
+  width: calc(var(--fwm-space-8) + var(--fwm-space-1));
+  height: calc(var(--fwm-space-8) + var(--fwm-space-1));
+  padding: 0;
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-specular);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-demo-steps {
+  display: flex;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-1);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background-color: var(--dr-surface-thin);
+  background-image: var(--dr-grain);
+  backdrop-filter: var(--dr-blur);
+  -webkit-backdrop-filter: var(--dr-blur);
+}
+
+.fwm-demo-step {
+  min-height: var(--fwm-space-8);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-forecast);
+  font-weight: 700;
+  color: var(--dr-ink-muted);
+  cursor: pointer; /* keyword */
+}
+
+/* The chosen step wears the same 13% accent fill and accent hairline the top
+   chrome's active chip does. One active look in the whole app. */
+.fwm-demo-step[data-fwm-chosen='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+}
+
+.fwm-demo-exit {
+  display: inline-flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  min-height: calc(var(--fwm-space-8) + var(--fwm-space-1));
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background-color: var(--dr-surface-thin);
+  background-image: var(--dr-grain);
+  backdrop-filter: var(--dr-blur);
+  -webkit-backdrop-filter: var(--dr-blur);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-forecast);
+  font-weight: 700;
+  color: var(--dr-ink);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-demo-exit svg {
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-4);
+}
+
+/* The pad is a demo control and never a driving one, so it may animate freely -
+   but it still honours the system setting, because somebody who asked for less
+   motion asked once and meant everywhere. */
+@media (prefers-reduced-motion: no-preference) {
+  .fwm-demo-key:active,
+  .fwm-demo-halt:active {
+    transform: scale(0.92);
+  }
+}

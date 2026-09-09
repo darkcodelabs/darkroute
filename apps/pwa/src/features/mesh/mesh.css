@@ -1,0 +1,158 @@
+/* MESH - one screen while unpaired.
+ *
+ * The frame, the segmented control and the card are `styles/screen.css`. What
+ * is here is the promo card's own type and the three hairline-separated rules
+ * inside it.
+ *
+ * =============================================================================
+ * WHAT LEFT THIS FILE, AND THE ONE THAT MATTERS
+ * =============================================================================
+ * `.fwm-mesh-pitch`'s LAVENDER GROUND. It filled with `--fwm-accent-mesh`
+ * (#8A6BFF) and set its text in `--fwm-bg` - a solid purple slab, the loudest
+ * surface in the product, spent on an explainer. Brief 4 deletes it and says
+ * why: purple was the one hue in the palette with no meaning, and the brief
+ * gives it one. `--dr-owner-unverified` is #a78bfa now, and an unverified
+ * camera is the only purple thing in DarkRoute. A decorative slab in nearly
+ * that hue on another screen is how a taxonomy stops being readable.
+ *
+ * `.fwm-mesh-leaves` AS A SEPARATE BORDERED LIST. It was its own box under the
+ * pitch card, so the three claims arrived after the argument had finished and
+ * read as three unexplained pills. They are inside the card now, separated by
+ * hairlines rather than boxed, which is the difference between fine print and
+ * a footer.
+ *
+ * `.fwm-mesh-leaf-state` AS A PILL. A bordered capsule per tag put three
+ * outlines in a column doing the job one aligned word does. It is a 52px
+ * right-aligned tag now: the spine the brief asks for.
+ *
+ * `.fwm-mesh-tab` AND `.fwm-mesh-tabs`' OWN GEOMETRY. The tabs were pill-shaped
+ * and `--fwm-touch-min` tall in a `--fwm-radius-full` shell. Section C's
+ * segmented control is 36px keys with radius 12 in a radius-16 shell, and it
+ * is the same control EXPOSURE and the map menus draw.
+ *
+ * THE LIQUID GLASS BLOCK, and the two class names it contributed to the
+ * `[data-fwm-liquid="on"]` list in tokens.css.
+ * ========================================================================== */
+
+.fwm-mesh {
+  --fwm-me-t-10: calc(var(--fwm-text-micro) * 10 / 11); /* 10 -- the tag */
+  --fwm-me-t-13-5: calc(var(--fwm-text-forecast) * 27 / 26); /* 13.5 -- a rule */
+  --fwm-me-t-14: var(--fwm-text-label); /* 14 -- the paragraph */
+  --fwm-me-t-19: calc(var(--fwm-text-title) * 19 / 24); /* 19 -- the headline */
+
+  --fwm-me-track-caps-10: calc(var(--fwm-card-track-tight) * -10); /* 0.10em */
+  --fwm-me-track-title: var(--fwm-card-track-tight); /* -0.01em */
+
+  --fwm-me-tabs-gap-b: var(--fwm-space-3); /* 12 -- tabs to the first card */
+  --fwm-me-body-gap: var(--fwm-space-2); /* 8 -- headline to paragraph */
+  --fwm-me-rules-gap: calc(var(--fwm-space-1) * 3.5); /* 14 -- paragraph to rules */
+  --fwm-me-rule-gap: calc(var(--fwm-space-1) * 2.75); /* 11 -- rule to rule */
+  --fwm-me-tag-w: calc(var(--fwm-space-1) * 13); /* 52 -- the tag column */
+}
+
+.fwm-mesh-band {
+  min-width: 0;
+}
+
+/* The spec draws the segmented control 2px below the title track and 12 above
+   the first card. The band supplies the side padding; this supplies the air. */
+.fwm-mesh-tabs {
+  margin-bottom: var(--fwm-me-tabs-gap-b);
+}
+
+/* =========================================================================
+ * THE PROMO CARD -- claim, explanation, and the three rules that qualify it
+ * ====================================================================== */
+
+.fwm-mesh-pitch-title {
+  margin: 0;
+  font-size: var(--fwm-me-t-19); /* 19 */
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: var(--fwm-me-track-title); /* -0.01em */
+  color: var(--dr-ink);
+}
+
+.fwm-mesh-pitch-body {
+  margin: var(--fwm-me-body-gap) 0 0;
+  font-size: var(--fwm-me-t-14); /* 14 */
+  line-height: 1.5;
+  color: var(--dr-ink-4);
+}
+
+/* WHAT LEAVES YOUR CAR. Two states and no third: a thing is sent or it is not,
+   and a maybe here would be the product hedging about the one promise that
+   matters. */
+.fwm-mesh-leaves {
+  display: grid;
+  min-width: 0;
+  margin: var(--fwm-me-rules-gap) 0 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+/* THE HAIRLINE IS A TOP BORDER, WHICH PUTS ONE ABOVE THE FIRST RULE TOO.
+   That is the spec's own markup and it is right: the first line needs a rule
+   separating it from the paragraph above as much as the second needs one
+   separating it from the first. Three rules, three lines, evenly spaced. */
+.fwm-mesh-leaf {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-me-rule-gap);
+  min-width: 0;
+  margin-top: var(--fwm-me-rule-gap);
+  padding-top: var(--fwm-me-rule-gap);
+  border-top: var(--fwm-rule-w) solid var(--dr-group-line);
+}
+
+/* THE SPINE. 52px wide and right-aligned, so SENT / NEVER / NEVER end on one
+   vertical rather than each starting where the word before it happened to
+   finish. It is what makes three sentences read as one table. */
+.fwm-mesh-leaf-state {
+  flex: none; /* keyword */
+  width: var(--fwm-me-tag-w); /* 52 */
+  font-size: var(--fwm-me-t-10); /* 10 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-me-track-caps-10); /* 0.10em */
+  text-align: right; /* keyword */
+  color: var(--fwm-alert-clear);
+}
+
+/* Green is SENT, red is NEVER. Both resolve to the alert scale rather than to
+   a `--dr-*` surface: they are the product's own words for positive and for
+   stop, and a promise about what is broadcast should change colour with the
+   skin exactly as an alert does. The spec draws #7fe3a0 and #ff9aa6; these are
+   the published tokens nearest each. */
+.fwm-mesh-leaf-state[data-fwm-state='NEVER'] {
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-mesh-leaf-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-me-t-13-5); /* 13.5 */
+  line-height: 1.45;
+  color: var(--dr-ink-3);
+}
+
+/* =========================================================================
+ * THE CHAT TAB OWNS THE SCREEN
+ *
+ * RADIOS is a long document and scrolls as one. CHAT must not: its composer is
+ * the one control that has to stay under a thumb, and in a scrolling column it
+ * walks off the bottom as the thread grows. So on that tab the BAND stops
+ * scrolling and the thread is the only thing that does - see
+ * `.fwm-chat-thread`.
+ *
+ * The band rather than the section, which is the change section C forces: the
+ * section is a three-row grid now (title / band / dock reserve) and it never
+ * scrolled in the first place.
+ * ====================================================================== */
+
+.fwm-mesh[data-fwm-tab='chat'] .fwm-mesh-band {
+  overflow-y: hidden; /* keyword */
+}
+
+.fwm-mesh[data-fwm-tab='chat'] .fwm-chat {
+  min-height: 0;
+}

@@ -1,0 +1,665 @@
+/* DarkRoute global stylesheet.
+ *
+ * This file is inside apps/pwa/src, so it obeys the token rule: every colour,
+ * length, radius, duration and easing below is `var(--fwm-*)`. The only
+ * exceptions are called out inline, and each one is either a CSS keyword, a
+ * dimensionless zero, or a keyframe geometry value that the token set does not
+ * model (design gap animations-are-not-tokens).
+ *
+ * It imports no project stylesheet. tokens.css is imported FIRST by
+ * src/main.tsx, before this file, so `var(--fwm-*)` is always declared by the
+ * time these rules resolve.
+ *
+ * The @import below is not a file include -- it is the substitution point
+ * Tailwind's PostCSS plugin replaces with generated CSS. It lives here because
+ * this is the PWA's only global stylesheet. Tailwind 4 replaced the three
+ * `@tailwind base/components/utilities` directives with this single import.
+ *
+ * @config keeps the theme in tailwind.config.ts rather than a v4 `@theme`
+ * block. That is deliberate: `@theme` would mint a SECOND generation of custom
+ * properties (--color-bg, --spacing-2) shadowing the --fwm-* set that
+ * tokens.css owns, and check-design-values.mjs treats tokens.css as the single
+ * source of raw values. One indirection, not two.
+ */
+
+@import 'tailwindcss';
+@config '../../tailwind.config.ts';
+
+/* ---------------------------------------------------------------------------
+ * Document
+ * ------------------------------------------------------------------------ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--fwm-bg);
+}
+
+html {
+  /* 100% + the body min-height below keeps a full-bleed dark canvas under the
+   * safe areas when viewport-fit=cover lets the page paint behind the notch. */
+  height: 100%;
+
+  /* THE CANVAS UNDER THE APP, WHICH IS NOT THE APP'S BACKGROUND.
+   *
+   * This was `color-scheme: dark` flat, and that is what painted a BLACK BAND
+   * across the bottom of a paper-coloured app. `color-scheme` tells the engine
+   * what to paint the parts of the viewport the document does not: the region
+   * behind the home indicator under `viewport-fit=cover`, the overscroll
+   * gutter, and the default form-control and scrollbar rendering. Setting
+   * `background` on html and body does not reach it -- the engine has already
+   * decided the canvas is a dark-scheme canvas.
+   *
+   * So on `refinement` -- the one light mode -- an installed PWA framed the
+   * app in black at the bottom, which reads as a rendering fault rather than a
+   * design. `theme-color` had already been taught to follow the mode
+   * (`app/mode.ts`), so the TOP bar was right and the bottom was not, which is
+   * the version of this bug that looks most like a bug.
+   *
+   * Dark stays the default here because seven of the eight modes are dark and
+   * because this is what applies before any preference has been read. The
+   * per-mode override lives in tokens.css beside the palette it belongs to --
+   * an attribute selector on the same element, so it wins on specificity
+   * regardless of stylesheet order.
+   */
+  color-scheme: dark; /* keyword */
+  -webkit-text-size-adjust: 100%; /* keyword-equivalent: "do not rescale" */
+}
+
+body {
+  min-height: 100%;
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  /* A pull-to-refresh gesture during a live alert would reload the app and
+   * drop the alert. The design has no refresh affordance; disable the gesture. */
+  overscroll-behavior: none; /* keyword */
+  -webkit-tap-highlight-color: transparent; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Numerals
+ *
+ * "mono, tabular-nums. Never wraps, never animates its digits."
+ *   -- Flockys Design System.dc.html, section 02 (type scale, text-hero note)
+ *
+ * Every readout -- distance, count, speed, exposure -- carries .fwm-data so a
+ * changing digit never shifts the glyphs beside it.
+ *
+ * =============================================================================
+ * THIS USED TO SET `white-space: nowrap` AND THAT WAS A CATEGORY ERROR
+ * =============================================================================
+ * The design note above is about a READOUT: "1,247 FT" must not break between
+ * the number and its unit, because a digit changing must never reflow the line
+ * beside it. True, and worth guaranteeing.
+ *
+ * But `.fwm-data` is not only the readout class -- it is also how any element
+ * asks for the mono typeface, and roughly thirty of them are PROSE: settings
+ * captions, the stored-data explanations, the help strapline, the privacy
+ * promises. Forcing those onto a single line does not stabilise anything; it
+ * runs a sentence straight off the side of the phone. Measured at 320 CSS px,
+ * one settings caption extended 641 px past its column and several others by
+ * 100-200 px, all of it invisible off-screen.
+ *
+ * So the typeface rule is here and the layout rule is not. The readouts that
+ * genuinely must not break say so themselves, which is also where somebody
+ * reading that rule can see WHICH value it is protecting -- `.fwm-radar-digits`
+ * and `.fwm-radar-unit` already did exactly this. `scripts/check-text-fits.mjs`
+ * measures the whole app at three widths and fails on a box its text does not
+ * fit, so a prose element that picks up a stray nowrap is caught rather than
+ * shipped.
+ * ------------------------------------------------------------------------ */
+
+.fwm-data {
+  font-family: var(--fwm-font-data);
+  font-variant-numeric: tabular-nums; /* keyword */
+  font-feature-settings: "tnum" 1; /* keyword + on/off flag, for older engines */
+}
+
+/* ---------------------------------------------------------------------------
+ * Safe areas
+ *
+ * "safe areas: env(safe-area-inset-*) on nav + header"
+ * "bottom nav 64px + env(safe-area-inset-bottom)"
+ *   -- Flockys Design System.dc.html, section 06 (PLATFORM BEHAVIOUR)
+ *
+ * The `0px` inside each env() is the zero fallback for engines without safe
+ * area support, not a design value. It is required: without it the whole
+ * calc() would be invalid on those engines and the base padding would be lost.
+ * ------------------------------------------------------------------------ */
+
+.fwm-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.fwm-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/**
+ * `hidden` MEANS HIDDEN, and without this it did not.
+ *
+ * The HTML attribute works through a user-agent rule of `display: none`, which
+ * ANY author `display` beats outright - so `.fwm-drive-closest-keys { display:
+ * flex }` won, and the collapsed closest-camera card kept drawing both of its
+ * keys underneath a card that had been shrunk specifically to get them out of
+ * the way. That is a live defect on the one card a driver cannot dismiss.
+ *
+ * One rule, at author level, so every `hidden` in the app means what it says
+ * rather than each component having to remember to check.
+ */
+[hidden] {
+  display: none !important; /* keyword */
+}
+
+.fwm-safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.fwm-safe-all {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* Header and dock composites: the token height IS the touchable height, and the
+ * inset is added on top of it so the safe area never eats the hit target. */
+.fwm-safe-header {
+  height: calc(var(--fwm-header-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.fwm-safe-dock {
+  height: calc(var(--fwm-nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Content that sits under the FIXED dock reserves its full height.
+ *
+ * `--fwm-dock-h` (84px), NOT `--fwm-nav-h` (64px). The dock's wrapper is
+ * `fixed inset-x-0 bottom-0` and is 84px tall; reserving 64 left a 20px band
+ * where the bar was drawn over whatever the screen ended with. On RADAR that
+ * band took the bottom of the live zone card -- the row of counts.
+ * Closes gap record dock-v2 (the-content-gutter-still-reserves-nav-h).
+ *
+ * The inset is added on top, never folded in: the safe area is below the dock,
+ * not part of it.
+ *
+ * This is also what bounds a screen's own height. A percentage height resolves
+ * against its containing block's CONTENT box, so a screen at `height: 100%`
+ * inside this padded slot ends exactly where the dock begins -- which is what
+ * lets a screen scroll internally instead of growing the page. */
+.fwm-safe-dock-gutter {
+  padding-bottom: calc(var(--fwm-dock-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* THE GUTTER FOLLOWS THE DOCK'S FAMILY, because the dock now has three heights.
+ *
+ * =============================================================================
+ * WHY THIS IS NOT JUST A BIGGER NUMBER IN tokens.css
+ * =============================================================================
+ * `--fwm-dock-h` was one value, 84px, and eighteen stylesheets read it as the
+ * band to keep clear at the bottom of a screen. `Dock.dc.html` replaces that
+ * bar with a surface that is 147px BROWSING, 288px EXPANDED and 168px DRIVING,
+ * and none of those is 84. Leaving the token alone would draw every one of
+ * those eighteen screens' last row behind the bar; changing it to a single new
+ * constant would be wrong in two of the three states.
+ *
+ * So the value follows `data-fwm-family`, which is the attribute the dock
+ * already sets on itself and the same one its own height comes from. One
+ * source, two readers, and they cannot disagree.
+ *
+ * THE BASE VALUE IS NOT TOUCHED. `tokens.css` still declares 84px on `:root`
+ * and that is deliberate: it is the height of the v1 bar, which is still what
+ * `App.tsx` mounts on every screen the new dock has not reached yet. These
+ * rules fire only where a `.fwm-dock` actually exists, so a screen keeps the
+ * gutter that matches the bar it is actually drawing.
+ *
+ * `:root:has()` rather than an attribute on `<html>`. The dock is a component
+ * and the state is its own; lifting it to the document would let a screen that
+ * has no dock leave the wrong gutter behind it. `drive.css` reaches the dock
+ * the same way, for the same reason.
+ *
+ * Specificity: `:root:has(.fwm-dock[...])` is (0,3,0) against `:root`'s (0,1,0),
+ * so these win wherever they apply regardless of file order.
+ *
+ * Lengths are ratios off the 4px step, which is what the design-value gate
+ * accepts; the spec's own pixel figure is beside each one. */
+:root:has(.fwm-dock[data-fwm-family='browse']) {
+  --fwm-dock-h: calc(var(--fwm-space-1) * 36.75); /* 147 */
+}
+
+:root:has(.fwm-dock[data-fwm-family='expanded']) {
+  --fwm-dock-h: calc(var(--fwm-space-1) * 72); /* 288 */
+}
+
+:root:has(.fwm-dock[data-fwm-family='drive']) {
+  --fwm-dock-h: calc(var(--fwm-space-1) * 42); /* 168 */
+}
+
+/* THE SHELL IS THE VIEWPORT, AND THE SCREEN IS WHAT IS LEFT OF IT.
+ *
+ * `min-height: 100%` let the shell grow to its contents, so the document
+ * scrolled and a screen could not bound its own internal scrolling: RADAR's
+ * column ran past the bottom of the phone and its last card was drawn behind
+ * the dock.
+ *
+ * `100dvh` is the dynamic viewport unit. It tracks a mobile browser's
+ * collapsing address bar; `vh` does not, and that difference is what makes a
+ * bottom bar jump while scrolling. `100%` stays as the fallback.
+ *
+ * `min-height: 0` on the screen slot is the other half: a flex child's default
+ * `min-height: auto` refuses to shrink below its content, which silently
+ * defeats every `overflow: auto` inside it. */
+.fwm-shell {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden; /* keyword */
+}
+
+/* FOCUS COMES BACK TO THE SCREEN when an overlay closes and the control that
+ * raised it is gone -- see components/overlay/useOverlayDismiss.ts. The ring is
+ * suppressed because this element is never tabbed to and never clicked: the
+ * only focus it can receive is the programmatic one, and drawing a rectangle
+ * around the entire viewport for it would say something is selected when
+ * nothing is. */
+.fwm-shell-screen:focus {
+  outline: none; /* keyword */
+}
+
+.fwm-shell-screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* EVERY SCREEN IS BOUNDED BY THIS SLOT, NOT BY ITS CONTENT.
+ *
+ * Screen roots are written `min-height: 100%` -- correct when the document
+ * scrolled, and wrong the moment the shell became the viewport: a min-height
+ * grows past a clipped parent, so a long screen simply had its bottom cut off
+ * with no way to reach it. SETTINGS lost everything below the permissions
+ * section and could not be scrolled at all.
+ *
+ * Bounding the child here fixes every screen at once rather than one file at a
+ * time, and `min-height: 0` is the half that matters: without it a flex child
+ * refuses to shrink below its content, which silently defeats the
+ * `overflow: auto` each screen already has on its own scrolling body.
+ *
+ * Overlays and the alert layer are positioned, so they are out of flow and
+ * untouched by this. */
+.fwm-shell-screen > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Keyframes -- copied verbatim from the design sources.
+ *
+ * WHICH DEFINITION WON: the four design files ship conflicting bodies for
+ * fwmPulse, fwmRing and fwmVoice. The source-authority rule in
+ * the gap records puts rendered screen references above the
+ * design-system primitives, so the screen definitions win where they disagree.
+ *
+ * Percentages, opacities and scale factors here are keyframe geometry. The
+ * token set models no such family, and a keyframe cannot be expressed in
+ * tokens -- see design gap animations-are-not-tokens. Durations are NOT
+ * defined here: every published duration (2.4s, 1.6s, 1.4s, 1.1s, .6s-1.3s,
+ * 3s) exceeds --fwm-dur-alert (400ms), so callers set duration at the use site
+ * and cite their source file, per that same gap entry.
+ *
+ * A sixth keyframe, fwmBlink, exists in the design system file and is not
+ * reproduced here: it is outside the documented five and nothing rendered
+ * uses it. See gap record repo-tooling (sixth-keyframe-fwmblink).
+ * ------------------------------------------------------------------------ */
+
+/* Source: Flockys App Screens.dc.html:18 -- identical in all four files. */
+@keyframes fwmSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Source: Flockys App Screens.dc.html:19, matching Screens II:18 and Watch:18.
+ * The design system file (line 20) dims to .25 instead of .3; the screens win. */
+@keyframes fwmPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Source: Flockys App Screens.dc.html:20 (the phone surface, which is primary).
+ * Flockys Watch.dc.html:19 renders .74 -> 1.5 and the design system file
+ * (line 21) renders .7 -> 1.6 at opacity .9. Divergence logged at
+ * gap record repo-tooling (keyframe-definitions-diverge-across-design-files) */
+@keyframes fwmRing {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+/* Source: Flockys Design System.dc.html:23 -- the only file that defines it.
+ * Used by the pursuit-mode scanner bar. */
+@keyframes fwmScan {
+  0% {
+    left: 4%;
+  }
+  100% {
+    left: 76%;
+  }
+}
+
+/* Source: Flockys App Screens.dc.html:21, matching Watch:21.
+ * The design system file (line 24) renders scaleY(.3); the screens win. */
+@keyframes fwmVoice {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion
+ *
+ * Stops decorative motion. Does NOT touch hue.
+ *
+ * `animation-name: none` returns an element to its own base styles, and none
+ * of the five keyframes above animate a colour -- they move transform, opacity
+ * and left only. Alert colour is therefore carried entirely by the element's
+ * own `color` / `background` / `border-color`, which this block never sets.
+ * The four-state hue survives reduced motion intact, including the takeover.
+ *
+ * `[data-fwm-motion="essential"]` is the documented opt-out for motion that
+ * carries meaning rather than decoration. It is opt-in per element, never a
+ * blanket exemption, and decorative motion may not use it.
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto; /* keyword */
+  }
+
+  *:not([data-fwm-motion="essential"]),
+  *:not([data-fwm-motion="essential"])::before,
+  *:not([data-fwm-motion="essential"])::after {
+    animation-name: none !important; /* keyword */
+    animation-iteration-count: 1 !important; /* count, not a duration */
+    transition-duration: var(--fwm-dur-instant) !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * A LAYER OVER THE SCREEN - sheets, modals, the camera alert.
+ *
+ * `.fwm-shell-screen > *` gives every child `flex: 1`, which is right for the
+ * ONE screen it was written for and wrong for anything rendered beside it: an
+ * overlay became a second flex row, so the screen took the top half of the
+ * viewport and the sheet took the bottom half and both were visible at once.
+ * The camera card appeared UNDER the drive screen rather than over it.
+ *
+ * Taken out of flow, so the screen keeps the whole slot and the layer covers
+ * it. `inset: 0` is correct here and only here: the whole point of this element
+ * is to be in front of everything.
+ * ------------------------------------------------------------------------ */
+.fwm-shell-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* keyword */
+  overflow: hidden; /* keyword */
+}
+
+/* A live camera alert outranks a sheet, and both may be mounted for one
+   frame while the alert is taking the screen. */
+.fwm-shell-layer[data-fwm-layer='alert'] {
+  z-index: 3;
+
+  /* THE ALERT IS A MODAL OVER THE MAP, NOT A TAKEOVER OF IT - owner decision.
+   *
+   * It used to fill the screen, which is the one thing a camera warning must
+   * not do: you are being told a reader is 114 feet away, and the map is where
+   * that fact lives. Covering it answers "how far" and hides "where", and the
+   * driver has to dismiss the warning to see the thing it is warning about.
+   *
+   * Brief 4 already made this argument for the camera sheet - "tapping a camera
+   * on the map must not hide the map, you tapped it BECAUSE of where it is" -
+   * and the live alert is the same case with more urgency, not less.
+   *
+   * So the layer is inset to the band between the chrome and the dock. Both
+   * insets are the existing tokens rather than new numbers: the chrome's own
+   * second row and the dock's own height, so the card cannot drift out of
+   * agreement with either when they change. */
+  top: var(--fwm-drive-row-2);
+  bottom: var(--fwm-dock-h);
+  inset-inline: 0;
+  justify-content: center; /* keyword */
+  padding: var(--fwm-space-3);
+}
+
+/* The layer is a column that pins its child to the bottom, so a SHEET rises
+   from the bottom edge and a FULL-SCREEN surface still fills it. */
+.fwm-shell-layer > * {
+  max-height: 100%;
+}
+
+
+/* ===========================================================================
+ * EDGE TO EDGE - v1 only.
+ *
+ * The dock is a FLEX SIBLING of the screen, which is right for v0: its screens
+ * are panels and instruments that should end where the chrome begins. v1's
+ * DRIVE is a map, and a map that stops 78px short of the bottom of the phone
+ * reads as the app being cut off rather than as chrome sitting on it.
+ *
+ * Under v1 the screen fills the shell and the dock floats over it. The dock is
+ * already a rounded pill with air around it, so there is nothing to paint a
+ * ground behind - `bg-bg` there was covering live map with black.
+ *
+ * v0 is untouched: its dock keeps its own row and its own ground.
+ * ======================================================================== */
+:root .fwm-shell {
+  position: relative;
+}
+
+:root .fwm-shell-screen {
+  position: absolute;
+  inset: 0;
+}
+
+:root .fwm-shell-dock {
+  --fwm-dk-inset: calc(var(--fwm-space-1) * 2.5); /* 10 -- the spec's frame */
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  /* A COLUMN, BECAUSE THE DOCK IS TWO ELEMENTS AND ONE OF THEM IS RIGHT-ALIGNED.
+     `Dock` returns a fragment - the 54px REPORT circle, then the pill - and the
+     spec floats REPORT above the pill's RIGHT edge. `dock.css` says so with
+     `align-self: flex-end`, which is inert against a block container: the key
+     measured `left: 0`, hard left, in all nineteen states. `align-items:
+     stretch` keeps the pill itself full width, so nothing else here moves. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* keyword */
+  /* THE DOCK IS INSET, NOT FULL-BLEED, AND THAT IS THE SHAPE.
+     `Dock.dc.html` draws every one of the nineteen inside a phone frame with
+     `padding: 10px`, so the pill floats with a margin on both sides and the
+     22px radius reads as a rounded card. Bolted to `left: 0; right: 0` the
+     same radius reads as a panel with two clipped top corners, which is what
+     the owner meant by the shape being wrong. The bottom pad is the same 10
+     and rides above the gesture area. */
+  padding: 0 var(--fwm-dk-inset) var(--fwm-dk-inset);
+  /* NO GROUND. The pill brings its own; a black band behind it is the bottom
+     of the map painted out. */
+  background: transparent;
+  /* The bar is the only thing here a finger should hit. */
+  pointer-events: none; /* keyword */
+}
+
+:root .fwm-shell-dock > * {
+  pointer-events: auto; /* keyword */
+}
+
+/* ===========================================================================
+ * MAP-PRIMARY, on the `dash` surface.
+ *
+ * WHAT THIS IS FOR. A phone shows one thing at a time and navigating replaces
+ * it, which is right when there is room for one thing. The same tree on a
+ * monitor gives a 1,900px-wide settings list and no map at all - you tap a nav
+ * key and the product's most important surface disappears. Here the map is the
+ * ground and everything else is a panel over one edge of it.
+ *
+ * WIDTH IS CAPPED, DELIBERATELY. A settings list stretched to a full monitor is
+ * a worse settings list: the eye loses the row it was on between the label and
+ * the control. The panel holds a readable measure and gives the rest to the
+ * map, which is the one surface that genuinely wants every pixel.
+ *
+ * The rail is the same dock component, turned. It is not re-implemented: it
+ * loses its bottom placement and its horizontal flow and keeps its keys, its
+ * gestures, its badge and the report circle.
+ * ======================================================================== */
+
+/* PARKED. Mounted so MapLibre keeps its context and its tiles, invisible so it
+   cannot show through the screen over it. See the note in `App.tsx` for why
+   this is `visibility` and not `display: none` - a zero-size container makes
+   MapLibre resize to nothing, and coming back would show an empty map. */
+.fwm-shell-mapbed[data-fwm-map-parked='true'] {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  visibility: hidden; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-shell-mapbed[data-fwm-map-parked='true'] > * {
+  flex: 1;
+  min-height: 0;
+}
+
+[data-fwm-surface='dash'] .fwm-shell-mapbed {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+}
+
+[data-fwm-surface='dash'] .fwm-shell-mapbed > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* =========================================================================
+ * THE LANDSCAPE ARRANGEMENT -- `DarkRoute Landscape Mode.html`, sections B, C, D
+ *
+ * WHAT THIS REPLACES, AND WHY THE OLD BLOCK IS GONE RATHER THAN AMENDED.
+ * What stood here turned the portrait tree sideways: the screen became a panel
+ * capped at `--fwm-panel-w` (420), the dock was pinned `top: 0; bottom: 0;
+ * left: 0` with `width: max-content`, and `.fwm-dockv1` / `.fwm-dockv1-bar`
+ * were flipped to `flex-direction: column`. It carried its own confession --
+ * "THIS IS THE OLD BEHAVIOUR, KEPT ON PURPOSE. THE DOCK SPEC HAS NO RAIL ...
+ * Turning the bar on its side would be this stylesheet inventing a twentieth
+ * state" -- and pointed at
+ * gap record pwa-shell (dash-surface-needs-a-rail-not-a-bottom-dock).
+ *
+ * THAT GAP IS NOW CLOSED BY A SPEC RATHER THAN BY A ROTATION. There is a
+ * drawn landscape layout: a 52px tab rail at `left: 8`, a 336px content column
+ * at `left: 68`, a rail of 44px circles at `right: 8`, and 484px of untouched
+ * map between the two columns. `features/landscape/` draws it and
+ * `app/ShellDock.tsx` mounts it. So this stylesheet no longer invents anything
+ * about the rail: it places the LAYER the rail lives in, and stops.
+ *
+ * THE THREE `.fwm-dockv1*` RULES ARE DELETED. They were the v1 pill's own
+ * wide-screen behaviour and nothing renders that pill on this surface any more.
+ * A dead rule scoped to a surface is worse than no rule: it reads as an
+ * intention.
+ * ====================================================================== */
+
+/* =========================================================================
+ * WHERE A SCREEN GOES IN LANDSCAPE -- and the spec does not say.
+ *
+ * All five landscape frames draw the MAP tab. Not one draws EXPOSURE, MESH,
+ * LOOKUP or MORE, and the tab rail navigates to all four. So the arrangement
+ * below is a derivation and is flagged as one: a screen takes THE SAME COLUMN
+ * THE SLOTS TAKE -- `left: 68`, 336 wide -- because that is the only placement
+ * consistent with the one rule section D does state about this surface:
+ *
+ *   "484 px between the two columns stays clear at all times. That band is the
+ *    road ahead and the vehicle puck -- it is not available for chrome, ever."
+ *
+ * The old 420px cap violated that by 84px. A screen in the content column does
+ * not, and it means the four screens and the two slots occupy one column rather
+ * than two overlapping ones.
+ * ====================================================================== */
+
+[data-fwm-surface='dash']:root .fwm-shell[data-fwm-map-primary='true'] .fwm-shell-screen {
+  top: var(--fwm-ls-shell-inset);
+  right: auto;
+  bottom: var(--fwm-ls-shell-inset);
+  left: var(--fwm-ls-shell-col);
+  z-index: 2;
+  width: var(--fwm-ls-shell-col-w);
+  max-width: var(--fwm-ls-shell-col-w);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-ls-shell-radius);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-panel-lift), var(--dr-specular);
+}
+
+/* An overlay is a panel too, in the same column, for the same reason: a sheet
+   that slides up from the bottom of a head unit is a phone gesture with no
+   pointer equivalent, and in landscape there is no vertical room for one. */
+[data-fwm-surface='dash']:root .fwm-shell-layer:not([data-fwm-layer='alert']) {
+  top: var(--fwm-ls-shell-inset);
+  right: auto;
+  bottom: var(--fwm-ls-shell-inset);
+  left: var(--fwm-ls-shell-col);
+  z-index: 3;
+  width: var(--fwm-ls-shell-col-w);
+  max-width: var(--fwm-ls-shell-col-w);
+}
+
+/* =========================================================================
+ * THE CHROME LAYER.
+ *
+ * In portrait `.fwm-shell-dock` is a flex child that occupies real space at the
+ * bottom of the column -- see the note in `App.tsx` for why it is in flow
+ * rather than `fixed`. In landscape it occupies NO space: it is a full-frame
+ * layer over the map, and everything inside it places itself against the four
+ * edges. `features/landscape/landscape.css` makes it transparent to the pointer
+ * so the 484px band in the middle is live map.
+ *
+ * IT KEEPS ITS BACKGROUND OFF. `bg-bg` is on the element in the markup for the
+ * portrait bar's ground; a full-frame opaque layer here would be the map gone.
+ * ====================================================================== */
+[data-fwm-surface='dash']:root .fwm-shell-dock {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  padding: 0;
+  pointer-events: none; /* keyword */
+  background: none; /* keyword */
+}

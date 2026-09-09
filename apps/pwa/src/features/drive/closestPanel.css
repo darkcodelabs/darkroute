@@ -1,0 +1,363 @@
+/* THE READER COLUMN. One component, drawn twice.
+ *
+ * =============================================================================
+ * IT IS MONITOR COLUMN 1 AND NAVIGATION COLUMN 3, AND THE SOURCE PROVES IT
+ * =============================================================================
+ * Both open `flex: 1.35 0 min(93cqw, 400px)` in `Dynamic Cards (3)`, and every
+ * child under them is identical. The ONE difference is that monitor's copy also
+ * carries a right padding and a right border; navigation's does not. That rule
+ * therefore lives on the HOST card selector rather than on a variant prop, so
+ * this component has no variants at all.
+ *
+ * =============================================================================
+ * WHAT THE COLUMN HOLDS, AND WHY IT IS ONLY TWO THINGS
+ * =============================================================================
+ * The reader box, then the list. That is all - and it is what makes the card's
+ * locked 180px work. The version before this one pinned FOUR children: the
+ * reader, an "Upcoming Cameras Nearby" heading, the list, and a key row under
+ * it. That is roughly 206px of fixed content in a 154px box, so the list was
+ * squeezed to nothing and the keys were cut off the bottom.
+ *
+ * The design's answer is not a taller card. It folds the route-around and mute
+ * keys INTO the reader box's third line, beside the NEARBY count, and drops the
+ * heading entirely. Two pinned children, and the list gets everything left.
+ *
+ * GEOMETRY IS THE SOURCE'S, VERBATIM; COLOURS ARE THIS APP'S THEME TOKENS -
+ * the owner's amendment, so the cards follow the active theme rather than being
+ * pinned to one light palette. Every length is a `--fwm-card-*` in tokens.css,
+ * which is the only file allowed a raw one.
+ */
+
+.fwm-closest {
+  container-type: inline-size;
+  flex: var(--fwm-card-col-grow-wide) 0 var(--fwm-card-col-reader);
+  /* Both of these are the source's own, and they are what stops the squeezed
+     text: a flex item refuses to go below its content without them, so one long
+     street name widens the column and every clamp inside it collapses. */
+  min-width: 0;
+  min-height: 0;
+  /* START, NOT CENTER. With `scroll-snap-type: x mandatory` the browser rests
+     on the nearest snap point, and CENTRING a column wider than the rail puts
+     that point at a positive scrollLeft - so the card opened on column two.
+     Snapping to the start means the rail rests at 0, on the reader. */
+  scroll-snap-align: start; /* keyword */
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-card-col-gap);
+}
+
+/* --- the reader box, flush to the card's top edge ------------------------- */
+
+.fwm-closest-head {
+  position: relative;
+  flex: none; /* keyword */
+  display: flex;
+  align-items: stretch; /* keyword */
+  gap: var(--fwm-card-reader-pad);
+  padding: var(--fwm-card-reader-pad);
+  border-radius: var(--fwm-card-reader-radius);
+  background: var(--fwm-surface-sunk);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  min-width: 0;
+}
+
+/* THE LITTLE MAP OF THIS READER - where it is and which way it looks.
+   A real picture rather than a hatch: the facing cone is the one thing on this
+   card that says which way the camera points, and no amount of texture stands
+   in for it.
+
+   ONE INSTANCE, for the closest camera only. `MiniMap` is a full MapLibre map,
+   and one per list row evicted the scope's own WebGL context and blacked out
+   the real map - so the rule is never per-row, not never-at-all. */
+.fwm-closest-map {
+  flex: none; /* keyword */
+  position: relative;
+  width: var(--fwm-card-chip-w);
+  border-radius: var(--fwm-card-chip-radius);
+  overflow: hidden; /* keyword */
+  background: var(--fwm-surface-1);
+}
+
+.fwm-closest-map .fwm-minimap {
+  --fwm-minimap-size: 100%;
+  width: 100%;
+  height: 100%;
+}
+
+/* The caption is out of flow: in flow it is height the canvas has to give back,
+   and the mark over it is sized from the whole chip - so the dot came to rest
+   half a caption below the point the map is centred on. */
+.fwm-closest-map .fwm-minimap-note {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* THE PRESS, across the whole reader box. Behind the keys, which take their own
+   presses - `z-index` is what keeps MUTE from opening the intel card. */
+.fwm-closest-open {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-card-reader-radius);
+  background: none; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-closest-face,
+.fwm-closest-map {
+  position: relative;
+  z-index: 1;
+}
+
+/* ...but the face must not EAT the press it sits over. Only the keys do. */
+.fwm-closest-face {
+  pointer-events: none; /* keyword */
+}
+
+.fwm-closest-key {
+  pointer-events: auto; /* keyword */
+}
+
+
+/* The compass, on the chip and NOT inside anything `aria-hidden` - which way a
+   reader faces is stated nowhere else on this column, so hiding it from the
+   accessibility tree loses the fact outright. */
+.fwm-closest-rose-slot {
+  position: absolute;
+  inset-block-start: var(--fwm-space-1);
+  inset-inline-end: var(--fwm-space-1);
+  font-size: var(--fwm-card-text-pill);
+  line-height: 1;
+  color: var(--fwm-text-2);
+}
+
+/* --- the three lines beside it -------------------------------------------- */
+
+.fwm-closest-face {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.fwm-closest-figure-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-space-2);
+  margin: 0;
+  min-width: 0;
+}
+
+.fwm-closest-figure {
+  flex: none; /* keyword */
+  font-size: var(--fwm-card-text-dist);
+  font-weight: 800;
+  letter-spacing: var(--fwm-card-track-tight);
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+/* THE STREET SHRINKS AND THE PILL DOES NOT. `flex: 1 1 auto` with `min-width: 0`
+   is what lets a long cross street give way instead of pushing CLOSEST off the
+   end of the row. */
+.fwm-closest-where {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-card-text-street);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-closest-chip {
+  flex: none; /* keyword */
+  font-size: var(--fwm-card-text-pill);
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-pill);
+  color: var(--fwm-text-on-alert);
+  background: var(--fwm-accent-scan);
+  border-radius: var(--fwm-radius-full);
+  padding: var(--fwm-space-1) var(--fwm-card-row-gap);
+}
+
+/* Brand, mount and facing on ONE line, joined by middots - the design gives the
+   operator no chip of its own here. */
+.fwm-closest-detail {
+  margin: 0;
+  font-size: var(--fwm-card-text-detail);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* --- line three: the count and the two keys ------------------------------- */
+
+.fwm-closest-keys {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-card-row-gap);
+  min-width: 0;
+}
+
+.fwm-closest-nearby {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-card-text-detail);
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-pill);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-closest-nearby-count {
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--fwm-text-2);
+}
+
+/* THE TOUCH FLOOR, ON THE BLOCK AXIS ONLY.
+   The design draws these keys 26px and `--fwm-touch-min` is 44, so each gets a
+   transparent overhang top and bottom - the same trick `.fwm-sweep-key::before`
+   and `.fwm-dock-report-key::before` already use, and it moves no drawn pixel.
+
+   NOT on the inline axis, deliberately: the two keys sit 7px apart, so an
+   overhang wide enough to matter would put each key's hit area under its
+   neighbour's and an edge press would fire the WRONG control. A short target is
+   better than a wrong one. */
+.fwm-closest-key {
+  position: relative;
+  flex: none; /* keyword */
+  height: var(--fwm-card-key-h);
+  border-radius: var(--fwm-card-key-radius);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-card-text-keyface);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-closest-key::before {
+  content: ""; /* keyword */
+  position: absolute;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-card-key-h)) / -2);
+  inset-inline: 0;
+  background: transparent; /* keyword */
+}
+
+.fwm-closest-key[data-fwm-closest-key='route'] {
+  padding: 0 var(--fwm-card-key-pad);
+  background: var(--fwm-surface-control);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  color: var(--fwm-text);
+}
+
+.fwm-closest-key[data-fwm-closest-key='mute'] {
+  width: var(--fwm-card-key-w);
+  padding: 0;
+  background: var(--fwm-accent-scan);
+  border: none; /* keyword */
+  color: var(--fwm-text-on-alert);
+}
+
+/* --- the list, which is the only thing that scrolls ----------------------- */
+
+.fwm-closest-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* keyword */
+  overscroll-behavior: contain; /* keyword */
+  scrollbar-width: none; /* keyword */
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-closest-list::-webkit-scrollbar { display: none; /* keyword */ }
+
+.fwm-closest-row {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  width: 100%;
+  /* TIGHTER THAN THE DESIGN'S 7px, by owner decision: at 180px the column
+     shows two rows and a cut third, and every pixel of row padding is a pixel
+     of the next row a driver cannot see. */
+  padding: var(--fwm-space-1) var(--fwm-space-1);
+  border: none; /* keyword */
+  border-bottom: var(--fwm-hairline) solid var(--fwm-line-soft);
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  text-align: left; /* keyword */
+  min-width: 0;
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+/* OWNER IS THE DOT AND NOTHING ELSE. The design's row carries no owner text at
+   all - the hue is the whole signal, which is the rule LOOK UP already follows.
+   The 'FLOCK SAFETY' tag that used to sit on every row is gone with it. */
+.fwm-closest-row-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-card-dot);
+  height: var(--fwm-card-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+/* THE SAME THREE BANDS LOOK UP PAINTS, from the same field and in the same
+   hues - see `.fwm-lookupv1-dot`. A second owner vocabulary on a second screen
+   is how two surfaces end up disagreeing about who runs a camera. */
+.fwm-closest-row-dot[data-fwm-owner='police'],
+.fwm-closest-row-dot[data-fwm-owner='inter_agency'] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-closest-row-dot[data-fwm-owner='hoa'],
+.fwm-closest-row-dot[data-fwm-owner='private'] {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-closest-row-dist {
+  flex: none; /* keyword */
+  font-size: var(--fwm-card-text-rowdist);
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight);
+  color: var(--fwm-text);
+}
+
+.fwm-closest-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-card-text-street);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-closest-row-detail { color: var(--fwm-text-2); }
+
+.fwm-closest-row-chevron {
+  flex: none; /* keyword */
+  color: var(--fwm-text-2);
+}
+
+/* Every "there is nothing here" sentence, in one voice. Muted rather than red:
+   an empty list is not a fault. */
+.fwm-closest-empty {
+  margin: 0;
+  padding: var(--fwm-space-2) 0;
+  font-size: var(--fwm-card-text-detail);
+  line-height: 1.5;
+  color: var(--fwm-text-muted);
+}

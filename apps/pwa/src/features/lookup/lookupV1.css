@@ -1,0 +1,535 @@
+/* LOOK UP - the field, the chips, the count, and one heading per street.
+ *
+ * The frame, the row, the chip and the scroller are `styles/screen.css`. What
+ * is here is the four things that are LOOK UP's and not the section's: the
+ * search field, the count line, the street heading, and the two-line body of a
+ * result row.
+ *
+ * =============================================================================
+ * THE LOCALS ARE THIS FILE'S, EVEN WHERE THEY REPEAT A NUMBER
+ * =============================================================================
+ * `.fwm-lookupv1` sits on the SAME element as `.fwm-screen`, so at runtime
+ * every `--fwm-sc-*` is in scope here. They are still not read: the design gate
+ * resolves a `var(--fwm-*)` against tokens.css and against the declaring file
+ * only, and it fails a reference to another component's local by name. So this
+ * file declares what it needs. Where a number below is also in `screen.css`,
+ * both are the spec's, and the spec is the shared source rather than either
+ * file being the other's.
+ *
+ * =============================================================================
+ * WHAT LEFT THIS FILE
+ * =============================================================================
+ * THE LIQUID GLASS BLOCK, and the six class names it contributed to the
+ * `[data-fwm-liquid="on"]` list in tokens.css, which were pruned in the same
+ * change. Section C is opaque: a full screen has nothing behind it to blur.
+ *
+ * THE STREET CARD. The results were a card per street with the rows nested
+ * inside it, hairline-separated and clipped by the card's radius. Brief 4 gives
+ * this section one surface - the 44px row on `--dr-row-fill` - and a bordered
+ * box around a run of them is a second one. The heading is now a 34px tracked
+ * caps line with the count at its tail, sitting on the screen ground.
+ *
+ * `.fwm-lookupv1-owner`. The owner class was a second line of text under every
+ * row title. It is the 9px mark at the head of the row now, in that class's own
+ * hue - the same vocabulary the chips are coloured in, so the filter and its
+ * result are the same colour rather than the same word printed twice. The line
+ * it vacated carries the camera id.
+ * ========================================================================== */
+
+.fwm-lookupv1 {
+  /* --- type, in the spec's own sizes ----------------------------------- */
+  --fwm-lk-t-10-5: calc(var(--fwm-text-micro) * 21 / 22); /* 10.5 -- LOCAL */
+  --fwm-lk-t-11-5: calc(var(--fwm-text-micro) * 23 / 22); /* 11.5 -- street, id */
+  --fwm-lk-t-13: var(--fwm-text-forecast); /* 13 -- the count's body */
+  --fwm-lk-t-14: var(--fwm-text-label); /* 14 -- place, distance, placeholder */
+  --fwm-lk-t-22: calc(var(--fwm-text-title) * 11 / 12); /* 22 -- the figure */
+
+  --fwm-lk-track-caps-12: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+  --fwm-lk-track-caps-10: calc(var(--fwm-card-track-tight) * -10); /* 0.10em */
+  --fwm-lk-track-figure: calc(var(--fwm-card-track-tight) * 2); /* -0.02em */
+
+  /* --- geometry --------------------------------------------------------- */
+  --fwm-lk-field-h: calc(var(--fwm-space-1) * 11.5); /* 46 */
+  --fwm-lk-field-radius: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-lk-field-pad: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-lk-field-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-lk-chips-gap-t: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  /* The count line is inset 4 further than the band, which is the spec's
+     `padding: 12px 18px 8px` against a 14px band. */
+  --fwm-lk-count-pad-t: var(--fwm-space-3); /* 12 */
+  --fwm-lk-count-inset: var(--fwm-space-1); /* 4 -- 18 less the band's 14 */
+  --fwm-lk-count-pad-b: var(--fwm-space-2); /* 8 */
+  --fwm-lk-count-gap: var(--fwm-space-2); /* 8 */
+  --fwm-lk-head-h: calc(var(--fwm-space-1) * 8.5); /* 34 */
+  --fwm-lk-head-pad: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-lk-head-gap: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-lk-row-gap-v: var(--fwm-space-1); /* 4 -- between rows */
+  --fwm-lk-line-gap: var(--fwm-rule-w); /* 1 -- title over id */
+  --fwm-lk-band-gap: 0;
+
+  /* The plate panel's own two radii. Hoisted rather than written inline for a
+     mechanical reason worth knowing: the design gate's `radius` rule strips
+     `var(--fwm-*)` out of a `border-radius` value and fails on any digit left
+     behind, so `calc(var(--fwm-space-1) * 4.5)` written AT the declaration is a
+     violation and the same calc declared as a local and read by name is not.
+     Every radius in section C is spelled this way for that reason. */
+  --fwm-lk-panel-radius: calc(var(--fwm-space-1) * 4.5); /* 18 */
+  --fwm-lk-panel-pad: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-lk-go-radius: calc(var(--fwm-space-1) * 3.25); /* 13 */
+
+  /* The AROUND YOU card: the panel's radius, a tighter pad, and one line of
+     air between its lines. */
+  --fwm-lk-around-pad: var(--fwm-space-3); /* 12 */
+  --fwm-lk-around-gap: calc(var(--fwm-space-1) * 0.75); /* 3 */
+  --fwm-lk-around-line-h: 1.4;
+
+  /* The result row grows to its three lines; 44 is the floor, not the size. */
+  --fwm-lk-row-min-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-lk-row-pad-v: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-lk-row-pad-h: var(--fwm-space-3); /* 12 */
+  --fwm-lk-row-line-gap: calc(var(--fwm-space-1) * 0.5); /* 2 -- between the three lines */
+  --fwm-lk-dot-top: calc(var(--fwm-space-1) * 1.5); /* 6 -- the mark sits on the title's line */
+  --fwm-lk-t-12: calc(var(--fwm-text-micro) * 12 / 11); /* 12 -- the context line */
+  --fwm-lk-t-15: var(--fwm-text-body); /* 15 -- the title */
+  /* THE CHIP ROW HAS A HEIGHT OF ITS OWN. It is a scroll container inside the
+     band's grid, and a scrollable grid item's automatic minimum height is
+     ZERO: once the list below it overflowed the band, the grid squeezed the
+     row to its padding and the six chips vanished ("I need this lookup page
+     filtering added back in at the top" -- owner, 2026-09-09). The chip is 32
+     in screen.css; this is that plus the 10 of air above it. */
+  --fwm-lk-chips-h: calc(var(--fwm-space-1) * 10.5); /* 42 = 32 + 10 */
+
+  /* The band is a grid and every child is a row of it. No gap: each block
+     below owns the air above itself, which is how the spec's own frame is
+     spaced and what keeps the field flush under the 56px title track. */
+}
+
+.fwm-lookupv1-band {
+  gap: var(--fwm-lk-band-gap);
+}
+
+/* =========================================================================
+ * THE FIELD -- 46 tall, radius 14, and the claim on its right
+ * ====================================================================== */
+
+.fwm-lookupv1-field {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-lk-field-gap);
+  min-width: 0;
+  height: var(--fwm-lk-field-h);
+  padding: 0 var(--fwm-lk-field-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-lk-field-radius);
+  background: var(--dr-row-fill);
+}
+
+/* The lens takes the same tier as the placeholder beside it, so the glyph and
+   the words read as one object rather than an icon next to some text. */
+.fwm-lookupv1-lens {
+  flex: none; /* keyword */
+  color: var(--dr-ink-faint);
+}
+
+.fwm-lookupv1-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-lk-t-14); /* 14 */
+  color: var(--dr-ink);
+}
+
+.fwm-lookupv1-input::placeholder {
+  color: var(--dr-placeholder);
+}
+
+/* THE CLAIM, painted in the product's word for "this part is live". */
+.fwm-lookupv1-badge {
+  flex: none; /* keyword */
+  font-size: var(--fwm-lk-t-10-5); /* 10.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-lk-track-caps-10); /* 0.10em */
+  color: var(--dr-accent);
+}
+
+/* =========================================================================
+ * THE CHIPS -- geometry is `screen.css`; the air above them is the spec's
+ * ====================================================================== */
+
+.fwm-lookupv1-filters {
+  flex: none; /* keyword */
+  height: var(--fwm-lk-chips-h); /* 42 */
+  min-height: var(--fwm-lk-chips-h); /* 42 */
+  padding-top: var(--fwm-lk-chips-gap-t); /* 10 */
+}
+
+/* =========================================================================
+ * THE COUNT -- `40` at 22/800, then what it counted
+ * ====================================================================== */
+
+.fwm-lookupv1-count {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-lk-count-gap);
+  min-width: 0;
+  margin: 0;
+  padding: var(--fwm-lk-count-pad-t) var(--fwm-lk-count-inset) var(--fwm-lk-count-pad-b);
+}
+
+.fwm-lookupv1-count-figure {
+  flex: none; /* keyword */
+  font-size: var(--fwm-lk-t-22); /* 22 */
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-lk-track-figure); /* -0.02em */
+  color: var(--dr-ink);
+}
+
+.fwm-lookupv1-count-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-lk-t-13); /* 13 */
+  color: var(--dr-ink-muted);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The empty note is a sentence on the ground, not a panel. It says the search
+   found nothing, and a bordered box around that reads as a result. */
+.fwm-lookupv1-empty {
+  margin: 0;
+  padding: 0 var(--fwm-lk-count-inset) var(--fwm-lk-count-pad-b);
+  font-size: var(--fwm-lk-t-13); /* 13 */
+  color: var(--dr-ink-muted);
+}
+
+/* =========================================================================
+ * AROUND YOU -- the one card on this screen, and it sits above the rows
+ * ====================================================================== */
+
+/* A card, because it is the one thing on LOOK UP that is not a row or a
+   heading: it is a reading of the whole list rather than one entry in it, and
+   it needs an edge so it is not mistaken for the first result. It takes the
+   section's card fill and line, the same surface the plate panel below uses. */
+.fwm-lookupv1-around {
+  display: grid;
+  gap: var(--fwm-lk-around-gap); /* 3 */
+  min-width: 0;
+  margin: 0 0 var(--fwm-lk-count-pad-b); /* 8 */
+  padding: var(--fwm-lk-around-pad); /* 12 */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-lk-panel-radius); /* 18 */
+  background: var(--dr-card-fill);
+}
+
+.fwm-lookupv1-around-top {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-lk-count-gap); /* 8 */
+  min-width: 0;
+}
+
+/* The kicker in the product's live-accent, like LOCAL on the field: this card
+   is computed from the archive on the phone, and the colour says so. */
+.fwm-lookupv1-around-kicker {
+  flex: none; /* keyword */
+  font-size: var(--fwm-lk-t-10-5); /* 10.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-lk-track-caps-12); /* 0.12em */
+  color: var(--dr-accent);
+}
+
+/* The county, in the street heading's own voice, so the two levels of place
+   on this screen -- county above, street below -- read as one system. */
+.fwm-lookupv1-around-county {
+  min-width: 0;
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-lk-track-caps-10); /* 0.10em */
+  color: var(--dr-ink-4);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-lookupv1-around-head {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-lk-t-14); /* 14 */
+  font-weight: 600;
+  line-height: var(--fwm-lk-around-line-h);
+  color: var(--dr-ink);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* The maker tally and the Atlas sentence: the row's context tier, allowed to
+   wrap, because an agency list clipped at three characters is not a fact. */
+.fwm-lookupv1-around-line {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  line-height: var(--fwm-lk-around-line-h);
+  color: var(--dr-ink-muted);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* =========================================================================
+ * THE RESULTS -- a heading per street, rows under it
+ * ====================================================================== */
+
+.fwm-lookupv1-results,
+.fwm-lookupv1-rows {
+  display: grid;
+  gap: var(--fwm-lk-row-gap-v);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-lookupv1-group {
+  display: grid;
+  gap: var(--fwm-lk-row-gap-v);
+  min-width: 0;
+}
+
+.fwm-lookupv1-group-head {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-lk-head-gap);
+  min-width: 0;
+  height: var(--fwm-lk-head-h); /* 34 */
+  padding: 0 var(--fwm-lk-head-pad);
+}
+
+/* THE STREET IS TRACKED CAPS, WHICH IS WHAT MAKES IT A HEADING AND NOT A ROW.
+   It was 17px bold on a bordered card head. At 11.5 tracked it reads as
+   structure rather than as the first and largest result on the road.
+
+   `overflow-wrap: anywhere` because a street name may not be truncated into
+   ambiguity: `W COUNTY LINE RD` clipped at the edge is a different road from
+   `W COUNTY LINE RD SW`, and the whole point of the heading is that it tells
+   the driver which one this is. It wraps to a second line instead, and the
+   heading gives up its fixed height to let it. */
+.fwm-lookupv1-street {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-lk-track-caps-12); /* 0.12em */
+  color: var(--dr-ink-4);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* THE GROUP THAT IS NOT A PLACE. A quarter of the archive has no street, and
+   those cameras end up under a heading that says so. It is already lower case
+   and already a sentence, so the caps transform is what would make it read as
+   a road name - and it is the one heading that must not. */
+.fwm-lookupv1-group[data-fwm-street='false'] .fwm-lookupv1-street {
+  font-weight: 500;
+  letter-spacing: normal; /* keyword */
+  text-transform: none; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+/* HOW MANY CAMERAS ARE ON THIS ROAD. A bare numeral in the faint tier, at the
+   tail of its own heading - not a filled pill. A dozen filled badges down a
+   scrolling list read as a dozen alerts rather than as a dozen counts. */
+.fwm-lookupv1-tally {
+  flex: none; /* keyword */
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  font-weight: 700;
+  color: var(--dr-ink-faint);
+}
+
+/* THREE LINES NEED THEIR HEIGHT. The section's row is 44 fixed, drawn for a
+   title and a meta on one line; this row carries a title, a context line and
+   a detail line, and at 44 it clipped the first and spilled the third into the
+   row below ("so this needs work" -- owner, 2026-09-09). Auto height with the
+   44 as a floor, and the row's own vertical air. */
+.fwm-lookupv1-result {
+  align-items: flex-start; /* keyword */
+  height: auto; /* keyword */
+  min-height: var(--fwm-lk-row-min-h); /* 44 */
+  padding: var(--fwm-lk-row-pad-v) var(--fwm-lk-row-pad-h); /* 10 12 */
+}
+
+/* The owner mark sits on the title's line, not at the middle of three. */
+.fwm-lookupv1-result .fwm-screen-dot {
+  margin-top: var(--fwm-lk-dot-top); /* 6 */
+}
+
+/* The three-line body between the owner mark and the distance. */
+.fwm-lookupv1-where {
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--fwm-lk-row-line-gap); /* 2 */
+  min-width: 0;
+}
+
+.fwm-lookupv1-place {
+  min-width: 0;
+  font-size: var(--fwm-lk-t-15); /* 15 */
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--dr-ink);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE ID, IN A REAL MONOSPACE.
+ *
+ * The stack is written out rather than read from `--fwm-font-data`, and that is
+ * the point: `--fwm-font-data` resolves to `'Google Sans', ui-monospace,
+ * monospace`, so on every skin that ships Google Sans the "data" face is
+ * PROPORTIONAL. An `osm:` key set in a proportional face is exactly what brief
+ * 4 is objecting to - it reads as a word rather than as a key, and two ids
+ * differing in one digit do not line up under each other.
+ *
+ * JetBrains Mono is self-hosted (`tokens.css` declares three faces of it from
+ * `/fonts/`), so this costs no request and works offline. The gate allows the
+ * name: `ALLOWED_FONTS` in `check-design-values.mjs` lists it. */
+.fwm-lookupv1-id {
+  min-width: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  color: var(--dr-ink-faint);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE CONTEXT LINE: what the record knows, in words, a tier above the id. */
+.fwm-lookupv1-context {
+  min-width: 0;
+  font-size: var(--fwm-lk-t-12); /* 12 */
+  line-height: 1.3;
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+/* THE DETAIL LINE IS DATA -- who, since when, and the key -- so it is set in
+   the same real monospace the id has always had, and it recedes to faint. */
+.fwm-lookupv1-detail {
+  min-width: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  line-height: 1.3;
+  color: var(--dr-ink-faint);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+/* The compass point rides the distance's own line: "1.5 mi NE" reads as one
+   fact, and a second line under the figure cost the row its height. */
+.fwm-lookupv1-bearing {
+  display: inline; /* keyword */
+  margin-left: var(--fwm-space-1); /* 4 */
+  font-size: var(--fwm-lk-t-11-5); /* 11.5 */
+  font-weight: 500;
+  color: var(--dr-ink-faint);
+}
+.fwm-lookupv1-dist {
+  flex: none; /* keyword */
+  align-self: flex-start; /* keyword */
+  padding-top: var(--fwm-lk-row-line-gap); /* 2 */
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  font-size: var(--fwm-lk-t-14); /* 14 */
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--dr-ink-2);
+}
+
+/* =========================================================================
+ * THE PLATE HAND-OFF -- v0's LOOKUP, behind a row
+ * ====================================================================== */
+
+/* The row is `.fwm-screen-row`; only its label has to give, because the
+   question is a whole sentence rather than the section's usual two words. */
+.fwm-lookupv1-plate {
+  margin-top: var(--fwm-lk-count-pad-t); /* 12 */
+}
+
+.fwm-lookupv1-plate-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The panel it opens keeps its own shape: it is a form with a field and a
+   button, which is not one of section C's row types, and brief 4 does not draw
+   it. It takes the section's CARD instead of the glass it used to sit on, so
+   it belongs to the screen it opens on. */
+.fwm-lookupv1-plate-panel {
+  display: grid;
+  gap: var(--fwm-lk-field-gap);
+  min-width: 0;
+  margin-top: var(--fwm-lk-row-gap-v);
+  padding: var(--fwm-lk-panel-pad); /* 16 */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-lk-panel-radius); /* 18 */
+  background: var(--dr-card-fill);
+}
+
+.fwm-lookupv1-plate-heading {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+.fwm-lookupv1-plate-body,
+.fwm-lookupv1-plate-note {
+  margin: 0;
+  font-size: var(--fwm-lk-t-13); /* 13 */
+  line-height: 1.45;
+  color: var(--dr-ink-muted);
+}
+
+.fwm-lookupv1-plate-field {
+  display: grid;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-lookupv1-plate-field-label {
+  font-size: var(--fwm-lk-t-10-5); /* 10.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-lk-track-caps-12); /* 0.12em */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-lookupv1-plate-field .fwm-lookupv1-input {
+  height: var(--fwm-lk-field-h); /* 46 */
+  padding: 0 var(--fwm-lk-field-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-lk-field-radius);
+  background: var(--dr-row-fill);
+}
+
+.fwm-lookupv1-plate-go {
+  height: var(--fwm-lk-field-h); /* 46 */
+  border: var(--fwm-rule-w) solid var(--dr-accent-line);
+  border-radius: var(--fwm-lk-go-radius); /* 13 */
+  background: var(--dr-accent-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-body); /* 15 */
+  font-weight: 700;
+  color: var(--dr-accent);
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-lookupv1-plate-outcome {
+  font-size: var(--fwm-lk-t-13); /* 13 */
+  color: var(--fwm-alert-clear);
+}

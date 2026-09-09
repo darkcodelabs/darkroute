@@ -1,0 +1,423 @@
+/* EXPOSURE - a hero count over a week of bars, or a sentence and one action.
+ *
+ * The frame, the row, the card, the group header and the owner mark are
+ * `styles/screen.css`. What is here is the chart, the two stat tiles, the
+ * range control that rides in the title track, and the empty state's own type.
+ *
+ * =============================================================================
+ * THE CHART IS A TRACK AND A BAR, WHICH IS WHY NO PIXEL REACHES THE COMPONENT
+ * =============================================================================
+ * The spec computes the bar's height in JavaScript:
+ * `Math.max(3, Math.round(count / max * 46)) + 'px'`. Two of those three
+ * numbers are geometry and belong here rather than in a render:
+ *
+ *   46  the BAR TRACK, `.fwm-exposure-track`. The tallest possible bar.
+ *    3  the FLOOR, `min-height` on the bar. A day with no passes still draws a
+ *       mark, because the shape of a quiet week is itself the information.
+ *
+ * What the component computes is the fraction, as a percentage of the track -
+ * the same number one indirection later, and the only part of the expression
+ * that is data rather than design. The design-value gate would reject the
+ * pixel in a style object, and it would be right to: a chart whose maximum
+ * height lives in a `.tsx` is a chart that cannot be re-scaled by editing a
+ * stylesheet.
+ *
+ * The 62px the spec gives the chart row is 46 + the 5px gap + the 11px day
+ * label, so it is not restated: the track and the label add up to it, and a
+ * fixed height on the row as well would be a fourth number that has to agree
+ * with the other three.
+ *
+ * =============================================================================
+ * WHAT LEFT THIS FILE
+ * =============================================================================
+ * THE LIQUID GLASS BLOCK, and the three class names it contributed to the
+ * `[data-fwm-liquid="on"]` list in tokens.css. Section C is opaque.
+ *
+ * `.fwm-exposure-hero`'s `--fwm-tint-mesh` ground. The hero was the one panel
+ * on the screen with a hue of its own, which made the count look like a state
+ * rather than a reading. It is a section-C card now, like the two under it.
+ *
+ * `.fwm-exposure-sub` (the distinct-camera line), `.fwm-exposure-pass-meta`
+ * (the distance on a row) and `.fwm-exposure-dot[data-fwm-state]`. All three
+ * were drawing an em dash more often than a value, and none is in the spec's
+ * frame. The row's mark is the camera's OWNER now - `.fwm-screen-dot` - which
+ * is what the spec draws and the same vocabulary LOOK UP uses.
+ * ========================================================================== */
+
+.fwm-exposure {
+  /* --- type ------------------------------------------------------------- */
+  --fwm-ex-t-10: calc(var(--fwm-text-micro) * 10 / 11); /* 10 -- day names */
+  --fwm-ex-t-10-5: calc(var(--fwm-text-micro) * 21 / 22); /* 10.5 -- kickers */
+  --fwm-ex-t-12: var(--fwm-text-plate); /* 12 -- the range keys, tile notes */
+  --fwm-ex-t-13: var(--fwm-text-forecast); /* 13 -- the comparison line */
+  --fwm-ex-t-14: var(--fwm-text-label); /* 14 -- a row, the empty paragraph */
+  --fwm-ex-t-15: var(--fwm-text-body); /* 15 -- the unit, a tile's value */
+  --fwm-ex-t-19: calc(var(--fwm-text-title) * 19 / 24); /* 19 -- the empty title */
+  --fwm-ex-t-46: calc(var(--fwm-text-title) * 23 / 12); /* 46 -- the figure */
+
+  --fwm-ex-track-caps-12: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+  --fwm-ex-track-caps-6: calc(var(--fwm-card-track-tight) * -6); /* 0.06em */
+  --fwm-ex-track-figure: var(--fwm-card-track-tighter); /* -0.03em */
+  --fwm-ex-track-title: var(--fwm-card-track-tight); /* -0.01em */
+
+  /* --- the range control, in the title track ---------------------------- */
+  --fwm-ex-range-pad: calc(var(--fwm-space-1) * 0.75); /* 3 */
+  --fwm-ex-range-gap: var(--fwm-space-1); /* 4 */
+  --fwm-ex-range-radius: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-ex-range-key-h: calc(var(--fwm-space-1) * 6); /* 24 */
+  --fwm-ex-range-key-radius: var(--fwm-space-3); /* 12 */
+  --fwm-ex-range-key-pad: calc(var(--fwm-space-1) * 2.75); /* 11 */
+
+  /* --- the chart -------------------------------------------------------- */
+  --fwm-ex-bar-track: calc(var(--fwm-space-1) * 11.5); /* 46 */
+  --fwm-ex-bar-track-flat: calc(var(--fwm-rule-w) * 3); /* 3 -- the baseline */
+  --fwm-ex-bar-floor: calc(var(--fwm-rule-w) * 3); /* 3 */
+  --fwm-ex-bar-radius: calc(var(--fwm-rule-w) * 3); /* 3 */
+  --fwm-ex-bar-radius-flat: calc(var(--fwm-rule-w) * 2); /* 2 */
+  --fwm-ex-col-gap: calc(var(--fwm-space-1) * 1.5); /* 6 -- between columns */
+  --fwm-ex-col-inner: calc(var(--fwm-space-1) * 1.25); /* 5 -- bar to label */
+  --fwm-ex-chart-gap-t: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-ex-chart-gap-t-flat: calc(var(--fwm-space-1) * 4); /* 16 */
+
+  /* --- the hero and the tiles ------------------------------------------ */
+  --fwm-ex-figure-gap: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-ex-compare-gap: var(--fwm-space-1); /* 4 */
+  --fwm-ex-tiles-gap: var(--fwm-space-2); /* 8 */
+  --fwm-ex-tile-radius: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-ex-tile-pad-y: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-ex-tile-pad-x: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-ex-tile-gap-1: calc(var(--fwm-space-1) * 1.25); /* 5 */
+  --fwm-ex-tile-gap-2: calc(var(--fwm-space-1) / 2); /* 2 */
+
+  /* --- the empty card --------------------------------------------------- */
+  --fwm-ex-empty-pad-y: calc(var(--fwm-space-1) * 4.5); /* 18 */
+  --fwm-ex-empty-pad-x: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-ex-empty-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+}
+
+/* The band's own 10px card gap is the section's; the eyebrow above the list
+   pays for its own air, so it does not take a second one. */
+.fwm-exposure-band {
+  min-width: 0;
+}
+
+/* =========================================================================
+ * THE RANGE, IN THE TITLE TRACK
+ *
+ * The spec's smaller segmented control: 24px keys, 4px gap, 3px padding,
+ * radius 12 inside 15. Section C's 36-in-44 is the full-width one MESH draws;
+ * this rides beside a 24px title inside a 56px track and has to be smaller.
+ * ====================================================================== */
+
+.fwm-exposure-range {
+  display: flex;
+  flex: none; /* keyword */
+  gap: var(--fwm-ex-range-gap);
+  padding: var(--fwm-ex-range-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-ex-range-radius);
+}
+
+.fwm-exposure-range-key {
+  display: flex;
+  align-items: center; /* keyword */
+  height: var(--fwm-ex-range-key-h);
+  padding: 0 var(--fwm-ex-range-key-pad);
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-ex-range-key-radius);
+  background: none; /* keyword */
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-ex-t-12); /* 12 */
+  color: var(--dr-ink-muted);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-exposure-range-key[data-fwm-selected='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  font-weight: 700;
+  color: var(--dr-accent);
+}
+
+/* =========================================================================
+ * THE HERO -- one number, the size of the question being asked
+ * ====================================================================== */
+
+.fwm-exposure-figure-line {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-ex-figure-gap);
+  min-width: 0;
+  margin: 0;
+}
+
+.fwm-exposure-figure {
+  flex: none; /* keyword */
+  font-size: var(--fwm-ex-t-46); /* 46 */
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-ex-track-figure); /* -0.03em */
+  color: var(--dr-ink);
+}
+
+.fwm-exposure-unit {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-ex-t-15); /* 15 */
+  font-weight: 500;
+  color: var(--dr-ink-3);
+}
+
+.fwm-exposure-compare {
+  margin: var(--fwm-ex-compare-gap) 0 0;
+  font-size: var(--fwm-ex-t-13); /* 13 */
+  color: var(--dr-ink-muted);
+}
+
+/* =========================================================================
+ * THE WEEK
+ * ====================================================================== */
+
+.fwm-exposure-week {
+  display: flex;
+  align-items: flex-end; /* keyword */
+  gap: var(--fwm-ex-col-gap);
+  min-width: 0;
+  margin: var(--fwm-ex-chart-gap-t) 0 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-exposure-week-flat {
+  margin-top: var(--fwm-ex-chart-gap-t-flat); /* 16 */
+}
+
+.fwm-exposure-day {
+  display: grid;
+  flex: 1 1 0;
+  gap: var(--fwm-ex-col-inner);
+  justify-items: center; /* keyword */
+  min-width: 0;
+}
+
+/* THE TRACK IS THE TALLEST A BAR CAN BE, and the bar grows off its floor.
+   `align-content: end` rather than a flex column: a percentage height on the
+   bar resolves against this box, which is what makes the component's fraction
+   mean what it says. */
+.fwm-exposure-track {
+  display: grid;
+  align-content: end; /* keyword */
+  width: 100%;
+  height: var(--fwm-ex-bar-track); /* 46 */
+}
+
+.fwm-exposure-week-flat .fwm-exposure-track {
+  /* THE AXIS WITHOUT A READING. Three pixels, flat, seven times. It says what
+     the chart will be and does not claim to be one - which a row of zero-height
+     bars in the chart's own colours would. */
+  height: var(--fwm-ex-bar-track-flat); /* 3 */
+}
+
+.fwm-exposure-bar {
+  width: 100%;
+  /* The spec's `Math.max(3, ...)`, as a floor rather than as arithmetic. */
+  min-height: var(--fwm-ex-bar-floor); /* 3 */
+  border-radius: var(--fwm-ex-bar-radius); /* 3 */
+  background: var(--dr-accent);
+}
+
+/* THE THREE TIERS, off the spec's own expression.
+
+   `low` is the dim cyan the spec writes as `rgba(47,212,212,0.4)`. There is no
+   token at that alpha; `--dr-accent-line` is the same hue at 0.42 and is the
+   nearest published one, which is two hundredths of an alpha step away and
+   was minted for exactly this weight of the accent. Recording the value rather
+   than adding a token for a two-hundredths difference. */
+.fwm-exposure-bar[data-fwm-tier='high'] {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-exposure-bar[data-fwm-tier='mid'] {
+  background: var(--dr-accent);
+}
+
+.fwm-exposure-bar[data-fwm-tier='low'] {
+  background: var(--dr-accent-line);
+}
+
+/* The flat baseline is not on the accent scale at all: it is a rule, not a
+   reading, so it takes the group divider rather than a dimmed hue. */
+.fwm-exposure-bar[data-fwm-tier='flat'] {
+  height: 100%;
+  border-radius: var(--fwm-ex-bar-radius-flat); /* 2 */
+  background: var(--dr-group-line);
+}
+
+.fwm-exposure-day-name {
+  font-size: var(--fwm-ex-t-10); /* 10 */
+  letter-spacing: var(--fwm-ex-track-caps-6); /* 0.06em */
+  color: var(--dr-ink-faint);
+}
+
+/* TODAY IS THE LAST BUCKET, and it is the one day name in the body tier: it is
+   the bar the driver is adding to right now. */
+.fwm-exposure-day-name[data-fwm-today='true'] {
+  color: var(--dr-ink-3);
+}
+
+/* =========================================================================
+ * THE TWO STAT CARDS
+ * ====================================================================== */
+
+.fwm-exposure-tiles {
+  display: flex;
+  gap: var(--fwm-ex-tiles-gap);
+  min-width: 0;
+}
+
+.fwm-exposure-tile {
+  display: grid;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--fwm-ex-tile-pad-y) var(--fwm-ex-tile-pad-x);
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-ex-tile-radius); /* 16 */
+  background: var(--dr-card-fill);
+}
+
+/* THE KICKER IS THE ONLY COLOURED THING ON A TILE. Amber is the spec's hue for
+   HOTTEST, which is the alert scale's own word for "this is the one to look
+   at"; cyan is system-positive, and ALL TIME is a fact rather than a warning. */
+.fwm-exposure-tile-kicker {
+  font-size: var(--fwm-ex-t-10-5); /* 10.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-ex-track-caps-12); /* 0.12em */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-exposure-tile-kicker[data-fwm-hue='amber'] {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-exposure-tile-kicker[data-fwm-hue='cyan'] {
+  color: var(--dr-accent);
+}
+
+.fwm-exposure-tile-value {
+  min-width: 0;
+  margin-top: var(--fwm-ex-tile-gap-1); /* 5 */
+  font-size: var(--fwm-ex-t-15); /* 15 */
+  font-weight: 700;
+  color: var(--dr-ink);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-exposure-tile-note {
+  margin-top: var(--fwm-ex-tile-gap-2); /* 2 */
+  font-size: var(--fwm-ex-t-12); /* 12 */
+  color: var(--dr-ink-muted);
+}
+
+/* =========================================================================
+ * TODAY
+ * ====================================================================== */
+
+/* The eyebrow is section C's group header. It only has to give up the side
+   inset the header carries, because the list under it is full-width rows. */
+.fwm-exposure-eyebrow {
+  padding-left: var(--fwm-space-1); /* 4 */
+  padding-right: var(--fwm-space-1); /* 4 */
+}
+
+.fwm-exposure-list {
+  display: grid;
+  gap: var(--fwm-space-1); /* 4 */
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-exposure-pass-place {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-ex-t-14); /* 14 */
+  font-weight: 500;
+  color: var(--dr-ink-2);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE PLACE AND ITS SECOND LINE, stacked. The row is a flex line of place
+   and time; the place became a column of street over operator-and-town, so
+   this box takes the place's old flex share and the two lines sit inside. */
+.fwm-exposure-pass-where {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: calc(var(--fwm-space-1) * 0.25); /* 1 */
+}
+.fwm-exposure-pass-meta {
+  min-width: 0;
+  font-size: var(--fwm-ex-t-12); /* 12 */
+  color: var(--dr-ink-muted);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+.fwm-exposure-pass-time {
+  flex: none; /* keyword */
+  font-size: var(--fwm-ex-t-13); /* 13 */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-exposure-none-today {
+  padding: 0 var(--fwm-space-1); /* 0 4 */
+}
+
+/* =========================================================================
+ * THE EMPTY STATE
+ * ====================================================================== */
+
+.fwm-exposure-empty {
+  padding: var(--fwm-ex-empty-pad-y) var(--fwm-ex-empty-pad-x);
+}
+
+.fwm-exposure-empty-title {
+  margin: 0;
+  font-size: var(--fwm-ex-t-19); /* 19 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-ex-track-title); /* -0.01em */
+  color: var(--dr-ink);
+}
+
+/* THE PARAGRAPH IS `--dr-ink-4`, NOT THE MUTED TIER. It is the one block of
+   prose on the screen and it carries the promise that none of this leaves the
+   phone, which is the sentence a reader has to be able to read. */
+.fwm-exposure-empty-body {
+  margin: var(--fwm-ex-empty-gap) 0 0;
+  font-size: var(--fwm-ex-t-14); /* 14 */
+  line-height: 1.5;
+  color: var(--dr-ink-4);
+}
+
+/* THE ONE ACTION. Section C's row, filled with accent rather than the row
+   fill, because it is the only key on the screen and a key that looks like
+   every navigate row is a key nobody presses. */
+.fwm-exposure-go {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+}
+
+.fwm-exposure-go-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-ex-t-14); /* 14 */
+  font-weight: 700;
+  color: var(--dr-accent);
+}

@@ -1,0 +1,14 @@
+.gradle/
+build/
+app/build/
+local.properties
+
+# THE SIGNING KEY NEVER GOES IN THE REPO.
+#
+# Losing this key means never being able to update the app on Play under the
+# same listing again — there is no recovery and no appeal. Committing it means
+# anyone who clones the repo can publish an update that is, as far as every
+# installed device is concerned, genuinely from us.
+keystore.properties
+*.keystore
+*.jks

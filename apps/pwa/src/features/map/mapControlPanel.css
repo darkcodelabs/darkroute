@@ -1,0 +1,212 @@
+/* THE LAYERS PANEL'S SHELL - where it sits over the map, and nothing else.
+ *
+ * =============================================================================
+ * WHY THESE RULES ARE `fwm-drive-*` IN A `map/` FILE
+ * =============================================================================
+ * The panel is DRIVE's: it is positioned in `.fwm-drive`'s coordinate space,
+ * against `.fwm-drive-rail`'s own arithmetic, and it is meaningless anywhere
+ * else. The COMPONENT lives beside the map because everything it controls does
+ * - `layers.ts` owns the map's own owner hues and `app/mapView.ts` owns the
+ * flavours - so the class names follow the screen and the file follows the
+ * subject.
+ *
+ * =============================================================================
+ * THE INSIDE OF THE PANEL IS NOT HERE ANY MORE
+ * =============================================================================
+ * It was: a private `.fwm-drive-panel-*` set - a kicker, a sub, six rows, a
+ * switch with its own track and thumb, a chevron, an empty-state callout and a
+ * note - which is why this panel, the abuse menu and map view read as three
+ * products under three chips that sit side by side.
+ *
+ * The rows are `features/chrome/Menu.tsx`'s six types now and the look comes
+ * from `menu.css`. What is left in this file is the SHELL, which is genuinely
+ * this panel's own: abuse anchors to the left inset, map view sits on the right
+ * inset, and this one is held clear of the rail. See the deletion note at the
+ * foot of the file for what went and what took each piece over.
+ *
+ * A SURFACE IS NOT PART OF THE SHELL, on `abuseMenu.css`'s argument: the
+ * `.fwm-menu` inside draws the glass, the hairline, the radius and the padding,
+ * so a shell that drew its own would be a rounded pane inside a rounded pane
+ * with 12px of nothing between them. The radius stays - and is the menu's own
+ * 20 rather than `--fwm-radius-5` - because the liquid skin casts a rim off
+ * this box in `tokens.css`, and a rim has to trace the panel a person can see.
+ *
+ * =============================================================================
+ * IT DOES NOT SPAN THE MAP, AND IT DOES NOT COVER ITS OWN OPENER
+ * =============================================================================
+ * `drive.css`'s governing rule is that nothing covers the map that is not a
+ * control. This is a control, and it still keeps its width bounded so the road
+ * stays visible while a driver taps through it - the whole value of choosing an
+ * owner class here is watching the dots change as you choose.
+ *
+ * It is also inset from the RIGHT by the width of the rail rather than sitting
+ * on `--fwm-space-4` like the rail does. The panel is later in the DOM than the
+ * rail, so a panel flush to the edge would paint over the very key that opens
+ * and closes it, and "press it again to dismiss" would be dead under a pane.
+ */
+
+.fwm-drive-panel {
+  /* The rail's own top: `--fwm-space-4` down from the edge, plus the gear
+     (`--fwm-space-12`) and the gap under it. Written once and read three
+     times below, because these three offsets must move together. */
+  --fwm-drive-panel-top: var(--fwm-drive-row-2);
+  --fwm-drive-panel-radius: calc(var(--fwm-space-1) * 5); /* 20 */
+
+  position: absolute;
+  top: var(--fwm-drive-panel-top);
+  /* Clear of the rail: the edge inset, the 48px key, and a gap. */
+  right: calc(var(--fwm-space-4) + var(--fwm-space-12) + var(--fwm-space-2));
+  width: calc(var(--fwm-space-12) * 5);
+  /* Never the whole width, whatever the phone. Two key-widths and an inset are
+     held back so there is always map to the left of it. */
+  max-width: calc(100% - var(--fwm-space-12) - var(--fwm-space-12) - var(--fwm-space-4));
+  /* Clear of the dock and of the closest card's top edge.
+
+     AGAINST THE VIEWPORT, NOT THE PARENT. This was `100%`, which is a
+     percentage of the containing block's height - and a percentage max-height
+     resolves to `none` unless every ancestor up the chain has a definite
+     height. When that chain broke, the panel simply grew to its content and got
+     CLIPPED by the closest card with no way to scroll, which is exactly what
+     was reported: rows cut off at the bottom edge and a flick that did nothing.
+
+     `dvh` needs no ancestor to cooperate, and it tracks a mobile browser's
+     collapsing address bar, which a fixed `vh` does not. */
+  max-height: calc(
+    100dvh - var(--fwm-drive-panel-top) - var(--fwm-dock-h) - var(--fwm-space-12)
+  );
+  /* THE MENU'S OWN RADIUS, 20, and it is the only thing left here that is about
+     appearance. Nothing is painted on this box; the corner exists so the liquid
+     skin's rim in `tokens.css` follows the pane the driver sees instead of
+     cutting square corners past a rounded menu.
+
+     Off the 4px step and through a named property, which is `menu.css`'s own
+     spelling of the same 20: `check-design-values.mjs` reads a `calc()` written
+     straight into `border-radius` as a raw radius, and none of the
+     `--fwm-radius-*` steps is 20 on every skin. */
+  border-radius: var(--fwm-drive-panel-radius);
+  overflow-y: auto; /* keyword */
+  /* THIN, NOT HIDDEN. It was hidden to keep a bright browser scrollbar from
+     cutting a second vertical rail through the glass - which is the right
+     instinct and the wrong outcome here: this panel is taller than the space it
+     gets on most phones, and a scrollable box with no indicator reads as a
+     clipped one. Thin, in the panel's own muted ink, says "there is more" at a
+     fraction of the visual cost. */
+  scrollbar-width: thin; /* keyword */
+  scrollbar-color: var(--fwm-text-muted) transparent;
+  /* A flick that runs out of panel must not then scroll the map underneath. */
+  overscroll-behavior: contain; /* keyword */
+  opacity: 0;
+  transform: translateX(var(--fwm-space-4));
+  /* VISIBILITY, NOT `display`, and that is what makes the close animate.
+     `visibility` interpolates discretely but honours the duration: it flips to
+     `visible` immediately on open and holds until the end of the transition on
+     close. It also takes the rows out of the tab order and out of the
+     accessibility tree while the panel is shut, which `opacity: 0` alone does
+     not - a driver tabbing into invisible controls is a real defect. */
+  visibility: hidden; /* keyword */
+  transition:
+    opacity var(--fwm-dur-fast) var(--fwm-ease-mech),
+    transform var(--fwm-dur-fast) var(--fwm-ease-mech),
+    visibility var(--fwm-dur-fast) var(--fwm-ease-mech);
+}
+
+.fwm-drive-panel::-webkit-scrollbar {
+  display: none; /* keyword */
+}
+
+.fwm-drive-panel[data-fwm-open="true"] {
+  opacity: 1;
+  transform: none; /* keyword */
+  visibility: visible; /* keyword */
+}
+
+/* The slide is decoration; the appearance is not. Matching `drive.css`'s own
+   reduced-motion block, the panel still arrives, it just arrives at once. */
+@media (prefers-reduced-motion: reduce) {
+  .fwm-drive-panel {
+    transform: none; /* keyword */
+    transition: none; /* keyword */
+  }
+}
+
+/* =============================================================================
+   THE ONE THING THE MENU LANGUAGE CANNOT SAY
+   =============================================================================
+   ALL OWNERS IS NOT A CLASS, so it must not wear a class's colour.
+
+   `MenuFilter` requires a `MenuOwner` and the language has five of them -
+   police, flock, hoa, private, unverified - because in that language the dot IS
+   the taxonomy. "Everything, including the cameras whose owner nobody recorded"
+   is not a member of a taxonomy of owners, and there is no sixth token to pass.
+   So the row is handed an arbitrary member and the dot is redrawn here as a
+   hollow ring: nothing is being singled out, which is exactly what the row
+   means. Same decision the bespoke `[data-fwm-owner="all"]` swatch made before
+   this panel spoke the language, in one rule instead of a set.
+
+   The wrapper carries no box of its own - `display: contents` - so the row
+   stays a direct child of the menu's grid and measures identically to the five
+   under it.
+
+   WHAT WOULD CLOSE IT: an optional `owner` on `MenuFilter`, or an `all` member
+   of `MenuOwner`. Both are `Menu.tsx`'s call and neither is invented here.
+   ========================================================================== */
+
+.fwm-drive-panel-all {
+  display: contents; /* keyword */
+}
+
+.fwm-drive-panel-all .fwm-menu-dot {
+  border: var(--fwm-rule-w) solid var(--dr-ink-muted);
+  background: transparent; /* keyword */
+}
+
+/* =============================================================================
+   WHAT WAS DELETED HERE, AND WHAT DRAWS IT NOW
+   =============================================================================
+   Every one of these selected markup this panel no longer writes. Left in
+   place they would read as live rules, which is the only thing worse than a
+   missing one.
+
+     `.fwm-drive-panel-section`     -> `MenuGroup`
+     `.fwm-drive-panel-kicker/-sub` -> `MenuHeader`, whose caps and 0.14em
+                                        tracking are the stylesheet's, not the
+                                        caller's string
+     `.fwm-drive-panel-row`         -> the menu row, at 44 rather than
+       and `[aria-pressed="true"]`     `--fwm-touch-min`; the pressed ring is
+                                        the SELECT row's accent fill now, which
+                                        is the language's "one selection, ever"
+     `.fwm-drive-panel-row-label`   -> `.fwm-menu-label`
+     `.fwm-drive-panel-row-note`    -> `.fwm-menu-value`
+     `.fwm-drive-panel-row-count`   -> `.fwm-menu-count`
+     `.fwm-drive-panel-switch`      -> `MenuToggle`
+     `.fwm-drive-panel-track/-thumb`-> `.fwm-menu-switch` / `-knob`, 40x23
+     `.fwm-drive-panel-link`        -> `MenuNavigate`
+     `.fwm-drive-panel-chevron`     -> the navigate row's inline SVG chevron,
+                                        which replaces a text glyph
+     `.fwm-drive-panel-empty`       -> `MenuNote`
+     `.fwm-drive-panel-note`        -> `MenuNote`
+     `.fwm-drive-panel-dot`         -> `.fwm-menu-dot`, painted from
+       and its five owner variants     `--dr-owner-*`
+
+   THE SWATCH USED TO BE THE MAP'S OWN LANGUAGE, and on two classes it is not
+   any more. The deleted `.fwm-drive-panel-dot` rules were `cameraLayer`'s
+   `circle-color` match expression verbatim (`layers.ts`); `--dr-owner-*` is the
+   product-wide operator taxonomy that Look up, the dock and the camera modal
+   already draw. Three of the five agree exactly - police is
+   `--fwm-alert-in-range`, inter-agency is `--fwm-alert-multiple`, HOA is
+   `--fwm-alert-approaching` in both. Two do not:
+
+     private      the map draws `--fwm-plasma-6`; the dot is
+                  `--dr-owner-private`, which is `--fwm-alert-in-range-text`.
+     unverified   the map falls through to `--fwm-accent-scan`; the dot is
+                  `--dr-owner-unverified`, the fixed purple.
+
+   The purple is the owner's own 2026-09-08 decision, recorded in `tokens.css`
+   beside the token: cyan meant "active selection" AND "unverified", so on this
+   very panel an enabled filter and an unverified camera were the same colour.
+   That note names the map markers as one of the four surfaces that move with
+   it, and `layers.ts` has not moved yet - so this panel is now ahead of the map
+   on `unverified` and disagrees with it on `private`. Recorded rather than
+   patched: re-cutting a map layer is not a restyle of a menu.
+   gap record map-owner-filter already holds the older half of this.
+   ========================================================================== */

@@ -1,0 +1,123 @@
+/* ---------------------------------------------------------------------------
+ * THE BRAND MARK.
+ *
+ * The eye artwork used as a mask over `currentColor`, so it takes the colour of
+ * the title beside it -- including RADAR's, which changes with the alert state.
+ * See the header of `BrandMark.tsx` for why it is a mask and not an image.
+ * ------------------------------------------------------------------------ */
+
+/* THE MARK MATCHES THE TITLE, IN SIZE AND IN COLOUR.
+ *
+ * Both come from the title rather than from a constant: the size is `em`, so it
+ * follows the type, and the colour is set per header to whatever that header's
+ * title is painted with -- including RADAR's, which is the live alert hue and
+ * is a different colour in every theme mode.
+ *
+ * THE COLOUR HAS TO BE GIVEN, NOT INHERITED.
+ *
+ * The mark sits BESIDE the title, not inside it, so `currentColor` resolves
+ * against the header -- measured white (247,249,252) next to a green RADAR
+ * title (61,224,138) the first time this shipped. Every screen sets
+ * `.fwm-<screen>-header .fwm-brand-mark { color: ... }` to its title's colour.
+ *
+ * This is the fallback for a screen that has not: the body text colour, which
+ * is legible everywhere and obviously not a brand hue, so a missing rule looks
+ * like a missing rule rather than passing for correct. */
+.fwm-brand-mark {
+  color: var(--fwm-text);
+  position: relative;
+  flex: none; /* keyword */
+  display: inline-block;
+  /* SIZED FROM THE TITLE, NOT FROM THE ICON SCALE.
+   *
+   * It was `--fwm-icon-size` -- a flat 24px, set for the dock's stroke marks.
+   * Beside a 19px title that is barely bigger than the type, and beside a
+   * larger title it would be SMALLER than it. Either way it reads as a bullet
+   * point rather than as a mark.
+   *
+   * `2em` is twice whatever the title is set at, on every screen and in every
+   * theme mode, because `em` resolves against the inherited font size. The mark
+   * is always clearly the largest thing in the header, which is what makes it
+   * read as a mark rather than as a bullet point.
+   *
+   * 1.5 -> 1.62 -> 2. At 1.5 the eye sat almost exactly on the title's cap
+   * height and read as part of the word. 1.62 was still reading as punctuation
+   * next to RADAR at 19px. Two is the first step where it is unambiguously the
+   * logo and the word is the caption, which is the relationship the header is
+   * supposed to have. It is bounded by the 52px header, not by taste: at the
+   * largest title in the app this lands under the bar's own height. */
+  width: 2em;
+  height: 2em;
+  background: currentcolor;
+  -webkit-mask-image: url("/assets/darkroute-mark.png");
+  mask-image: url("/assets/darkroute-mark.png");
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* The ground. A thin silhouette on a near-black screen dissolves at a glance in
+ * daylight; a tint of the mark's own colour lifts it off the page without
+ * bringing a second colour into the header.
+ *
+ * A pseudo-element rather than a background: the element itself is a mask, so
+ * anything painted on it would be masked away with it. */
+.fwm-brand-mark::before {
+  content: ''; /* keyword */
+  position: absolute;
+  inset: calc(var(--fwm-space-1) * -0.75);
+  z-index: -1;
+  border-radius: var(--fwm-radius-full);
+  background: currentcolor;
+  opacity: 0.16;
+}
+
+/* ---------------------------------------------------------------------------
+ * THE TITLE BELONGS TO THE MARK, NOT TO THE MIDDLE OF THE BAR
+ *
+ * Every header in the app is the same object: `display: flex` with
+ * `justify-content: space-between` over three children -- the mark, the title,
+ * and whatever the screen puts on the right (a strapline, a close key, a
+ * range toggle). With three items and space-between, the middle one goes to
+ * the MIDDLE, so SETTINGS, ASK, REPORT and the rest floated their titles into
+ * the centre of the bar while the mark stayed pinned left. The two read as
+ * unrelated objects, and the gap between them changed width on every screen
+ * because it was whatever the right-hand item left over.
+ *
+ * `margin-inline-end: auto` on the mark's next sibling gives the title the
+ * slack instead, so it sits hard against the mark and the right-hand item
+ * keeps its edge. One rule for every screen, keyed on the adjacency rather
+ * than on eight class names -- a new header gets it by construction, which is
+ * the only way this stays true.
+ *
+ * `inline-end` rather than `right`: the app is not localised today and a
+ * hard-coded `right` is a bug waiting for the day it is.
+ *
+ * `+ [class]` RATHER THAN `+ *`, and the attribute selector is load-bearing.
+ * Every title carries `margin: 0` in its own screen's stylesheet, which is a
+ * SHORTHAND -- it sets margin-inline-end back to 0 along with the other three.
+ * At `+ *` this rule and `.fwm-settings-title` are both one class of
+ * specificity, so the tie broke on source order and the feature stylesheet won
+ * wherever it happened to load later. Measured: ASK hugged at 12px while
+ * SETTINGS sat 70px out and REPORT 112px, from one rule, which is exactly what
+ * an order-dependent tie looks like.
+ *
+ * The attribute selector adds a second point of specificity, so this wins
+ * outright instead of by luck. Every title has a class, so nothing is missed.
+ * ------------------------------------------------------------------------ */
+
+.fwm-brand-mark + [class] {
+  margin-inline-end: auto;
+}
+
+/* RADAR IS THE EXCEPTION, because its mark and title are not header children
+ * at all -- they are wrapped in an inner flex group so the live count can be
+ * centred against the pair. Inside a content-width group `auto` has no slack
+ * to take, and what it would do instead is push the MUTED chip off the title
+ * it belongs to. The header already reads left-aligned there. */
+.fwm-radar-header .fwm-brand-mark + [class] {
+  margin-inline-end: 0;
+}

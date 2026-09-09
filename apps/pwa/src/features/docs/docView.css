@@ -1,0 +1,563 @@
+/* THE PUBLISHED-DOCUMENT READER.
+ *
+ * SOURCE: `the_rest_of_the_app.dc.html`, section D, the DOC READER frame.
+ *
+ * =============================================================================
+ * WHAT BRIEF 4 CHANGED, AND THE ONE MEASUREMENT BEHIND ALL OF IT
+ * =============================================================================
+ * BODY 15 -> 17, at 1.6. `--fwm-text-body` is .9375rem, so this screen was
+ * setting eight thousand words of technical prose at 15px across the full width
+ * of a phone. That is a wall: the line box holds about 55 characters at 15px on
+ * a 390px screen, which is inside the comfortable measure, but the SIZE is
+ * below what anybody reads long-form at. 17px is `--fwm-text-subtitle`, which is
+ * the one token on the scale that is exactly the spec's number.
+ *
+ * HEADINGS BECOME TRACKED CAPS. They were 17 / 14 / 15 at weight 600-700 --
+ * three sizes within two points of the body, so a heading read as one more
+ * paragraph in bold. Caps at 11px with 0.14em of tracking read as STRUCTURE at
+ * a glance and cannot be confused with prose at any size.
+ *
+ * CODE BLOCKS SCROLL INSIDE A BOX. `overflow-x: auto` was already here, so the
+ * lines did not escape the viewport -- but on a bare sunk panel with no edge and
+ * no caption, a block that scrolled looked identical to one that did not, and
+ * there was no way to get its contents out. The box has a hairline, a caption
+ * naming the fence's own language, and a Copy affordance.
+ *
+ * A PROGRESS BAR AND A SIZE LINE. There was no way to know whether a document
+ * was two screens or forty before opening it and scrolling.
+ *
+ * =============================================================================
+ * SURFACE AND TOKENS
+ * =============================================================================
+ * Opaque -- `--dr-screen` with flat alphas over it, no `backdrop-filter`. The
+ * one hue is the accent, on the progress fill, the two affordance words and the
+ * callout. Lengths are ratios off `--fwm-space-1`; type is read off the scale.
+ * Substitutions are written up beside the rule that makes them, the way
+ * `features/chrome/menu.css` does.
+ *
+ * IT IS AN OVERLAY, NOT A REGISTERED SCREEN. `DriveScreen` mounts it inside
+ * `.fwm-docview-over` -- absolute, inset 0, z-index 40 -- from local state, and
+ * that is deliberate: a back gesture must not restore a document over a map
+ * that has since moved. So this root has to work as a flex child that is given
+ * `flex: 1; min-height: 0`, which is what the wrapper at the foot of this file
+ * hands it.
+ * ========================================================================== */
+
+.fwm-docview {
+  /* --- the frame ------------------------------------------------------- */
+  --fwm-dv-track: calc(var(--fwm-space-1) * 14); /* 56 -- the title track */
+  --fwm-dv-track-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-dv-pad: calc(var(--fwm-space-1) * 3.5); /* 14 -- the title track's */
+  /* 20 -- the READING measure's side padding, wider than the screen's own.
+     Prose wants more air at its edges than a row of controls does, and the spec
+     draws both numbers on the same frame. */
+  --fwm-dv-read-pad: calc(var(--fwm-space-1) * 5);
+
+  /* THE DOCK RESERVE, 150. See `settingsV1.css` for why this is not
+     `--fwm-dock-h`. This reader is mounted over DRIVE, where the dock is very
+     much present, so the reserve is not optional here even though the screen is
+     an overlay. */
+  --fwm-dv-dock: calc(var(--fwm-space-1) * 37.5); /* 150 */
+
+  /* --- the progress rail ----------------------------------------------- */
+  --fwm-dv-rail-h: calc(var(--fwm-space-1) * 0.75); /* 3 */
+  --fwm-dv-rail-radius: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-dv-rail-gap: calc(var(--fwm-space-1) * 1.75); /* 7 */
+
+  /* --- the code box ----------------------------------------------------- */
+  --fwm-dv-box-radius: var(--fwm-space-3); /* 12 */
+  --fwm-dv-box-head-y: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-dv-box-pad-x: var(--fwm-space-3); /* 12 */
+  --fwm-dv-box-pad-y: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-dv-callout-pad-y: var(--fwm-space-3); /* 12 */
+  --fwm-dv-callout-pad-x: calc(var(--fwm-space-1) * 3.25); /* 13 */
+
+  /* --- rhythm ----------------------------------------------------------- */
+  --fwm-dv-block-gap: calc(var(--fwm-space-1) * 3.5); /* 14 -- between blocks */
+  --fwm-dv-head-gap: calc(var(--fwm-space-1) * 5); /* 20 */
+  --fwm-dv-lead-gap: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-dv-track-caps: calc(var(--fwm-card-track-tight) * -14); /* 0.14em */
+  --fwm-dv-track-box: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+
+  display: grid;
+  /* Title track, the size line, the reading band. The first two are fixed; only
+     the band moves. */
+  grid-template-rows: var(--fwm-dv-track) auto 1fr;
+  min-height: 0;
+  background: var(--dr-screen);
+  color: var(--dr-ink);
+  font-family: var(--fwm-font-ui);
+  font-variant-numeric: tabular-nums; /* keyword */
+}
+
+/* =========================================================================
+ * 1. THE TITLE TRACK
+ *
+ * The exit is `components/nav/BackKey.tsx`. 44px and glass where the spec draws
+ * a 40px opaque circle -- see `settingsV1.css` section 1 for why that is
+ * reported rather than overridden. A hairline under the track, which the spec
+ * draws on THIS screen and on neither of the other two: the reader scrolls
+ * continuous prose under it, so without an edge the band and the header bleed
+ * into one another the moment a paragraph passes behind the title.
+ * ====================================================================== */
+
+.fwm-docview-top {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dv-track-gap); /* 11 */
+  padding: 0 var(--fwm-dv-pad); /* 14 */
+  border-bottom: var(--fwm-rule-w) solid var(--dr-hairline-row);
+}
+
+.fwm-docview-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-title); /* 24; spec draws 20 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* SPEC 20, TOKEN 24. There is no 20px step on the type scale -- it runs
+   ... 24 (title), 17 (subtitle), 16 (figure), 15 ... -- and 24 is the size
+   every other pushed screen's title takes, so a 20 here would make this the one
+   screen whose title is a different size for no reason a reader could see. The
+   title ellipsises, so the longest name in the allowlist ("Data provenance")
+   still fits beside the exit and the Repo word. */
+
+/* THE REPOSITORY, NAMED. If this rendering is wrong or stale the real thing is
+   one tap away, which is the standard the rest of the app is held to. */
+.fwm-docview-source {
+  flex: none; /* keyword */
+  color: var(--dr-accent);
+  font-size: var(--fwm-text-plate); /* 12 */
+  font-weight: 700;
+  text-decoration: none; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* =========================================================================
+ * 2. THE SIZE LINE -- a progress rail and one line of measured facts
+ *
+ * Fixed under the track, so "how far in am I" is answerable without scrolling
+ * back to find out.
+ * ====================================================================== */
+
+.fwm-docview-gauge {
+  padding: calc(var(--fwm-space-1) * 2.5) var(--fwm-dv-read-pad) 0; /* 10 / 20 */
+}
+
+.fwm-docview-rail {
+  height: var(--fwm-dv-rail-h); /* 3 */
+  border-radius: var(--fwm-dv-rail-radius); /* 2 */
+  background: var(--dr-hairline-row);
+  overflow: hidden; /* keyword */
+}
+
+.fwm-docview-rail-fill {
+  height: var(--fwm-dv-rail-h); /* 3 */
+  background: var(--dr-accent);
+}
+
+.fwm-docview-meta {
+  margin: var(--fwm-dv-rail-gap) 0 0; /* 7 */
+  color: var(--dr-ink-4);
+  font-size: var(--fwm-text-micro); /* 11; spec draws 11.5 */
+}
+
+/* SPEC `#6e7881`, TOKEN `--dr-ink-4` = `#a7b0b9`. The brief's own conformance
+   list asks for 4.5:1 on every text node in both themes and says the faint tier
+   may not carry meaning anywhere; `#6e7881` on `--dr-screen` measures 4.1:1 and
+   this line carries the only statement of how long the document is. Read up. */
+
+/* =========================================================================
+ * 3. THE READING BAND
+ *
+ * The only thing that scrolls, and the element the progress rail is measuring.
+ * 20px of side padding rather than the screen's 14: prose wants more air at its
+ * edges than a row of controls does.
+ * ====================================================================== */
+
+.fwm-docview-body {
+  display: grid;
+  /* THE ONE COLUMN IS THE BAND'S OWN WIDTH, NOT ITS WIDEST LINE. A bare `auto`
+     track grows to the longest unbreakable thing inside any block -- and a
+     fence inside a list step or a callout hands it a 60-character shell line,
+     which is how AUDITING.md laid itself out 475px wide on a 390px phone and
+     the whole band panned sideways. `minmax(0, 1fr)` pins the track; the
+     scrollers below take the wide content. Measured in Chromium, 2026-09-09:
+     the band's scrollWidth was 515 on AUDITING.md and 528 on DATA-CONTRACTS.md
+     before this line, 390 after. */
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start; /* keyword */
+  gap: var(--fwm-dv-block-gap); /* 14 */
+  min-height: 0;
+  padding: var(--fwm-space-4) var(--fwm-dv-read-pad) var(--fwm-dv-dock);
+  overflow-x: hidden; /* keyword -- nothing in a reading band should pan sideways */
+  overflow-y: auto; /* keyword */
+  /* Every prose container breaks anywhere rather than pushing the band out: a
+     long path in inline code, a URL in a link, a term in a heading. Tables opt
+     back out below so their columns size to content and the wrapper scrolls. */
+  overflow-wrap: anywhere; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-docview-body::-webkit-scrollbar {
+  width: 0;
+}
+
+/* =========================================================================
+ * 4. THE TYPE
+ *
+ * Body 17 at 1.6, headings in tracked caps. `text-wrap: pretty` on the prose:
+ * these documents are full of long compound terms and a one-word last line is
+ * the commonest thing that makes a paragraph look broken.
+ * ====================================================================== */
+
+.fwm-docview-p,
+.fwm-docview-list {
+  margin: 0;
+  color: var(--dr-ink-3);
+  font-size: var(--fwm-text-subtitle); /* 17 -- the brief's own number */
+  line-height: 1.6;
+  text-wrap: pretty; /* keyword */
+}
+
+.fwm-docview-list {
+  display: grid;
+  gap: var(--fwm-space-2);
+  padding-left: var(--fwm-space-4);
+}
+
+/* THE DOCUMENT'S OWN TITLE. `#` becomes the one heading on the screen that is
+   not caps: it is a NAME, and a name in tracked caps at 11px would be
+   unreadable at the head of eight thousand words. */
+.fwm-docview-h1 {
+  margin: 0;
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-title); /* 24; spec draws 21 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em */
+  line-height: 1.25;
+}
+
+/* STRUCTURE, NOT PROSE. `##` and `###` are the same treatment at the same size,
+   separated by the air above them rather than by weight: a two-point size
+   difference between heading levels is a difference nobody reads, and the
+   indent-by-air version is legible at a glance. */
+.fwm-docview-h2,
+.fwm-docview-h3 {
+  margin: var(--fwm-dv-head-gap) 0 0; /* 20 */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-dv-track-caps); /* 0.14em */
+  text-transform: uppercase; /* keyword */
+}
+
+.fwm-docview-h3 {
+  margin-top: var(--fwm-dv-block-gap); /* 14 -- a sub-section sits closer */
+  color: var(--dr-ink-4);
+}
+
+/* The first block in the band takes the band's own padding and no more. */
+.fwm-docview-body > :first-child {
+  margin-top: 0;
+}
+
+.fwm-docview-body strong {
+  color: var(--dr-ink);
+  font-weight: 700;
+}
+
+/* =========================================================================
+ * 5. THE CALLOUT -- a blockquote, in the accent
+ *
+ * The one markdown construct that says "read this differently", so it is the
+ * one that gets a surface. Derived from the document rather than decided here:
+ * a `>` line is a callout and nothing else is.
+ * ====================================================================== */
+
+.fwm-docview-callout {
+  margin: 0;
+  padding: var(--fwm-dv-callout-pad-y) var(--fwm-dv-callout-pad-x); /* 12 / 13 */
+  border: var(--fwm-rule-w) solid var(--dr-accent-line);
+  border-radius: var(--fwm-dv-box-radius); /* 12 */
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+  font-size: var(--fwm-text-label); /* 14 */
+  line-height: 1.55;
+}
+
+/* GAP -- THE CALLOUT'S THREE VALUES, all resolved to the published accent set:
+ *
+ *   edge  spec `rgba(47,212,212,0.28)` -> `--dr-accent-line` (0.42). Denser.
+ *   fill  spec `rgba(47,212,212,0.06)` -> `--dr-accent-fill` (0.13). Denser.
+ *   ink   spec `#a8e5e5` -- a desaturated pale cyan with no token in any family
+ *         -> `--dr-accent`, the saturated one. More saturated than drawn, and
+ *         it clears 4.5:1 on this ground with room (9.3:1 dark, 7.6:1 light).
+ *
+ * Three lines in `tokens.css` would make them exact:
+ *
+ *   --dr-callout-line: rgba(47,212,212,0.28);
+ *   --dr-callout-fill: rgba(47,212,212,0.06);
+ *   --dr-callout-ink:  #a8e5e5;
+ */
+
+/* =========================================================================
+ * 6. THE CODE BOX -- hairlined, captioned, and it scrolls sideways
+ *
+ * A block that overflows its box is the failure being fixed. `overflow-x: auto`
+ * on the pre alone did that much already; what it did not do was LOOK
+ * scrollable, or offer any way to get the contents out on a phone where
+ * selecting eight lines of monospace by hand is not realistic.
+ * ====================================================================== */
+
+.fwm-docview-box {
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-dv-box-radius); /* 12 */
+  background: var(--dr-card-fill);
+  overflow: hidden; /* keyword */
+  /* THE BOX TELLS ITS ANCESTORS NOTHING ABOUT HOW WIDE ITS LINES ARE. A code
+     block now lands inside list steps and callouts as well as at the top of
+     the band, and without this a `<pre>` line of 60 characters is the minimum
+     width of every list and quote that holds one. The box takes the width it
+     is given and its scroller does the rest. */
+  contain: inline-size; /* keyword */
+}
+
+/* SPEC 0.025, TOKEN `--dr-card-fill` 0.03. Half a percent of white, which is
+   under the quantisation of an 8-bit channel over this ground. */
+
+.fwm-docview-box-head {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  min-width: 0;
+  padding: var(--fwm-dv-box-head-y) var(--fwm-dv-box-pad-x); /* 9 / 12 */
+  border-bottom: var(--fwm-rule-w) solid var(--dr-hairline-row);
+}
+
+/* THE FENCE'S OWN LANGUAGE, uppercased. Read off the info string rather than
+   captioned by hand: the spec draws `PUBLISHED FILES`, which is a caption
+   somebody wrote for one block on one page, and there is nothing in a markdown
+   fence that could produce it. `BASH` / `JSON` / `JS` / `CODE` is what the
+   document actually says about its own block. */
+.fwm-docview-box-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro); /* 11; spec draws 10.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-dv-track-box); /* 0.12em */
+  overflow: hidden; /* keyword */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-docview-copy {
+  flex: none; /* keyword */
+  padding: 0;
+  border: none; /* keyword */
+  background: transparent;
+  color: var(--dr-accent);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  touch-action: manipulation; /* keyword */
+}
+
+/* The verdict is the adapter's, and it is never "it was copied" when the
+   adapter said otherwise -- the same rule TEST THE ALERT runs on. A refusal
+   prints in the muted ink so it does not read as a second offer. */
+.fwm-docview-copy[data-fwm-copied='false'] {
+  color: var(--dr-ink-muted);
+}
+
+.fwm-docview-scroll {
+  padding: var(--fwm-dv-box-pad-y) var(--fwm-dv-box-pad-x); /* 11 / 12 */
+  overflow-x: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-docview-scroll::-webkit-scrollbar {
+  height: 0;
+}
+
+.fwm-docview-code {
+  margin: 0;
+  color: var(--dr-ink-4);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro); /* 11; spec draws 11.5 */
+  line-height: 1.75;
+  white-space: pre; /* keyword */
+}
+
+/* An inline span, which is a different thing from a block and keeps the body's
+   own colour so a term in code font still reads as part of the sentence. */
+.fwm-docview-body code {
+  padding: 0 var(--fwm-space-1);
+  border-radius: var(--fwm-radius-1);
+  background: var(--dr-row-fill);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-forecast); /* 13, against a 17px line */
+}
+
+/* =========================================================================
+ * 7. TABLES -- a contract's columns ARE the content
+ *
+ * Same box as the code block, and it scrolls for the same reason: crushing a
+ * four-column contract into 350px makes it unreadable in a way that is easy to
+ * miss, because every cell is still technically on screen.
+ * ====================================================================== */
+
+.fwm-docview-tablewrap {
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-dv-box-radius);
+  background: var(--dr-card-fill);
+  overflow-x: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+  contain: inline-size; /* keyword -- see `.fwm-docview-box` */
+}
+
+.fwm-docview-tablewrap::-webkit-scrollbar {
+  height: 0;
+}
+
+.fwm-docview-table {
+  border-collapse: collapse; /* keyword */
+  width: 100%;
+  font-size: var(--fwm-text-forecast); /* 13 */
+  /* Columns size to their content and the wrapper scrolls; breaking a path
+     mid-word to fit four columns into 350px is the failure named above. */
+  overflow-wrap: normal; /* keyword */
+}
+
+.fwm-docview-table th,
+.fwm-docview-table td {
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-bottom: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  color: var(--dr-ink-3);
+  text-align: left; /* keyword */
+  vertical-align: top; /* keyword */
+}
+
+.fwm-docview-table th {
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-dv-track-box); /* 0.12em */
+  text-transform: uppercase; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* =========================================================================
+ * 7b. EVERYTHING ELSE THE DOCUMENTS ARE WRITTEN WITH
+ *
+ * The rule, the numbered list, the nested list, the fourth heading, the link,
+ * and a callout or a list item that holds more than one paragraph. None of
+ * these had a rule because the first renderer never produced them -- see
+ * `docMarkdown.tsx` for the count of each that the published set contains.
+ * Every value is a token the reader already uses; nothing new is minted.
+ * ====================================================================== */
+
+/* A THEMATIC BREAK. The documents put one between every top-level section --
+   106 of them across the set -- and the owner's screenshot shows the literal
+   `---` the old renderer left in its place. A hairline in the row alpha, no
+   more: it separates, it does not announce. */
+.fwm-docview-rule {
+  height: var(--fwm-rule-w);
+  margin: var(--fwm-space-2) 0;
+  border: 0;
+  background: var(--dr-hairline);
+}
+
+/* `####`: a term under a term. Not caps -- three tiers of tracked caps stop
+   reading as tiers -- but the body face, bold, in the second ink, one step
+   below the sub-section it sits in. */
+.fwm-docview-h4 {
+  margin: var(--fwm-space-2) 0 0;
+  color: var(--dr-ink-2);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* A NUMBERED LIST. The number is the content in these documents -- "step 4",
+   "rule 0" -- so it is drawn, and given the room a two-digit marker needs. */
+.fwm-docview-list-ordered {
+  list-style: decimal; /* keyword */
+  padding-left: var(--fwm-space-6);
+}
+
+/* A list inside a list item, and blocks inside an item that has more than
+   one: the item's own gap, not the band's, so the structure reads as one
+   item rather than as a new block. */
+.fwm-docview-list .fwm-docview-list,
+.fwm-docview-list > li > * + * {
+  margin-top: var(--fwm-space-2);
+}
+
+/* A list is a grid, so each item is a grid item with an automatic minimum of
+   its own longest line -- which, with a fence inside the step, is the fence's.
+   Zero it; the item takes the list's width and the box inside it scrolls. */
+.fwm-docview-list > li {
+  min-width: 0;
+}
+
+/* A CALLOUT WITH MORE THAN A PARAGRAPH IN IT keeps its blocks -- a list, a
+   fence, a second paragraph -- at the callout's own size and ink rather than
+   the band's, because the surface is what says "read this differently" and
+   the type inside it must not say something else. */
+.fwm-docview-callout > * + * {
+  margin-top: var(--fwm-space-2);
+}
+
+.fwm-docview-callout .fwm-docview-p,
+.fwm-docview-callout .fwm-docview-list {
+  color: inherit; /* keyword */
+  font-size: inherit; /* keyword */
+  line-height: inherit; /* keyword */
+}
+
+/* A LINK IN THE PROSE. The accent, underlined: the one colour this screen
+   uses for "you can press this", and the underline because a link that is
+   only a colour is invisible to anybody who cannot see the colour. Long
+   URLs break anywhere rather than pushing the band sideways. */
+.fwm-docview-link {
+  color: var(--dr-accent);
+  text-decoration: underline; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-docview-body del {
+  text-decoration: line-through; /* keyword */
+}
+
+/* =========================================================================
+ * 8. THE OVERLAY WRAPPER
+ *
+ * Over the map, not beside it. The reader is long-form and the map behind it is
+ * irrelevant while you are reading; leaving it visible would only make the text
+ * harder to read for no gain -- and this is the one surface in section D that
+ * genuinely has something behind it, which is exactly why it is opaque rather
+ * than glass.
+ * ====================================================================== */
+
+.fwm-docview-over {
+  display: flex;
+  position: absolute; /* keyword */
+  inset: 0;
+  z-index: 40;
+  background: var(--dr-screen);
+  overflow: hidden; /* keyword */
+}
+
+.fwm-docview-over > .fwm-docview {
+  flex: 1;
+  min-height: 0;
+}

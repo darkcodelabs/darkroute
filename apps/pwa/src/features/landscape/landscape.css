@@ -1,0 +1,939 @@
+/* ==========================================================================
+   LANDSCAPE MODE -- `DarkRoute Landscape Mode.html`, sections A1, A2, B, C, D.
+   ==========================================================================
+
+   LANDSCAPE IS A COLUMN LAYOUT, NOT A STRETCHED PORTRAIT. That sentence is the
+   whole file. What it replaces was the portrait tree widened: a 56px search bar
+   spanning 940px doing nothing, a bottom dock keeping its portrait height and
+   eating a third of a 434px viewport, and the map left as a letterbox. Nothing
+   below re-flows a portrait element. Six surfaces are placed against the four
+   edges of the viewport and the middle is left alone.
+
+   =============================================================================
+   NOTHING CROSSES THE CENTRE
+   =============================================================================
+   "484 px between the two columns stays clear at all times. That band is the
+    road ahead and the vehicle puck -- it is not available for chrome, ever."
+                                                                    -- section D
+
+   Which is why every rule here is an INSET off an edge and not a width off a
+   container. The band is not declared anywhere: it is what is left when the
+   rail, the column and the right rail have taken theirs, and `geometry.ts`
+   carries the arithmetic that proves it closes to 484 at 940 exactly.
+
+   =============================================================================
+   EVERY LENGTH IS A RATIO OF `--fwm-space-1`, WHICH IS 4px AND IS NEVER RE-CUT
+   =============================================================================
+   `searchPanel.css` argues this out at length and the same three reasons hold
+   here: half-pixel type sizes have no step on the scale, `--fwm-space-4` is
+   re-cut to 12 by two skins so 16 cannot come off it, and a drawing that is
+   exact on one skin and approximate on sixteen is not the drawing.
+   `scripts/check-design-values.mjs` fails the build on a raw px or hex outside
+   `tokens.css`, and the spec's own number is written beside each ratio below.
+
+   =============================================================================
+   THE MATERIAL IS PORTRAIT'S, UNCHANGED
+   =============================================================================
+   "0.72 tint, crossed grain, 1 px hairline, 22 px blur -- identical to
+    portrait. Rotation changes layout, never material."           -- section D
+
+   So every glass surface here takes `--dr-grain` over `--dr-surface-thin` with
+   `--dr-blur` and a `--dr-hairline` edge, which is the same four-layer recipe
+   `topBar.css`, `searchPanel.css`, `chrome.css` and `dock.css` already draw.
+   ONE knowing deviation from the drawn file, recorded in the run notes:
+
+     LIFT      the spec draws `0 12px 34px rgba(0,0,0,0.5)` on the slots and
+               `--dr-lift` is `0 10px 30px` at the same alpha. The token is
+               used, and the trade is that the landscape slots sit a little
+               closer to the map than the file draws them.
+
+   AND ONE THAT WAS NEVER A DEVIATION. This block used to list the grain as a
+   second one -- "the spec draws its grain ink at 0.024 and `--dr-grain-ink`
+   is 0.022". It does not. `DarkRoute Landscape Mode.html` writes
+   `rgba(255,255,255,0.022)` seventy-eight times and the string `0.024` zero
+   times, which is the token's own value. The 0.024 came from a READBACK:
+   Chromium stores a legacy `rgba()` alpha as one byte, so 0.022 lands on
+   6/255 and `getComputedStyle` prints 0.024 for it. 0.022 and 0.024 serialise
+   to the same string and cannot be told apart through the CSSOM.
+
+   ========================================================================== */
+
+/* =========================================================================
+ * 1. THE CHROME LAYER
+ *
+ * One absolutely-positioned layer over the map bed, and it is TRANSPARENT TO
+ * THE POINTER by default. The clear centre band is 484px of live map -- pan,
+ * pinch and the vehicle puck all live there -- and a full-bleed layer that ate
+ * those gestures would be the same bug as chrome in the middle, invisible.
+ * Each surface turns pointer events back on for itself.
+ * ====================================================================== */
+
+.fwm-ls {
+  /* --- geometry, all of it, in one place ------------------------------ */
+  --fwm-ls-inset: var(--fwm-space-2); /* 8 -- every edge, every surface */
+  --fwm-ls-radius: calc(var(--fwm-space-1) * 5.5); /* 22 -- card */
+  --fwm-ls-radius-band: calc(var(--fwm-space-1) * 4.5); /* 18 -- alert band */
+  --fwm-ls-radius-tab: calc(var(--fwm-space-1) * 3.5); /* 14 -- rail tab */
+  --fwm-ls-radius-row: var(--fwm-space-3); /* 12 -- list row */
+
+  --fwm-ls-rail-w: calc(var(--fwm-space-1) * 13); /* 52 */
+  --fwm-ls-rail-pad-y: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-ls-rail-pad-x: var(--fwm-space-1); /* 4 */
+  --fwm-ls-rail-gap: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-ls-logo-cell: calc(var(--fwm-space-1) * 13); /* 52 */
+  --fwm-ls-logo: calc(var(--fwm-space-1) * 10.5); /* 42 */
+
+  --fwm-ls-col-left: calc(var(--fwm-space-1) * 17); /* 68 = 8 + 52 + 8 */
+  --fwm-ls-col-w: calc(var(--fwm-space-1) * 84); /* 336 */
+  --fwm-ls-top-h: calc(var(--fwm-space-1) * 21); /* 84 -- LOCKED */
+  --fwm-ls-band-h: calc(var(--fwm-space-1) * 14); /* 56 -- LOCKED */
+  --fwm-ls-bottom-h: calc(var(--fwm-space-1) * 24); /* 96 -- LOCKED */
+  /* 100 = the inset, the top slot and one more inset. Written as the sum so a
+     change to either constant cannot leave the band overlapping the slot. */
+  --fwm-ls-band-top: calc(var(--fwm-ls-inset) * 2 + var(--fwm-ls-top-h)); /* 100 */
+  --fwm-ls-slot-pad: calc(var(--fwm-space-1) * 4); /* 16 -- NOT --fwm-space-4 */
+  --fwm-ls-band-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+
+  --fwm-ls-head-h: calc(var(--fwm-space-1) * 14.5); /* 58 */
+  --fwm-ls-foot-h: calc(var(--fwm-space-1) * 9); /* 36 -- the slot's floor */
+  --fwm-ls-panel-foot-h: calc(var(--fwm-space-1) * 11); /* 44 -- A3's floor */
+  --fwm-ls-panel-pad-y: calc(var(--fwm-space-1) * 1.25); /* 5 */
+  --fwm-ls-panel-pad-x: calc(var(--fwm-space-1) * 2.5); /* 10 */
+
+  --fwm-ls-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-ls-row-pad: var(--fwm-space-2); /* 8 */
+  --fwm-ls-row-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-ls-dot: calc(var(--fwm-space-1) * 2.25); /* 9 -- the owner dot */
+
+  --fwm-ls-circle: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-ls-circle-gap: calc(var(--fwm-space-1) * 1.75); /* 7 */
+  --fwm-ls-glyph: calc(var(--fwm-space-1) * 4.75); /* 19 */
+  --fwm-ls-scrim-w: calc(var(--fwm-space-1) * 117.5); /* 470 */
+
+  /* --- type ----------------------------------------------------------- */
+  --fwm-ls-t-9: calc(var(--fwm-space-1) * 2.25); /* 9 -- rail label */
+  --fwm-ls-t-11: calc(var(--fwm-space-1) * 2.75); /* 11 -- slot caption */
+  --fwm-ls-t-11-5: calc(var(--fwm-space-1) * 2.875); /* 11.5 -- row sub */
+  --fwm-ls-t-12: var(--fwm-space-3); /* 12 */
+  --fwm-ls-t-13: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-ls-t-13-5: calc(var(--fwm-space-1) * 3.375); /* 13.5 -- row title */
+  --fwm-ls-t-14: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-ls-t-21: calc(var(--fwm-space-1) * 5.25); /* 21 -- slot figure */
+  --fwm-ls-t-30: calc(var(--fwm-space-1) * 7.5); /* 30 -- hero figure */
+  --fwm-ls-turn: calc(var(--fwm-space-1) * 8.5); /* 34 -- the maneuver glyph */
+  --fwm-ls-icon-22: calc(var(--fwm-space-1) * 5.5); /* 22 -- the camera glyph */
+
+  /* THE TWO TRACKINGS, off the card scale rather than written out. `dock.css`
+     derives its own `-0.02em` the same way and says so; the tight one is the
+     token itself. The 30px readouts take the doubled step, the 21px ones the
+     single -- which is the relationship the spec draws between them. */
+  --fwm-ls-track-tight: var(--fwm-card-track-tight); /* -0.01em */
+  --fwm-ls-track-mid: calc(var(--fwm-card-track-tight) * 2); /* -0.02em */
+
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none; /* keyword -- see the section header */
+  font-family: var(--fwm-font-ui);
+}
+
+/* =========================================================================
+ * BORDER-BOX, DECLARED RATHER THAN INHERITED.
+ *
+ * Tailwind's Preflight sets `box-sizing: border-box` on everything, and
+ * `searchPanel.css` relies on that. This file does not, and the reason is that
+ * EVERY HEIGHT IN THIS LAYOUT IS A BORDER-BOX HEIGHT WITH A HAIRLINE INSIDE IT:
+ * the top slot is 84 including its 1px edge, the bottom slot is 96 including
+ * two, and `landscape.geometry.test.ts` asserts that 58 + 1 + 36 fits inside
+ * 96 -- which is only true border-box. Under `content-box` every one of those
+ * numbers is silently two pixels out, the clear centre band loses four, and
+ * nothing throws.
+ *
+ * A layout whose whole contract is "these lengths are exact" should not take
+ * the box model from a reset it does not own.
+ * ====================================================================== */
+.fwm-ls-rail,
+.fwm-ls-slot,
+.fwm-ls-band,
+.fwm-ls-panel,
+.fwm-ls-circle,
+.fwm-ls-row,
+.fwm-ls-right :where(.fwm-dock-report-key) {
+  box-sizing: border-box; /* keyword */
+}
+
+/* =========================================================================
+ * AND THE LAYER HAS TO WIN THAT ARGUMENT, WHICH IT DID NOT.
+ *
+ * `.fwm-ls` declares `pointer-events: none` above and it was being overruled at
+ * runtime, so the whole map was dead in landscape: no pan, no pinch, no tap on
+ * a reader. `document.elementFromPoint` in the middle of the clear band
+ * returned this layer, not the canvas under it.
+ *
+ * The rule that beat it is `global.css`'s
+ *
+ *     :root .fwm-shell-dock > * { pointer-events: auto; }
+ *
+ * which exists so the dock can be pressed through its own transparent wrapper.
+ * `LandscapeChrome` is mounted by `ShellDock`, so it IS a direct child of that
+ * wrapper, and (0,2,1) beats (0,1,0) -- a class selector never outranks a
+ * class-plus-pseudo-class-plus-class one, however much intent is written above
+ * it.
+ *
+ * `dock.css` hit exactly this and left the fix beside its own scrim, in these
+ * words: "The `:root` raises specificity above that rule and nothing else here
+ * does." Same shape, same reason, one layer up.
+ * ====================================================================== */
+:root .fwm-shell-dock > .fwm-ls {
+  pointer-events: none; /* keyword */
+}
+
+/* Every surface takes its own presses back. */
+.fwm-ls-rail,
+.fwm-ls-slot,
+.fwm-ls-panel,
+.fwm-ls-right {
+  pointer-events: auto; /* keyword */
+}
+
+/* =========================================================================
+ * 2. THE SIDE SCRIM -- section D, "Side scrim, not bottom"
+ *
+ * "The gradient runs left-to-right across the left 470 px. A bottom scrim in
+ *  landscape would dim the horizon, which is where the next turn appears."
+ *
+ * It is under the chrome and over the map, it never takes a press, and it is
+ * the reason the rail and the column stay legible over a bright basemap
+ * without either of them going opaque.
+ * ====================================================================== */
+
+.fwm-ls-scrim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--fwm-ls-scrim-w);
+  pointer-events: none; /* keyword */
+  background: var(--dr-scrim-side);
+}
+
+/* =========================================================================
+ * 3. THE LEFT RAIL -- section B, "Tab bar: rotates into the 52 px left rail"
+ *
+ * "Five items at 52 x 52 in a full-height rail, labels shortened to fit --
+ *  Expose, not Exposure. Same order, same active treatment as portrait."
+ *
+ * SAME COMPONENT, AND THAT IS THE POINT. `features/dock/TabRow.tsx` draws this
+ * row and the portrait one, off `DOCK_TABS`, with one active-key rule. What
+ * changes is an attribute and the eight `--fwm-dk-tab-*` locals it reads, all
+ * of which are re-cut below. A second tab component would be a second answer to
+ * "which tab is lit" the first time somebody added a screen.
+ *
+ * THE TARGET IS 42 x 52, NOT 52 x 52. The rail is 52 wide with a hairline each
+ * side and 4px of padding, which leaves 42 -- the document's own drawing, and a
+ * disagreement with the document's own prose. `geometry.ts` argues it.
+ * ====================================================================== */
+
+.fwm-ls-rail {
+  position: absolute;
+  top: var(--fwm-ls-inset);
+  bottom: var(--fwm-ls-inset);
+  left: var(--fwm-ls-inset);
+  display: flex;
+  flex-direction: column; /* keyword */
+  align-items: stretch; /* keyword */
+  gap: var(--fwm-ls-rail-gap);
+  width: var(--fwm-ls-rail-w);
+  padding: var(--fwm-ls-rail-pad-y) var(--fwm-ls-rail-pad-x);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-ls-radius);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+}
+
+/* THE MARK, AND ONLY THE MARK. Section B: "Logo only, 42 px, at the top of the
+   tab rail. The wordmark and read count do not fit a 52 px column and are not
+   needed mid-drive." The 86x15 wordmark and the read count stay in portrait,
+   on the bar this layout deletes. */
+.fwm-ls-logo {
+  display: grid;
+  flex: none; /* keyword */
+  place-items: center; /* keyword */
+  height: var(--fwm-ls-logo-cell);
+  margin-bottom: var(--fwm-ls-rail-gap);
+  border-radius: var(--fwm-ls-radius-tab);
+}
+
+.fwm-ls-logo img {
+  display: block;
+  width: var(--fwm-ls-logo);
+  height: var(--fwm-ls-logo);
+}
+
+/* THE TAB STACK, CENTRED IN WHAT IS LEFT. `justify-content: center` is the
+   spec's own, and it is what keeps the five keys off the bottom bezel on a tall
+   landscape viewport without a media query. */
+.fwm-ls-rail .fwm-dock-tabs {
+  /* The eight locals `dock.css` reads, re-cut for a 52px column. Nothing in
+     that stylesheet is edited: it already declares every length as a local, so
+     a second host only has to supply a second set. */
+  --fwm-dk-tab-gap: var(--fwm-ls-rail-gap); /* 2 */
+  --fwm-dk-tabs-h: auto;
+  --fwm-dk-tab-pad-y: 0;
+  --fwm-dk-tab-pad-x: 0;
+  --fwm-dk-tab-stack: var(--fwm-ls-rail-gap); /* 2 */
+  --fwm-dk-tab-h: calc(var(--fwm-space-1) * 13); /* 52 */
+  --fwm-dk-tab-radius: var(--fwm-ls-radius-tab); /* 14 */
+  --fwm-dk-tab-icon: var(--fwm-ls-glyph); /* 19, where portrait draws 21 */
+  --fwm-dk-t-11: var(--fwm-ls-t-9); /* 9, where portrait draws 11 */
+
+  /* ONE COLUMN INSTEAD OF FIVE. The only structural override the rail makes:
+     `dock.css` sets `repeat(5, minmax(0, 1fr))` for a bar. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  flex: 1 1 0;
+  align-content: center; /* keyword */
+  min-height: 0;
+}
+
+/* =========================================================================
+ * 4. THE CONTENT COLUMN -- section C, "336 px wide, both slots locked"
+ *
+ * "The top slot holds WHAT IS HAPPENING NOW -- a maneuver, an approach, a
+ *  surveillance warning. The bottom slot holds WHERE YOU STAND -- counts,
+ *  exposure, ETA. Monitor mode fills only the bottom; navigation fills both.
+ *  Neither slot ever changes size, and an alert inserts a third 56 px band
+ *  under the top slot rather than growing it."
+ *
+ * THE HEIGHTS ARE HARD-CODED ON PURPOSE, which is unusual in this codebase and
+ * is the rule rather than a shortcut. A slot that sized to its content would
+ * move the alert band, and a band that moves is one a driver has to find again
+ * at 70mph. Both slots are `height`, not `min-height`, and the content
+ * ellipsises inside them.
+ * ====================================================================== */
+
+.fwm-ls-slot {
+  position: absolute;
+  left: var(--fwm-ls-col-left);
+  width: var(--fwm-ls-col-w);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-ls-radius);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+}
+
+.fwm-ls-slot[data-fwm-slot='top'] {
+  top: var(--fwm-ls-inset);
+  display: flex;
+  align-items: center; /* keyword */
+  gap: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  height: var(--fwm-ls-top-h);
+  padding: 0 var(--fwm-ls-slot-pad);
+}
+
+.fwm-ls-slot[data-fwm-slot='bottom'] {
+  bottom: var(--fwm-ls-inset);
+  height: var(--fwm-ls-bottom-h);
+  overflow: hidden;
+}
+
+/* THE MANEUVER GLYPH. 34px, and it is the only thing on either slot drawn
+   larger than the figure beside it -- a turn is a shape before it is a
+   sentence. */
+.fwm-ls-turn-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-ls-turn);
+  height: var(--fwm-ls-turn);
+  color: var(--dr-ink);
+}
+
+.fwm-ls-readout {
+  display: grid;
+  flex: 1 1 auto;
+  gap: calc(var(--fwm-space-1) / 2); /* 2 */
+  min-width: 0;
+}
+
+.fwm-ls-figure-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: calc(var(--fwm-space-1) * 1.75); /* 7 */
+}
+
+.fwm-ls-figure {
+  font-size: var(--fwm-ls-t-30);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-ls-track-mid);
+  color: var(--dr-ink);
+}
+
+.fwm-ls-unit {
+  font-size: var(--fwm-ls-t-14);
+  font-weight: 500;
+  color: var(--dr-ink-muted);
+}
+
+/* The instruction. One line, ellipsised, because the slot cannot grow. */
+.fwm-ls-sub {
+  overflow: hidden;
+  font-size: var(--fwm-ls-t-14);
+  font-weight: 500;
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--dr-ink-3);
+}
+
+/* =========================================================================
+ * 5. THE ALERT BAND -- the third element, and it INSERTS rather than grows
+ *
+ * The hue is the app's own alert scale and NOT the spec's literal ochre. The
+ * file draws `rgba(30,22,8,0.78)` on `rgba(245,165,36,0.42)`; those are the
+ * dark skin's resolution of "the approach tint over the glass", and seventeen
+ * skins re-cut what approaching means -- `#FF6A00` on `pursuit`, `#FFD24A` on
+ * `cluster`. `dock.css` paints its own APPROACHING pane out of exactly these
+ * three tokens, and a band that means the same thing on a different edge of the
+ * screen has to follow the same skin or the driver has two ambers.
+ * ====================================================================== */
+
+.fwm-ls-band {
+  position: absolute;
+  top: var(--fwm-ls-band-top);
+  left: var(--fwm-ls-col-left);
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-ls-row-gap);
+  width: var(--fwm-ls-col-w);
+  height: var(--fwm-ls-band-h);
+  padding: 0 var(--fwm-ls-band-pad);
+  pointer-events: auto; /* keyword */
+  border: var(--fwm-rule-w) solid var(--fwm-tint-approaching-ring);
+  border-radius: var(--fwm-ls-radius-band);
+  /* THE TINT IS WRAPPED IN A GRADIENT AND THAT IS NOT DECORATION. `background`
+     accepts a colour only in its FINAL layer, so `grain, tint, glass` is an
+     invalid shorthand and drops the whole declaration -- the band rendered
+     fully transparent, caught by measuring it in Chromium rather than by any
+     test. A two-stop gradient of one colour is the flat fill, in a form the
+     shorthand will take in the middle of a stack. */
+  background: var(--dr-grain),
+    linear-gradient(var(--fwm-tint-approaching), var(--fwm-tint-approaching)),
+    var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift);
+}
+
+.fwm-ls-band-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-ls-glyph);
+  height: var(--fwm-ls-glyph);
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-ls-band-figure {
+  flex: none; /* keyword */
+  font-size: var(--fwm-ls-t-21);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-alert-approaching-text);
+}
+
+.fwm-ls-band-text {
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-ls-t-13);
+  font-weight: 700;
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--fwm-alert-approaching-text);
+}
+
+/* =========================================================================
+ * 6. THE BOTTOM SLOT'S INTERIOR -- a header, a hairline and a footer
+ *
+ * 58 + 1 + 36 = 95, inside a 96 border-box with a hairline top and bottom. The
+ * arithmetic closes and is asserted in `landscape.geometry.test.ts`.
+ * ====================================================================== */
+
+.fwm-ls-head {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-ls-row-gap);
+  height: var(--fwm-ls-head-h);
+  padding: 0 var(--fwm-ls-slot-pad);
+}
+
+/* THE NAVIGATION HEADER IS THREE EQUAL COLUMNS, not a row of runs: arrival,
+   duration and readers-on-route each take a third so the three figures line up
+   on one baseline whatever their width. Section C's own composition. */
+.fwm-ls-head[data-fwm-triple] {
+  gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+}
+
+.fwm-ls-stat {
+  display: grid;
+  flex: 1 1 0;
+  gap: calc(var(--fwm-space-1) / 4); /* 1 */
+  justify-items: start; /* keyword */
+  min-width: 0;
+}
+
+.fwm-ls-stat-value {
+  font-size: var(--fwm-ls-t-21);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: var(--fwm-ls-track-tight);
+  color: var(--dr-ink);
+}
+
+.fwm-ls-stat-label {
+  font-size: var(--fwm-ls-t-11);
+  color: var(--dr-ink-muted);
+}
+
+/* THE COUNT THE DENSITY RAMP COLOURS, and the ramp is `dock.css`'s -- four
+   tiers over two miles, set from `data-fwm-density` exactly as the collapsed
+   pane sets it. Hue says WHAT, scope says WHEN: this is a reading about an
+   area, so it colours the number and never the slot. */
+.fwm-ls-count {
+  flex: none; /* keyword */
+  font-size: var(--fwm-ls-t-30);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-ls-track-mid);
+  color: var(--fwm-ls-tier, var(--dr-ink));
+}
+
+.fwm-ls-slot[data-fwm-density='clear'] {
+  --fwm-ls-tier: var(--fwm-alert-clear);
+}
+
+.fwm-ls-slot[data-fwm-density='low'] {
+  --fwm-ls-tier: var(--dr-ink);
+}
+
+.fwm-ls-slot[data-fwm-density='moderate'] {
+  --fwm-ls-tier: var(--fwm-alert-approaching-text);
+}
+
+.fwm-ls-slot[data-fwm-density='high'] {
+  --fwm-ls-tier: var(--fwm-alert-approaching);
+}
+
+/* AN UNCOMPUTED COUNT IS A DASH AND IT IS NEVER A ZERO. Zero readers within two
+   miles is a real and reassuring answer; drawing it before anything has
+   counted is a safety lie, so the unmeasured state takes the muted ink and the
+   dash glyph `features/search/panel.ts` already publishes. */
+.fwm-ls-slot[data-fwm-density='unknown'] {
+  --fwm-ls-tier: var(--dr-ink-muted);
+}
+
+/* The 22px camera glyph that leads the monitor header, and the 22px
+   struck-through wifi mark that leads the offline one. */
+.fwm-ls-icon {
+  display: grid;
+  flex: none; /* keyword */
+  place-items: center; /* keyword */
+  color: var(--fwm-ls-tier, var(--dr-ink-muted));
+}
+
+.fwm-ls-icon svg {
+  width: var(--fwm-ls-icon-22);
+  height: var(--fwm-ls-icon-22);
+}
+
+/* THE FOOTER'S OWN TARGET, which is what raises A3. It is a bare button
+   wrapping the note so the whole line is pressable without the note becoming a
+   second style; it takes the note's own ink and adds nothing of its own. */
+.fwm-ls-foot-key {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center; /* keyword */
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none; /* keyword */
+  font: inherit;
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-ls-headlines {
+  display: grid;
+  flex: 1 1 auto;
+  gap: calc(var(--fwm-space-1) / 4); /* 1 */
+  min-width: 0;
+}
+
+.fwm-ls-headline {
+  overflow: hidden;
+  font-size: var(--fwm-ls-t-14);
+  font-weight: 500;
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--dr-ink-3);
+}
+
+.fwm-ls-headnote {
+  overflow: hidden;
+  font-size: var(--fwm-ls-t-12);
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-ls-rule {
+  height: var(--fwm-rule-w);
+  background: var(--dr-hairline-row);
+}
+
+.fwm-ls-foot {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  height: var(--fwm-ls-foot-h);
+  padding: 0 var(--fwm-ls-slot-pad);
+}
+
+.fwm-ls-foot-note {
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-ls-t-13);
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+/* THE FOOTER'S KEYS. Text keys, and they are `<button>` because the spec draws
+   them as coloured spans -- correct for a static page and unreachable by
+   keyboard in a product. `TabRow.tsx` makes the same deviation for the same
+   reason and says so. */
+.fwm-ls-key {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: calc(var(--fwm-space-1) * 1.25); /* 5 */
+  padding: 0;
+  border: 0;
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-ls-t-13);
+  font-weight: 700;
+  white-space: nowrap; /* keyword */
+  color: var(--dr-accent);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-ls-key svg {
+  width: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  height: calc(var(--fwm-space-1) * 3.5);
+}
+
+/* END IS THE DESTRUCTIVE ONE and takes the abuse hue's text tier, which is the
+   red this product spends on "this stops something". It is the only End in the
+   application -- see `ShellDock.onAction`. */
+.fwm-ls-key[data-fwm-tone='end'] {
+  color: var(--dr-abuse-text);
+}
+
+/* =========================================================================
+ * 7. THE EXPANDED PANEL -- section A3, and section D's "not a sheet"
+ *
+ * "Tapping the bottom slot slides a 336 px panel up the left column to full
+ *  height -- section A3. It never becomes a bottom sheet: there is no vertical
+ *  room and it would cover the horizon."
+ *
+ * Same left, same width, same radius, same glass. It replaces both slots rather
+ * than covering them, and the list scrolls INSIDE it.
+ * ====================================================================== */
+
+.fwm-ls-panel {
+  position: absolute;
+  top: var(--fwm-ls-inset);
+  bottom: var(--fwm-ls-inset);
+  left: var(--fwm-ls-col-left);
+  display: flex;
+  flex-direction: column; /* keyword */
+  overflow: hidden;
+  width: var(--fwm-ls-col-w);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-ls-radius);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-panel-lift), var(--dr-specular);
+}
+
+.fwm-ls-panel .fwm-ls-head,
+.fwm-ls-panel .fwm-ls-rule,
+.fwm-ls-panel .fwm-ls-foot {
+  flex: none; /* keyword */
+}
+
+.fwm-ls-panel .fwm-ls-foot {
+  height: var(--fwm-ls-panel-foot-h);
+}
+
+.fwm-ls-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--fwm-ls-panel-pad-y) var(--fwm-ls-panel-pad-x);
+}
+
+/* THE ROW HAS NO FILL, IN ANY FRAME. Measured: every one of the nineteen rows
+   the landscape file draws computes `background-color: rgba(0,0,0,0)`, and the
+   spec never draws a pressed, hovered or selected landscape row at all. So the
+   resting row is bare and `--dr-row-fill` -- which the portrait list does use --
+   is deliberately not referenced here. The pressed state below is the app's
+   own, because a 44px target with no press feedback is a target a driver taps
+   twice; it is the smallest thing that could be added and it is flagged. */
+.fwm-ls-row {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-ls-row-gap);
+  width: 100%;
+  height: var(--fwm-ls-row-h);
+  min-width: 0;
+  padding: 0 var(--fwm-ls-row-pad);
+  border: 0;
+  border-radius: var(--fwm-ls-radius-row);
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-ls-row:active {
+  background: var(--dr-row-fill);
+}
+
+.fwm-ls-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-ls-dot);
+  height: var(--fwm-ls-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-ls-owner, var(--dr-ink-muted));
+}
+
+.fwm-ls-row-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: calc(var(--fwm-space-1) / 4); /* 1 */
+  min-width: 0;
+}
+
+.fwm-ls-row-title {
+  overflow: hidden;
+  font-size: var(--fwm-ls-t-13-5);
+  font-weight: 500;
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--dr-ink-2);
+}
+
+.fwm-ls-row-sub {
+  overflow: hidden;
+  font-size: var(--fwm-ls-t-11-5);
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-ls-row-dist {
+  flex: none; /* keyword */
+  font-size: var(--fwm-ls-t-13);
+  font-weight: 700;
+  color: var(--dr-ink-3);
+}
+
+/* THE OWNER DOTS, and UNVERIFIED IS PURPLE. The spec file draws it in the
+   accent cyan, which was the collision `tokens.css` closed on 2026-09-08: cyan
+   is "system positive / active selection" -- the lit tab, the chosen route --
+   and it was also unverified, so on one screen an armed filter and an
+   unmeasured camera were the same colour. The token is used and the spec file
+   predates the decision. Flagged so the drawing gets re-rendered. */
+.fwm-ls-row[data-fwm-owner='flock'] {
+  --fwm-ls-owner: var(--dr-owner-flock);
+}
+
+.fwm-ls-row[data-fwm-owner='police'] {
+  --fwm-ls-owner: var(--dr-owner-police);
+}
+
+.fwm-ls-row[data-fwm-owner='private'] {
+  --fwm-ls-owner: var(--dr-owner-private);
+}
+
+.fwm-ls-row[data-fwm-owner='hoa'] {
+  --fwm-ls-owner: var(--dr-owner-hoa);
+}
+
+.fwm-ls-row[data-fwm-owner='unverified'] {
+  --fwm-ls-owner: var(--dr-owner-unverified);
+}
+
+/* =========================================================================
+ * 8. THE RIGHT RAIL -- section B, "44 px circles, 7 px gaps"
+ *
+ * "Stays right, vertically centred, 44 px circles, 7 px gaps -- no longer
+ *  clipped by the bezel or overlapping the report button."
+ *
+ * FIVE CONTROLS: search, layers, day/night, report, settings. Search is FIRST
+ * because section D makes it the search bar's replacement -- "A 56 px bar
+ * spanning 940 px is all dead space." Report is FOURTH and keeps its own pink
+ * hairline, "one tap from anywhere".
+ *
+ * CENTRED WITH `translateY(-50%)`, the spec's own, which means the rail
+ * RECENTRES if a control is ever absent and every circle moves. Whether that is
+ * intended is not stated anywhere in the document; it is copied because it is
+ * what is drawn, and flagged.
+ * ====================================================================== */
+
+.fwm-ls-right {
+  position: absolute;
+  top: 50%;
+  right: var(--fwm-ls-inset);
+  display: grid;
+  gap: var(--fwm-ls-circle-gap);
+  transform: translateY(-50%);
+}
+
+.fwm-ls-circle {
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-ls-circle);
+  height: var(--fwm-ls-circle);
+  padding: 0;
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  color: var(--dr-ink-3);
+  cursor: pointer; /* keyword */
+}
+
+/* NO `box-shadow`. Measured, and it is the one place the right rail parts
+   company with every other surface in this layout: the five circles carry the
+   glass and the hairline and no lift at all. Over the clear centre band a
+   dropped shadow would be five smudges on the road. */
+
+.fwm-ls-circle svg {
+  width: var(--fwm-ls-glyph);
+  height: var(--fwm-ls-glyph);
+}
+
+/* NOT CONNECTED. A circle with no handler says so instead of looking pressable:
+   the ring goes dashed and the glyph drops to the fourth ink. `LandscapeChrome`
+   sets the attribute for any circle whose press is undefined, so the next key
+   that ships unwired is visible on the first look rather than found by a
+   driver pressing it. */
+.fwm-ls-circle[data-fwm-unwired='true'] {
+  border-style: dashed;
+  color: var(--dr-ink-4);
+  cursor: default; /* keyword */
+}
+
+/* ARMED. Layers is drawn lit in all four frames because a layer is on; it takes
+   the same 13% fill and accent hairline as the active tab, which is the one
+   "you are here" treatment this product has. */
+.fwm-ls-circle[aria-pressed='true'] {
+  border-color: var(--dr-accent-line);
+  /* Two layers, the last a colour -- valid, and the same shape `dock.css`
+     draws its own grounds with. See the band above for the three-layer trap. */
+  background: var(--dr-grain), var(--dr-accent-fill);
+  color: var(--dr-accent);
+}
+
+/* REPORT KEEPS ITS OWN HUE, AND IT IS THE SAME COMPONENT. Section B: "Fourth
+   right-rail button, pink hairline. It keeps its own hue and stays one tap from
+   anywhere." `ReportKey` draws its own button -- tap opens the sheet, a one
+   second hold drops a pin, a drag aborts, and the badge counts what is queued --
+   so the rail re-cuts that button into a 44px circle rather than drawing a
+   second pink one around it. Forking those two gestures is the failure this
+   avoids; `dock.css` section 8 owns the same control on the other surface.
+
+   The `:where()` keeps this at zero specificity above the class itself, so
+   `reportKey.css` still wins anything it sets deliberately. */
+.fwm-ls-right :where(.fwm-dock-report-key) {
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-ls-circle);
+  height: var(--fwm-ls-circle);
+  padding: 0;
+  border: var(--fwm-rule-w) solid var(--fwm-tint-multiple-line);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  color: var(--dr-owner-flock);
+  cursor: pointer; /* keyword */
+}
+
+/* The spec draws that ring at 40% of the Flock magenta and
+   `--fwm-tint-multiple-line` is 38% of the same hue -- the token `dock.css`
+   already spends on this control's border on the other surface. Two percentage
+   points, and one fewer place for the report key's edge to be defined. */
+
+/* =========================================================================
+ * 9. THE CHROME YIELDS -- section A5, "TYPING, KEYBOARD UP · the honest case ·
+ *    keyboard takes 200 px, chrome yields"
+ *
+ * A landscape soft keyboard is FULL WIDTH and roughly 200px tall, and it
+ * respects no columns. Left where it is, this layout would put the bottom slot,
+ * the whole right rail and four of the five tabs underneath it.
+ *
+ * So while the search field has focus, everything in this layer goes except the
+ * scrim. What is drawn instead is the panel, reflowed to 336 x 218 at left 8 by
+ * `searchPanel.css`, with the keyboard under it -- and a live slice of map
+ * roughly 590px wide beside it, which is the whole point:
+ *
+ *   "NEVER CLIP EITHER RAIL. NEVER TAKE THE WHOLE SCREEN. A full-screen sheet
+ *    would hide the map entirely; this keeps a ~590px live slice of it."
+ *
+ * WHY THE SLOTS GO TOO, WHICH THE BRIEF'S SENTENCE DOES NOT SAY OUTRIGHT.
+ * Measured: A5's frame has FOUR children -- the map, the scrim, the panel and
+ * the keyboard. No rails, no slots, no band. And the geometry forces it anyway:
+ * the keyboard-up panel is at `left: 8` and 336 wide, so it spans 8..344, while
+ * the content column spans 68..404. Leave a slot up and the panel is drawn
+ * through it. This is not a second decision, it is the same one.
+ *
+ * THE LIVE CAMERA WARNING IS NOT IN THIS LAYER AND IS NOT AFFECTED.
+ * `drive.css` states the principle for the portrait fold -- "an app that hides
+ * the camera warning when you tidy the screen is an app that has forgotten what
+ * it is for" -- and it holds here. It costs nothing to honour: the takeover is
+ * `App.tsx`'s own `.fwm-shell-layer[data-fwm-layer='alert']`, a sibling of the
+ * whole chrome, and `global.css` deliberately exempts it from the landscape
+ * left-column treatment so it stays full-bleed. `.fwm-ls-band` is a ROUTE
+ * advisory in the content column -- "Reroute around 9" -- not the warning.
+ *
+ * VISIBILITY, NOT `display`, and the reason is the same one `drive.css` gives
+ * for bare mode: it takes the controls out of the tab order and the
+ * accessibility tree while they are away, it can be transitioned so the chrome
+ * fades rather than blinking out from under a thumb, and -- the reason that
+ * matters most here -- it does not destroy layout. A `display: none` rail is a
+ * rail whose tab row has lost its scroll position and whose focused button has
+ * dropped focus on the body, which is the failure this whole surface is being
+ * careful about: "ROTATING NEVER RESETS."
+ * ====================================================================== */
+
+.fwm-ls-rail,
+.fwm-ls-right,
+.fwm-ls-slot,
+.fwm-ls-band,
+.fwm-ls-panel {
+  transition:
+    opacity var(--fwm-dur-fast) var(--fwm-ease-out),
+    visibility var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+.fwm-ls[data-fwm-yield='true'] .fwm-ls-rail,
+.fwm-ls[data-fwm-yield='true'] .fwm-ls-right,
+.fwm-ls[data-fwm-yield='true'] .fwm-ls-slot,
+.fwm-ls[data-fwm-yield='true'] .fwm-ls-band,
+.fwm-ls[data-fwm-yield='true'] .fwm-ls-panel {
+  opacity: 0;
+  visibility: hidden; /* keyword */
+  pointer-events: none; /* keyword */
+}

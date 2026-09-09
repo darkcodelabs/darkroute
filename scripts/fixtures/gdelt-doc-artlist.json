@@ -1,0 +1,34 @@
+{
+  "articles": [
+    {
+      "url": "https://www.wpr.org/news/milwaukee-police-changes-flock-safety-cameras",
+      "url_mobile": "",
+      "title": "Milwaukee Police announce more changes to use of Flock Safety cameras",
+      "seendate": "20260902T141500Z",
+      "socialimage": "https://www.wpr.org/example.jpg",
+      "domain": "wpr.org",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://www.fox5atlanta.com/news/hall-county-flock-audit-exposes-more-unauthorized-searches?utm_source=fixture#story",
+      "url_mobile": "https://www.fox5atlanta.com/news/hall-county-flock-audit-exposes-more-unauthorized-searches.amp",
+      "title": "Hall County Flock audit exposes more unauthorized searches",
+      "seendate": "20260902T064500Z",
+      "socialimage": "https://images.foxtv.com/example.jpg",
+      "domain": "fox5atlanta.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://example.test/company-stock-product-launch",
+      "url_mobile": "",
+      "title": "Plate reader company stock rises after product launch",
+      "seendate": "20260901T120000Z",
+      "socialimage": "",
+      "domain": "example.test",
+      "language": "English",
+      "sourcecountry": "United States"
+    }
+  ]
+}

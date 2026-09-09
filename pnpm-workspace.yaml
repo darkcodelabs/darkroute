@@ -1,0 +1,15 @@
+# pnpm workspace layout.
+#
+#   apps/pwa           the product: React + TypeScript + Vite PWA
+#   apps/desktop       the developer console served at api.darkroute.ai, with
+#                      the Pages Functions that proxy /v1 and /api/v1 to the apex
+#   apps/android       buildable Gradle Trusted Web Activity (not a Node package)
+#   packages/core      pure geo + alert engine, zero platform dependencies
+#   packages/api-client reserved placeholder; the live contract is
+#                      GET /api/v1/openapi.json (functions/api/v1/openapi.json.ts)
+#
+# The curation tools and the undeployed TypeScript
+# gateway. It has no package manifest, so its tests run from the root scripts.
+packages:
+  - 'apps/*'
+  - 'packages/*'

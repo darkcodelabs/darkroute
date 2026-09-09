@@ -1,0 +1,263 @@
+/* INTEL - v1. `Details`, the sheet under the camera modal.
+ *
+ * SOURCE: brief 4's screen language - a 56px title track that does not scroll,
+ * a band that does, 44px hairlined rows, and 150px reserved at the bottom for
+ * the dock. Same six-row vocabulary the Layers and Abuse menus ship.
+ *
+ * =============================================================================
+ * OPAQUE, AND THAT IS THE DECISION
+ * =============================================================================
+ * "Glass is for chrome floating over the map. A full screen has nothing behind
+ * it, so blurring it costs a compositor pass and buys nothing. Blur everywhere
+ * is blur nowhere." This sheet covers the modal, the map and the dock, so there
+ * is nothing to see through it: `--dr-screen`, opaque, no `backdrop-filter`
+ * anywhere in this file.
+ *
+ * Lengths are ratios off `--fwm-space-1` with the spec's own pixel beside each,
+ * for the reason `intelV1.css` states at length: the design-value gate rejects
+ * a raw px as hard as a raw hex.
+ */
+
+.fwm-inteldetailv1 {
+  /* --- geometry ----------------------------------------------------------- */
+  --fwm-inteldetailv1-track: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-inteldetailv1-pad: calc(var(--fwm-space-1) * 3.5); /* 14, side padding */
+  --fwm-inteldetailv1-gap: var(--fwm-space-1); /* 4 */
+  --fwm-inteldetailv1-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-inteldetailv1-row-radius: var(--fwm-space-3); /* 12 */
+  --fwm-inteldetailv1-row-pad: var(--fwm-space-3); /* 12 */
+  --fwm-inteldetailv1-row-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-inteldetailv1-group-gap: calc(var(--fwm-space-1) * 3); /* 12 */
+  --fwm-inteldetailv1-track-caps: calc(var(--fwm-card-track-tight) * -14); /* 0.14em */
+
+  /* IT COVERS EVERYTHING, INCLUDING THE DOCK. The modal underneath is still
+     mounted - this is a branch of the same component, so a driver returns to a
+     card that has not lost its queued outcome or its mute countdown - and this
+     is drawn over it. */
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--dr-screen);
+  font-family: var(--fwm-font-ui);
+  color: var(--dr-ink);
+}
+
+/* --- the title track ------------------------------------------------------ */
+
+/* 56px, and it does not scroll. The exit is at the HEAD of it, which is brief
+   4's rule for a screen; the modal underneath draws its close key at the tail,
+   which is what the spec's own frame for it does. */
+.fwm-inteldetailv1-head {
+  display: flex;
+  flex: none; /* keyword */
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  min-height: var(--fwm-inteldetailv1-track); /* 56 */
+  padding: 0 var(--fwm-inteldetailv1-pad);
+}
+
+.fwm-inteldetailv1-title {
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+/* THE ID, WHICH IS WHAT A DRIVER QUOTES. Mono, faint, and pushed to the far end
+   of the track so the title keeps the left edge every other screen's does. */
+.fwm-inteldetailv1-id {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-plate); /* 12 */
+  color: var(--dr-ink-faint);
+  text-align: right; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* --- the band that scrolls ------------------------------------------------ */
+
+/* THE CONTENT BAND, between the fixed track and the fixed dock reserve.
+ *
+ * The reservation is INSIDE the scroller, never a margin on it: a margin only
+ * moves the clipping outwards, which is the bug that put MUTE THIS ONE under
+ * the dock bar on the sheet this replaces. `--fwm-dock-h` follows the dock's
+ * own family - 147 browsing, 168 driving, 288 expanded - so the band clears
+ * whichever bar is actually mounted rather than the mock's flat 150. */
+.fwm-inteldetailv1-band {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-inteldetailv1-group-gap);
+  min-height: 0;
+  padding: 0 var(--fwm-inteldetailv1-pad)
+    calc(var(--fwm-dock-h) + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; /* keyword */
+  /* THE CONTENT IS THE AFFORDANCE. Brief 4 hides the scrollbar inside the
+     frame on every screen; a 3px trough beside a list of eight rows is chrome
+     explaining chrome. */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-inteldetailv1-band::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Nothing in a scrolling column may be squashed below its content: a flex
+   item's default `flex-shrink: 1` compresses every child a little and cuts the
+   last line off each one, rather than letting the column scroll. */
+.fwm-inteldetailv1-band > * {
+  flex-shrink: 0;
+}
+
+/* --- the three tiles ------------------------------------------------------ */
+
+/* OWNER / MOUNT / FACING. Two columns on a phone, OWNER across the top, for the
+   reason measured on the sheet this replaces: at 17px/700 the median operator
+   string needs 165px and three `flex: 1` columns give it 96 on a 390px screen,
+   which broke the word. Three across returns at 35rem, the first width where
+   the card is genuinely wide enough. */
+.fwm-inteldetailv1-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-inteldetailv1-tile:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 35rem) {
+  .fwm-inteldetailv1-tiles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .fwm-inteldetailv1-tile:first-child {
+    grid-column: auto; /* keyword */
+  }
+}
+
+.fwm-inteldetailv1-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-inteldetailv1-row-radius);
+  background: var(--dr-card-fill);
+}
+
+.fwm-inteldetailv1-tile-value {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--dr-ink);
+  /* IT WRAPS, IT DOES NOT ELLIPSIS. 71.5% of the records that carry an
+     `operator` carry a token longer than six characters, so a value overflowing
+     this box is the common case rather than the tail - and an ellipsis reads as
+     a considered decision to truncate, which `check-text-fits.mjs` deliberately
+     excludes from its report. */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* AN UNKNOWN VALUE IS DIM. The em dash carries as much weight as a number
+   otherwise, and this block is read at a glance. */
+.fwm-inteldetailv1-tile[data-fwm-known='false'] .fwm-inteldetailv1-tile-value {
+  color: var(--dr-ink-faint);
+}
+
+.fwm-inteldetailv1-tile-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: var(--fwm-inteldetailv1-track-caps);
+  color: var(--dr-ink-muted);
+}
+
+/* --- the eight fields ----------------------------------------------------- */
+
+/* ROWS, NOT CELLS. The modal has the three facts a driver reads while moving;
+   this is the audit trail, and brief 4's answer for a list of provenance is the
+   same 44px hairlined row every other screen uses.
+   `min-height` rather than `height`: five of the eight are an em dash and three
+   are not, and "1 SEPT 2026 · 2 DAYS AGO" beside its label is two lines on a
+   320px phone. A row that grows is better than a value that is cut. */
+.fwm-inteldetailv1-facts {
+  display: grid;
+  gap: var(--fwm-inteldetailv1-gap);
+  list-style: none; /* keyword */
+}
+
+.fwm-inteldetailv1-fact {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-inteldetailv1-row-gap);
+  min-height: var(--fwm-inteldetailv1-row-h); /* 44 */
+  padding: var(--fwm-space-2) var(--fwm-inteldetailv1-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-inteldetailv1-row-radius); /* 12 */
+  background: var(--dr-row-fill);
+}
+
+.fwm-inteldetailv1-fact-label {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: var(--fwm-inteldetailv1-track-caps);
+  color: var(--dr-ink-muted);
+}
+
+.fwm-inteldetailv1-fact-value {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-forecast);
+  font-weight: 600;
+  color: var(--dr-ink);
+  text-align: right; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-inteldetailv1-fact[data-fwm-tone='clear'] .fwm-inteldetailv1-fact-value {
+  color: var(--dr-verdict-keep);
+}
+
+.fwm-inteldetailv1-fact[data-fwm-tone='alert'] .fwm-inteldetailv1-fact-value {
+  color: var(--dr-verdict-drop);
+}
+
+.fwm-inteldetailv1-fact[data-fwm-known='false'] .fwm-inteldetailv1-fact-value {
+  color: var(--dr-ink-faint);
+}
+
+/* --- the mute clock and the three keys ------------------------------------ */
+
+.fwm-inteldetailv1-mute {
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-owner-hoa);
+}
+
+.fwm-inteldetailv1-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fwm-inteldetailv1-gap);
+}
+
+.fwm-inteldetailv1-key {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--fwm-inteldetailv1-row-h); /* 44 */
+  padding: 0 var(--fwm-inteldetailv1-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-inteldetailv1-row-radius);
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-forecast);
+  font-weight: 600;
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE CREDIT FOR THE PICTURE ON THE MODAL. Faint, at the foot of the sheet,
+   and it is a licence condition rather than decoration - see the component. */
+.fwm-inteldetailv1-credit {
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-ink-faint);
+}

@@ -1,0 +1,141 @@
+/* THE DESTINATION CARD. It sits with the closest-camera card at the bottom of
+   DRIVE, in the flow, so the two stack rather than one covering the other. */
+.fwm-dest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  /* Fill, blur and rim come from the shared control chrome in `drive.css`.
+     The BORDER COLOUR does not: this card's border is the heat ramp, and it
+     has to win. It does, on specificity - `.fwm-dest[data-fwm-dest-heat=...]`
+     is a class plus an attribute against the shared rule's single class, so
+     the ramp overrides it in every state including `clear`, which sets
+     `--fwm-heat` to the shared border colour on purpose. */
+}
+
+/* THE HEAT RAMP. More readers on the line, more colour - the owner's ask, in
+   the alert engine's own four states so it is a language a driver already
+   reads. `--fwm-heat` is set here and used by the border, the figure and the
+   key, so one attribute moves all three together.
+
+   CLEAR IS NOT GREEN-AND-SHOUTING. A road with no readers on it is the quiet
+   case; it gets the ordinary glass border and no glow, because the ramp only
+   means anything if its bottom rung looks like nothing at all. */
+/* THE HEAT WINS THE BORDER, and it has to do so regardless of which stylesheet
+   the bundler happens to emit first. `.fwm-dest[data-fwm-dest-heat]` is a class
+   plus an attribute, so it outranks the shared single-class rule in `drive.css`
+   on specificity rather than on cascade order - which is not something this
+   file gets to assume. */
+.fwm-dest[data-fwm-dest-heat] { border-color: var(--fwm-heat); }
+
+.fwm-dest[data-fwm-dest-heat='clear'] { --fwm-heat: var(--fwm-glass-border); }
+.fwm-dest[data-fwm-dest-heat='approaching'] { --fwm-heat: var(--fwm-alert-approaching); }
+.fwm-dest[data-fwm-dest-heat='in-range'] { --fwm-heat: var(--fwm-alert-in-range); }
+.fwm-dest[data-fwm-dest-heat='multiple'] { --fwm-heat: var(--fwm-alert-multiple); }
+
+/* The count of readers on the way takes the heat too, because it is the number
+   the colour is ABOUT - colouring the card and leaving the figure grey makes a
+   reader hunt for what changed. */
+.fwm-dest:not([data-fwm-dest-heat='clear']) .fwm-dest-readers { color: var(--fwm-heat); }
+
+.fwm-dest-head {
+  display: flex;
+  align-items: flex-start; /* keyword */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-dest-where {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+/* The name can be long - "Overland Park Regional Medical Center" - and this is
+   the one line on the card that must not be cut, because it is the answer to
+   "where am I going". It wraps; the card grows. */
+.fwm-dest-name {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-dest-detail {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-dest-clear {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  background: transparent; /* keyword */
+  color: var(--fwm-text-2);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-text-label);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-dest-figures {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-space-3);
+  margin: 0;
+  flex-wrap: wrap; /* keyword */
+}
+
+.fwm-dest-eta {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+.fwm-dest-miles,
+.fwm-dest-readers,
+.fwm-dest-cost,
+.fwm-dest-line {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-dest-failed {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-approaching);
+}
+
+/* THE ONE KEY. Full width and the accent, because it is the thing this card
+   exists to offer and a driver reaching for it is not looking at the screen. */
+.fwm-dest-avoid {
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  cursor: pointer; /* keyword */
+}
+
+.fwm-dest-avoid:disabled {
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-muted);
+  cursor: default; /* keyword */
+}
+
+/* WHAT THE DARK ROUTE ACHIEVED. Green when the line came back clear, amber when
+   readers remain on it - the same two hues the alert engine uses for the same
+   two meanings, so a driver reads this without learning a new colour. */
+.fwm-dest-outcome {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-dest-outcome[data-fwm-dest-clear='true'] { color: var(--fwm-alert-clear); }

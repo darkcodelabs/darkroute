@@ -1,0 +1,256 @@
+/* PEW -- the arena, the HUD, the end card, and the key on the dock.
+ *
+ * FOUR-LAYER GLASS, THE DOCK'S OWN RECIPE. `dock.css` section 3: the grain over
+ * the thin surface as the ground, the blur reading the map back through it, the
+ * hairline as the edge, the lift plus the specular as the one shadow. Same
+ * tokens, same order, so the arena and the pane under it are visibly one
+ * material.
+ *
+ * THE SAME INSETS AS THE ALERT CARD. `global.css` insets the alert layer to the
+ * band between the chrome's second row and the dock -- `--fwm-drive-row-2` and
+ * `--fwm-dock-h` -- so the search bar stays above and the dock stays live below.
+ * The arena takes exactly that band for exactly that reason.
+ *
+ * NOT ONE RAW VALUE. Every length is `--fwm-space-1` times something, declared
+ * here as a `--fwm-arc-*` local and read through `var()`; every colour is a
+ * `--dr-*` or `--fwm-*` token. `:active` only, never `:hover` -- this is a
+ * thumb surface. No animation, so nothing here needs `data-fwm-motion`, and
+ * decoration may not claim `essential` anyway; reduced motion is handled by
+ * not offering the game at all (`offer.ts`).
+ */
+
+.fwm-arcade {
+  --fwm-arc-radius: calc(var(--fwm-space-1) * 6); /* 24 -- the pane's own */
+  --fwm-arc-key-radius: calc(var(--fwm-space-1) * 3.25); /* 13 -- the dock's key */
+  --fwm-arc-dot: calc(var(--fwm-space-1) * 2.25); /* 9 -- the dock's owner dot */
+  --fwm-arc-pill-pad-y: calc(var(--fwm-space-1) * 2.75); /* 11 -- the toast's */
+  --fwm-arc-pill-pad-x: calc(var(--fwm-space-1) * 4.5); /* 18 -- the toast's */
+  --fwm-arc-pill-max: calc(100% - var(--fwm-space-1) * 9); /* 100% - 36 */
+  --fwm-arc-card-pad: var(--fwm-space-4); /* 16 */
+  --fwm-arc-card-max: calc(var(--fwm-space-1) * 80); /* 320 */
+  --fwm-arc-key-min: calc(var(--fwm-space-1) * 30); /* 120 */
+  --fwm-arc-pressed: 0.7;
+
+  position: absolute;
+  top: var(--fwm-drive-row-2);
+  bottom: var(--fwm-dock-h);
+  inset-inline: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--fwm-space-3);
+}
+
+.fwm-arcade-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden; /* keyword */
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-arc-radius);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+}
+
+/* THE CANVAS. Transparent, cleared not filled, the whole frame. `touch-action:
+   none` so a tap is a tap and not the start of a scroll the frame cannot do. */
+.fwm-arcade-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none; /* keyword */
+  cursor: crosshair; /* keyword */
+}
+
+/* THE HUD PILL. `.fwm-pxtoast`'s recipe -- `pixelSweep.css` section 10 -- at
+   the top of the frame instead of above the dock. */
+.fwm-arcade-hud {
+  position: absolute;
+  top: var(--fwm-space-3);
+  left: 50%;
+  display: inline-flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  width: max-content; /* keyword */
+  max-width: var(--fwm-arc-pill-max);
+  padding: var(--fwm-arc-pill-pad-y) var(--fwm-arc-pill-pad-x);
+  transform: translateX(-50%);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-surface-toast);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  font-weight: 500;
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  pointer-events: none; /* keyword -- taps go to the canvas under it */
+}
+
+.fwm-arcade-hud-clock {
+  font-family: var(--fwm-font-data);
+  font-variant-numeric: tabular-nums; /* keyword */
+}
+
+.fwm-arcade-hud-sep {
+  color: var(--fwm-text-2);
+}
+
+/* THE OWNER DOT, beside the word. The five hues the map, the layers panel and
+   the dock's nearby sheet already wear for the same five classes. */
+.fwm-arcade-hud-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-arc-dot);
+  height: var(--fwm-arc-dot);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-arcade-hud-dot[data-fwm-owner='flock'] {
+  background: var(--dr-owner-flock);
+}
+
+.fwm-arcade-hud-dot[data-fwm-owner='police'] {
+  background: var(--dr-owner-police);
+}
+
+.fwm-arcade-hud-dot[data-fwm-owner='hoa'] {
+  background: var(--dr-owner-hoa);
+}
+
+.fwm-arcade-hud-dot[data-fwm-owner='private'] {
+  background: var(--dr-owner-private);
+}
+
+.fwm-arcade-hud-dot[data-fwm-owner='unverified'] {
+  background: var(--dr-owner-unverified);
+}
+
+/* THE CLOSE KEY. 44, top right, in the END colour: it throws the round away,
+   and `dock.css` paints the one End in the navigation family the same way. */
+.fwm-arcade-close {
+  position: absolute;
+  top: var(--fwm-space-2);
+  right: var(--fwm-space-2);
+  display: inline-flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  color: var(--fwm-alert-in-range);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-arcade-close:active {
+  opacity: var(--fwm-arc-pressed);
+}
+
+/* THE END CARD. Centred in the frame, replacing the pill. */
+.fwm-arcade-end {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  padding: var(--fwm-space-4);
+}
+
+.fwm-arcade-end-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  max-width: var(--fwm-arc-card-max);
+  padding: var(--fwm-arc-card-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-arc-radius);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+}
+
+.fwm-arcade-end-line {
+  margin: 0;
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body); /* 15 */
+  font-weight: 500;
+  color: var(--fwm-text);
+  text-align: center; /* keyword */
+}
+
+.fwm-arcade-end-keys {
+  display: flex;
+  gap: var(--fwm-space-3);
+  justify-content: center; /* keyword */
+}
+
+/* The two keys, both `--fwm-touch-min` tall, in the accent. Text keys with a
+   hairline, no fill: the dock's own key vocabulary. */
+.fwm-arcade-end-key {
+  flex: 1 1 auto;
+  min-width: var(--fwm-arc-key-min);
+  height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-4);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-arc-key-radius);
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  color: var(--dr-accent);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-arcade-end-key:active {
+  opacity: var(--fwm-arc-pressed);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE KEY ON THE DOCK.
+ *
+ * 44 by 44 in the slot the map inset leaves empty (`ArcadeKey.tsx`), `flex:
+ * none` so the column truncates and the key does not. `position: relative`
+ * puts it above `.fwm-dock-tap`, which is the only reason a press plays rather
+ * than expanding the pane. Neutral ink, not the pane's hue: `dense`'s hue is
+ * the exposure ramp and a toy may not wear a reading's colour.
+ * ------------------------------------------------------------------------ */
+.fwm-arcade-key {
+  --fwm-arc-key-gap: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-arc-key-h: calc(var(--fwm-space-1) * 11); /* 44 -- the dock's key height */
+  --fwm-arc-pressed: 0.7;
+
+  position: relative;
+  flex: none; /* keyword */
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-arc-key-gap);
+  width: var(--fwm-arc-key-h);
+  height: var(--fwm-arc-key-h);
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  color: var(--dr-ink);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-arcade-key:active {
+  opacity: var(--fwm-arc-pressed);
+}
+
+.fwm-arcade-key-label {
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap; /* keyword */
+}

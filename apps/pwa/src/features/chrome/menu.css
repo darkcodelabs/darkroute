@@ -1,0 +1,712 @@
+/* THE MENU LANGUAGE -- section C of the chrome brief, section B of
+ * `searchbar_and_buttons.dc.html`.
+ *
+ * A panel of stacked 44px rows under a tracked caps header. SEVEN ROW TYPES:
+ * select, filter, toggle, navigate, action and note, which the spec draws, and
+ * SLIDER, which it does not. Sections 1 to 9 are a transcription of the spec's
+ * own menu markup -- every number in them is written there, and every number
+ * that is not written there is not there either. Section 10 is the exception
+ * and says so at its own head: the spec has no control that is dragged, MAP
+ * VIEW has one, and the numbers it needed are derived from the ones above it
+ * rather than drawn.
+ *
+ * =============================================================================
+ * THE ONE RULE
+ * =============================================================================
+ * Every surface is translucent glass with a 1px hairline. No solid fills, no
+ * drop shadow doing work a hairline does better. The panel is
+ * `--dr-surface-menu` + `--dr-hairline` + `--dr-blur`; a row is `--dr-row-fill`
+ * + `--dr-hairline-row`; and the ONLY thing in the whole file that fills with
+ * accent is the current selection.
+ *
+ * NO `box-shadow` ANYWHERE, and that is a decision rather than an omission.
+ * Section A of the brief spells the bar's material out as "surface, hairline,
+ * `--dr-blur`, `--dr-lift` + `--dr-specular`" and section C spells the panel's
+ * out as "border-radius 20px, `--dr-surface-menu`, hairline, `--dr-blur`,
+ * padding 14px, gap 4px" -- lift and specular are named for one and not the
+ * other. The spec page draws a `0 8px 24px` cast under the LIGHT panel only and
+ * none at all under the dark one, which is the same asymmetry from the other
+ * side. Taking the brief literally is what this file does everywhere else, and
+ * a shadow is the one thing the one rule bans by name.
+ *
+ * =============================================================================
+ * COLOUR IS `var(--dr-*)`, AND THOSE TOKENS ARE LITERAL
+ * =============================================================================
+ * The chrome brief withdraws the dock brief's instruction to resolve colour
+ * onto the app's skins and publishes the values it wants in production. They
+ * are already transcribed into `tokens.css` under `--dr-*`; this file only
+ * reads them and adds no colour of its own. The one exception is the OWNER DOT,
+ * which is the taxonomy and still resolves to the palette through
+ * `--dr-owner-*` -- the brief keeps operator hues on existing tokens on purpose.
+ *
+ * FIVE VALUES THE SPEC DRAWS HAVE NO TOKEN, and each is written up beside the
+ * rule that meets it: the switch's off-track edge, the switch's on-track fill
+ * and edge, the switch's light-mode off knob, and the action row's tinted
+ * ground. Every one of them resolves here to the nearest PUBLISHED token, with
+ * the spec's own value and the delta recorded, because minting a colour is the
+ * one thing this file may not do.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE SCALE
+ * =============================================================================
+ * `scripts/check-design-values.mjs` fails the build on a raw length as hard as
+ * on a raw hex, so `height: 44px` cannot be written even though 44 is the
+ * spec's number. Geometry is `calc(var(--fwm-space-1) * n)` off the 4px step --
+ * the idiom `dock.css` and `topBar.css` already use -- and type is read off the
+ * type scale. The spec's pixel value is written beside every one of them,
+ * because the ratio is the compliant spelling and the pixel is the design.
+ *
+ * `--fwm-space-1` (4), `--fwm-space-2` (8), `--fwm-space-3` (12),
+ * `--fwm-rule-w` (1), `--fwm-radius-full` (999) and `--fwm-card-track-tight`
+ * (-0.01em) are declared once at `:root` and re-cut by no skin, so the geometry
+ * below is exact on all seventeen. `--fwm-space-4` is NOT one of them -- two
+ * skins cut it to 12 -- so it is never read here. Of the type tokens,
+ * `--fwm-text-micro` is 13 rather than 11 on the two watch surfaces; that is
+ * the reading floor those raise and `dock.css` and `topBar.css` already let it
+ * through for the same eleven-pixel readings.
+ *
+ * TRACKING IS DERIVED, NOT MINTED. There are exactly three letter-spacing
+ * tokens in the product and 0.14em is not one of them, so the header's tracking
+ * is `--fwm-card-track-tight * -14` -- the same trick `dock.css` uses for its
+ * own -0.02em. The arithmetic is exact, not near.
+ *
+ * =============================================================================
+ * WHAT IS DELIBERATELY ABSENT
+ * =============================================================================
+ * HOVER. The spec carries `style-hover` on the filter, navigate and action
+ * rows. This is a touch-first product, the gate rejects `:hover` outright, and
+ * inventing an `:active` in its place would be adding a state the spec does not
+ * draw. Dropped, not translated -- the same call `dock.css` and `topBar.css`
+ * made. `--dr-row-hover` is still read once, for the switch's off track, where
+ * its VALUE is the spec's own and its name is a coincidence.
+ *
+ * AN UNSELECTED SELECT ROW. The spec draws one select row and it is the chosen
+ * one. What the other side of that radio looks like is not drawn, not described
+ * and not derivable, so it is not invented here. See section 4.
+ * ========================================================================== */
+
+/* =========================================================================
+ * 1. THE PANEL
+ *
+ * radius 20, `--dr-surface-menu`, hairline, `--dr-blur`, padding 14, gap 4.
+ * Six properties, which is the whole of what the brief says a panel is.
+ * ====================================================================== */
+
+.fwm-menu {
+  /* --- geometry, all of it, in one place ------------------------------- */
+  --fwm-menu-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-menu-gap: var(--fwm-space-1); /* 4 */
+  --fwm-menu-radius: calc(var(--fwm-space-1) * 5); /* 20 */
+
+  /* the header and the note hang 4 in from the panel's padding box, which is
+     23 short of where a row's own text starts. The spec outdents both. */
+  --fwm-menu-inset: var(--fwm-space-1); /* 4 */
+  --fwm-menu-head-gap: calc(var(--fwm-space-1) * 0.75); /* 3 */
+
+  /* every row, without exception */
+  --fwm-menu-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-menu-row-radius: var(--fwm-space-3); /* 12 */
+  --fwm-menu-row-pad: var(--fwm-space-3); /* 12 */
+  /* two gaps, and which one a row takes is fixed by its type: 11 where a round
+     mark leads the row, 10 where a word does. */
+  --fwm-menu-row-gap-mark: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-menu-row-gap-word: calc(var(--fwm-space-1) * 2.5); /* 10 */
+
+  /* the two round marks. A radio is 15 with a 1.5 ring and a 7 core; an owner
+     dot is 9 and solid. They are never the same size and never interchangeable
+     -- the radio says WHICH ONE, the dot says WHOSE. */
+  --fwm-menu-radio: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-menu-radio-ring: calc(var(--fwm-rule-w) * 1.5); /* 1.5 */
+  --fwm-menu-radio-core: calc(var(--fwm-space-1) * 1.75); /* 7 */
+  --fwm-menu-dot: calc(var(--fwm-space-1) * 2.25); /* 9 */
+
+  /* the switch. 40 x 23, 1px edge, 2px inset, 17px knob -- and those four
+     numbers are one number: 23 - 2 - 4 = 17 is the knob's height exactly, and
+     40 - 2 - 4 = 34 = 17 x 2 is its travel exactly. Change one and the knob
+     either rattles in the track or sits proud of it. */
+  --fwm-menu-switch-w: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-menu-switch-h: calc(var(--fwm-space-1) * 5.75); /* 23 */
+  --fwm-menu-switch-pad: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-menu-knob: calc(var(--fwm-space-1) * 4.25); /* 17 */
+
+  /* the slider, and both of its numbers come off the switch and the row rather
+     than out of the air -- see section 10. An 8 track under a 23 disc: 8 is the
+     scale's own second step and the thinnest bar that still reads as a track
+     rather than as a hairline, and 23 is the switch's height exactly, so the
+     two controls the language can put on a row present the same size of thing
+     to a thumb. */
+  --fwm-menu-slider-track: var(--fwm-space-2); /* 8 */
+  --fwm-menu-slider-thumb: var(--fwm-menu-switch-h); /* 23 */
+
+  /* the group rule, and the note's air */
+  --fwm-menu-rule-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-menu-note-pad-t: var(--fwm-space-2); /* 8 */
+  --fwm-menu-note-pad-b: calc(var(--fwm-space-1) / 2); /* 2 */
+
+  /* TRACKING, DERIVED. 0.14em on the header, 0.02em on a filter label. */
+  --fwm-menu-track-caps: calc(var(--fwm-card-track-tight) * -14); /* 0.14em */
+  --fwm-menu-track-filter: calc(var(--fwm-card-track-tight) * -2); /* 0.02em */
+
+  display: grid;
+  gap: var(--fwm-menu-gap);
+  padding: var(--fwm-menu-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-menu-radius);
+  background: var(--dr-surface-menu);
+  /* THE MATERIAL. Denser than `--dr-surface` by design: a menu is the one
+     chrome surface that has to be readable over anything the map draws. */
+  backdrop-filter: var(--dr-blur);
+  font-family: var(--fwm-font-ui);
+  /* Counts sit in a right-hand column and must not shuffle as they tick. */
+  font-variant-numeric: tabular-nums; /* keyword */
+  color: var(--dr-ink);
+}
+
+/* A GROUP IS NOT A ROW TYPE. It is the thing the rule "rows never mix types
+   inside a group" is about, and it exists so a caller can name one for
+   assistive technology. It re-states the panel's own gap and nothing else, so
+   a grouped run of rows and a loose run of rows measure identically -- which
+   is what lets the spec's own flat panel be built without one. */
+.fwm-menu-group {
+  display: grid;
+  gap: var(--fwm-menu-gap);
+}
+
+/* =========================================================================
+ * 2. THE HEADER
+ *
+ * An 11px accent label in tracked caps over a 13px muted sub-line. `padding:
+ * 0 4px 8px` -- the 8 plus the panel's 4px gap is the 12 of air before the
+ * first row.
+ * ====================================================================== */
+
+.fwm-menu-head {
+  padding: 0 var(--fwm-menu-inset) var(--fwm-space-2);
+}
+
+.fwm-menu-head-label {
+  margin: 0;
+  color: var(--dr-accent);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-menu-track-caps); /* 0.14em */
+  /* The rule is in the stylesheet, not in the caller's string: a header typed
+     in sentence case is still drawn as the design draws it. */
+  text-transform: uppercase; /* keyword */
+}
+
+.fwm-menu-head-sub {
+  margin: var(--fwm-menu-head-gap) 0 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-forecast); /* 13 */
+}
+
+/* =========================================================================
+ * 3. EVERY ROW
+ *
+ * 44 tall, radius 12, `padding: 0 12px`, `--dr-row-fill` on
+ * `--dr-hairline-row`. Five of the six types are this; the sixth is a note and
+ * is not a row at all.
+ *
+ * THE ROW IS SOMETIMES A BUTTON AND SOMETIMES NOT, and the spec says which by
+ * where it writes `cursor: pointer`: filter, navigate and action rows carry it,
+ * the select row and the toggle row do not. That is a complete and consistent
+ * affordance grammar and it is transcribed rather than second-guessed -- a
+ * toggle row's target is its switch, and a select row states the current
+ * choice rather than offering it.
+ * ====================================================================== */
+
+.fwm-menu-row {
+  display: flex;
+  align-items: center; /* keyword */
+  min-width: 0;
+  height: var(--fwm-menu-row-h);
+  padding: 0 var(--fwm-menu-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-menu-row-radius);
+  background: var(--dr-row-fill);
+  /* A button carries the UA's centred text and its own font. Both are undone
+     here so the same declarations draw a row whether it is a button or a div. */
+  color: inherit; /* keyword */
+  font-family: inherit; /* keyword */
+  text-align: left; /* keyword */
+}
+
+/* The row's own text never wraps out of a fixed-height pill, and every label
+   that could be long is the one that gives. */
+.fwm-menu-label,
+.fwm-menu-value {
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-menu-count {
+  flex: none; /* keyword */
+}
+
+/* =========================================================================
+ * 4. SELECT -- exactly one per group, ever
+ *
+ * A 15px radio, the label, the count. Accent fill and accent line, and it is
+ * the ONLY thing in the menu language that fills with accent. Everything else
+ * in the panel is row ground, so the eye finds the current choice without
+ * reading a word of it.
+ *
+ * THE UNSELECTED SIDE OF THIS ROW IS NOT DRAWN. The spec renders one select
+ * row and it is the chosen one; no hollow radio, no un-accented select row,
+ * no weight for its label appears anywhere in the file or the brief. Deriving
+ * one would be inventing a value, so this component draws the selected state
+ * and only that. The alternatives beside it in the spec's own panel are FILTER
+ * rows, which is why they are pressable and this is not.
+ * ====================================================================== */
+
+.fwm-menu-row[data-fwm-row='select'] {
+  gap: var(--fwm-menu-row-gap-mark); /* 11 */
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+}
+
+/* SPEC 0.40, TOKEN 0.42 -- the spec page draws the dark select row's edge at
+   `rgba(47,212,212,0.4)` and the brief's own token block publishes
+   `--dr-accent-line` as `rgba(47,212,212,0.42)`. The light pair agree at 0.40.
+   The token wins: the brief says to take its values exactly, and a 2%-alpha
+   hairline is not a difference a person can see. Reported, not silently kept. */
+
+.fwm-menu-row[data-fwm-row='select'] .fwm-menu-label,
+.fwm-menu-row[data-fwm-row='select'] .fwm-menu-count {
+  color: var(--dr-accent);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+}
+
+.fwm-menu-row[data-fwm-row='select'] .fwm-menu-label {
+  flex: 1 1 auto;
+}
+
+.fwm-menu-radio {
+  display: grid;
+  place-items: center; /* keyword */
+  flex: none; /* keyword */
+  width: var(--fwm-menu-radio);
+  height: var(--fwm-menu-radio);
+  border: var(--fwm-menu-radio-ring) solid var(--dr-accent);
+  border-radius: var(--fwm-radius-full);
+}
+
+/* MEASURED: THE 1.5 RING DRAWS AS 1. Chrome floors a border width to a whole
+   CSS pixel before it paints, at every device scale factor -- 1, 2, 2.75 and 3
+   were all read back as `1px` in a headless Chromium against this exact
+   markup. The spec page has the same declaration and so has the same used
+   value, which means this build matches the drawing anyone has actually seen.
+   Declared at 1.5 anyway, because 1.5 is the design and the flooring is the
+   engine's. An `outline` floors identically and a `box-shadow` ring is the one
+   thing the one rule bans, so there is nothing to trade it for. */
+
+.fwm-menu-radio-core {
+  width: var(--fwm-menu-radio-core);
+  height: var(--fwm-menu-radio-core);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-accent);
+}
+
+/* =========================================================================
+ * 5. FILTER -- the dot IS the taxonomy
+ *
+ * A 9px owner dot, a 13px label, a count. NEVER a text tag beside it: the
+ * whole point of the dot is that whose hardware is on the pole is carried by
+ * one colour that the map is already using for the same thing. Spelling it out
+ * as well would be two encodings of one fact, and the second one is the one
+ * that goes stale.
+ *
+ * This is also the only colour left in the file that resolves to the palette
+ * rather than to a literal `--dr-*`, and the brief keeps it that way on
+ * purpose -- an operator hue means the same thing on the map, in the dock and
+ * here, so it follows the driver's skin with them.
+ * ====================================================================== */
+
+.fwm-menu-row[data-fwm-row='filter'] {
+  gap: var(--fwm-menu-row-gap-mark); /* 11 */
+}
+
+.fwm-menu-row[data-fwm-row='filter'] .fwm-menu-label {
+  flex: 1 1 auto;
+  color: var(--dr-ink-2);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  font-weight: 500;
+  letter-spacing: var(--fwm-menu-track-filter); /* 0.02em */
+}
+
+.fwm-menu-row[data-fwm-row='filter'] .fwm-menu-count {
+  color: var(--dr-ink-4);
+  font-size: var(--fwm-text-forecast); /* 13 */
+}
+
+.fwm-menu-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-menu-dot);
+  height: var(--fwm-menu-dot);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-menu-dot[data-fwm-owner='flock'] {
+  background: var(--dr-owner-flock);
+}
+
+.fwm-menu-dot[data-fwm-owner='police'] {
+  background: var(--dr-owner-police);
+}
+
+.fwm-menu-dot[data-fwm-owner='hoa'] {
+  background: var(--dr-owner-hoa);
+}
+
+.fwm-menu-dot[data-fwm-owner='private'] {
+  background: var(--dr-owner-private);
+}
+
+.fwm-menu-dot[data-fwm-owner='unverified'] {
+  background: var(--dr-owner-unverified);
+}
+
+/* =========================================================================
+ * 6. TOGGLE -- the state is spelled out, always
+ *
+ * Label, then the current state IN WORDS, then a 40 x 23 switch. "off -- not a
+ * policy layer" and "sound and haptics on" are the spec's own two, and they are
+ * the reason this row type exists rather than a switch on its own: a switch
+ * says on or off and the words say what that MEANS, which is the half a driver
+ * actually needs at a glance.
+ *
+ * The row is not the target. The switch is, and it carries the label as its
+ * accessible name -- the same arrangement `SwitchRow` and `SettingsSwitch`
+ * already run on.
+ * ====================================================================== */
+
+.fwm-menu-row[data-fwm-row='toggle'],
+.fwm-menu-row[data-fwm-row='navigate'] {
+  gap: var(--fwm-menu-row-gap-word); /* 10 */
+}
+
+.fwm-menu-row[data-fwm-row='toggle'] .fwm-menu-label,
+.fwm-menu-row[data-fwm-row='navigate'] .fwm-menu-label,
+.fwm-menu-row[data-fwm-row='slider'] .fwm-menu-label {
+  flex: none; /* keyword */
+  color: var(--dr-ink-2);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 500;
+}
+
+.fwm-menu-value {
+  flex: 1 1 auto;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-forecast); /* 13 */
+}
+
+/* The navigate row's value is the only text in the menu that is right-aligned:
+   it is an answer, and it lines up with the chevron that opens the panel where
+   the answer can be changed. */
+.fwm-menu-row[data-fwm-row='navigate'] .fwm-menu-value {
+  text-align: right; /* keyword */
+}
+
+/* THE SWITCH. The knob's side is flex alignment keyed off `aria-checked` --
+   the same attribute a screen reader announces -- so the picture and the
+   announcement cannot drift apart. `settings.css` says this too, having had
+   them drift once. */
+.fwm-menu-switch {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: flex-start; /* keyword */
+  flex: none; /* keyword */
+  width: var(--fwm-menu-switch-w);
+  height: var(--fwm-menu-switch-h);
+  padding: var(--fwm-menu-switch-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-row-hover);
+}
+
+/* GAP -- THE OFF TRACK'S EDGE HAS NO TOKEN.
+ *
+ * The spec draws it at `rgba(255,255,255,0.12)` dark and `rgba(15,20,25,0.16)`
+ * light. Neither is in the brief's token block: `--dr-hairline` is 0.10 / 0.12
+ * and `--dr-hairline-row` is 0.07 / 0.08. Those two alphas are the values the
+ * spec ALSO uses for its hover edge, which this product does not have, so the
+ * off switch is the only place they would ever be needed.
+ *
+ * Resolved to `--dr-hairline` -- the outer-edge hairline, 2% lighter than drawn
+ * in dark and 4% in light. Reported rather than minted: `--dr-*` is a published
+ * list and adding to it is the brief author's call, not this file's. One line
+ * in `tokens.css` beside the others closes it:
+ *
+ *   --dr-switch-line:      rgba(255,255,255,0.12);   / * light: 15,20,25,0.16 * /
+ *
+ * THE OFF TRACK'S FILL IS EXACT IN DARK AND 1% OUT IN LIGHT. `--dr-row-hover`
+ * is `rgba(255,255,255,0.06)`, which is the spec's off-track fill to the digit;
+ * in light it is `rgba(15,20,25,0.06)` against a drawn 0.07. The token is named
+ * for a state this product does not have and its value is the one wanted here,
+ * so it is read for its value and the coincidence is written down. */
+
+.fwm-menu-switch[aria-checked='true'] {
+  justify-content: flex-end; /* keyword */
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+}
+
+/* GAP -- THE ON TRACK IS DRAWN DENSER THAN `--dr-accent-fill`, AND THIS IS THE
+ * ONE SUBSTITUTION A PERSON CAN SEE.
+ *
+ * Spec: edge `rgba(47,212,212,0.45)` / `rgba(9,96,100,0.45)`, fill
+ * `rgba(47,212,212,0.22)` / `rgba(9,96,100,0.18)`. Published:
+ * `--dr-accent-line` 0.42 / 0.40 and `--dr-accent-fill` 0.13 / 0.10. The edge
+ * is within 5% and invisible; the FILL is drawn at roughly twice the published
+ * alpha, because a 40px track needs to read as lit beside a 44px row that is
+ * already carrying `--dr-row-fill`.
+ *
+ * Built on the published token anyway -- the knob is solid `--dr-accent` and
+ * the edge is accent, so the switch still reads unambiguously ON -- and the
+ * delta is reported. Two lines in `tokens.css` close it:
+ *
+ *   --dr-switch-on-line:   rgba(47,212,212,0.45);    / * light: 9,96,100,0.45 * /
+ *   --dr-switch-on-fill:   rgba(47,212,212,0.22);    / * light: 9,96,100,0.18 * /
+ */
+
+.fwm-menu-switch-knob {
+  width: var(--fwm-menu-knob);
+  height: var(--fwm-menu-knob);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-ink-muted);
+}
+
+/* GAP -- THE LIGHT OFF KNOB IS `#98a2ac`, WHICH IS NOT A TOKEN IN EITHER
+ * THEME. In dark the spec's knob is `#8d97a1`, which IS `--dr-ink-muted`
+ * exactly; in light `--dr-ink-muted` is `#59636d` and the spec draws a much
+ * paler grey. Read as the muted ink in both, which makes the light off knob
+ * darker than drawn -- still plainly a knob, still plainly off, and one
+ * published token rather than a colour invented here. */
+
+.fwm-menu-switch[aria-checked='true'] .fwm-menu-switch-knob {
+  background: var(--dr-accent);
+}
+
+/* =========================================================================
+ * 7. NAVIGATE -- opens a panel of the same kind
+ *
+ * Label, current value right-aligned, chevron. The chevron is the promise that
+ * what opens is another menu built from these same six types, and not a dialog,
+ * a sheet or a screen. Sizing and paint above with the toggle row, which it
+ * shares its 10px gap and its label with.
+ * ====================================================================== */
+
+.fwm-menu-chevron {
+  flex: none; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+/* =========================================================================
+ * 8. ACTION -- always last, never more than one
+ *
+ * An icon and a label, tinted to the action's own hue. One per menu, at the
+ * bottom, so a panel of choices never reads as a panel of commands.
+ *
+ * THE HUE IS THE MEANING. `Report a camera here` is drawn in the Flock pink
+ * because reporting is what feeds that taxonomy. A second action in a second
+ * hue would be a second meaning, and the brief allows neither.
+ * ====================================================================== */
+
+.fwm-menu-row[data-fwm-row='action'] {
+  gap: var(--fwm-menu-row-gap-mark); /* 11 */
+}
+
+.fwm-menu-row[data-fwm-row='action'] .fwm-menu-label {
+  flex: 1 1 auto;
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+}
+
+/* The icon paints in `currentColor`, so the tone below moves both at once and
+   a glyph can never end up a different pink from its own label. */
+.fwm-menu-row[data-fwm-tone='report'] .fwm-menu-label,
+.fwm-menu-row[data-fwm-tone='report'] .fwm-menu-act-icon {
+  color: var(--dr-owner-flock);
+}
+
+.fwm-menu-act-icon {
+  display: grid;
+  place-items: center; /* keyword */
+  flex: none; /* keyword */
+}
+
+/* GAP -- THE ACTION ROW'S TINTED GROUND HAS NO TOKEN, so this row keeps the
+ * standard row ground and the tint reaches only the icon and the label.
+ *
+ * The spec draws the row itself in the hue: `rgba(255,61,190,0.09)` on
+ * `rgba(255,61,190,0.28)` in dark, `rgba(180,0,130,0.07)` on
+ * `rgba(180,0,130,0.30)` in light. That is the operator hue at two alphas, and
+ * an alpha of a palette colour can only be built with `color-mix()`, which the
+ * gate rejects everywhere but `tokens.css`. There is no `--dr-owner-flock-fill`
+ * to read instead.
+ *
+ * The brief's own composition line for this type is "Icon + label tinted to its
+ * own hue" and that much is built exactly. The row's ground is the half that
+ * needs the token. Two lines close it, and they have to be per-hue:
+ *
+ *   --dr-action-report-fill: rgba(255,61,190,0.09);  / * light: 180,0,130,0.07 * /
+ *   --dr-action-report-line: rgba(255,61,190,0.28);  / * light: 180,0,130,0.30 * /
+ *
+ * and this file then gains, keyed off the same `data-fwm-tone` already here:
+ *
+ *   .fwm-menu-row[data-fwm-tone='report'] {
+ *     border-color: var(--dr-action-report-line);
+ *     background: var(--dr-action-report-fill);
+ *   }
+ *
+ * NOTE ALSO that the spec's dark action INK is `#ff7ad2`, a lighter pink than
+ * `--dr-owner-flock`. The token is read here instead, and it clears 4.5:1 on
+ * the menu surface at 6.0:1, so the substitution costs legibility nothing. In
+ * light the two are the same colour. */
+
+/* =========================================================================
+ * 9. THE GROUP RULE, AND THE NOTE
+ *
+ * Neither is a row and neither is a seventh type. The rule is the boundary
+ * between two groups -- the spec's panel draws exactly one, between the owner
+ * filters and the settings under them. The note is 12px of muted prose with no
+ * ground and no edge at all, which is what makes it read as commentary on the
+ * rows rather than as another one.
+ * ====================================================================== */
+
+.fwm-menu-rule {
+  height: var(--fwm-rule-w);
+  margin: var(--fwm-menu-rule-gap) var(--fwm-menu-inset);
+  background: var(--dr-hairline-row);
+}
+
+/* SPEC 0.09, TOKEN 0.08, IN LIGHT ONLY. The spec page draws this one divider at
+   `rgba(15,20,25,0.09)` while every row edge around it is the published 0.08.
+   The token wins, for the reason the select row's edge does. */
+
+.fwm-menu-note {
+  margin: 0;
+  padding: var(--fwm-menu-note-pad-t) var(--fwm-menu-inset) var(--fwm-menu-note-pad-b);
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate); /* 12 */
+  line-height: 1.45;
+}
+
+/* =========================================================================
+ * 10. SLIDER -- the seventh type, and the only one the spec does not draw
+ *
+ * Label and current value on a row's own line, a track under them. MAP VIEW's
+ * warn distance is a value a driver DRAGS, none of the six types has a shape
+ * that is dragged, and the panel had been carrying a private control of its
+ * own -- which is how three panels over one map came to look like three
+ * products. So the type is here, and every number in it is derived from a
+ * number above it rather than invented: the ground, the edge, the radius, the
+ * two gaps and the whole type ramp are the row's, unchanged.
+ *
+ * THE ONE DEVIATION IS THE HEIGHT, and it is deliberate rather than a slip.
+ * Every other row in the language is 44 and there is no second row height. This
+ * one is two of them: the HEAD is 44, so `Warn me at` lands on exactly the
+ * baseline the toggle above it does, and the BAND under it is another 44
+ * because a thumb braced in a windscreen mount has to be able to land anywhere
+ * on the control rather than on an 8px bar. The row's own 12 of padding closes
+ * it underneath. Nothing else in the panel moves.
+ *
+ * NO FILLED PORTION, and that is an engine fact rather than a preference.
+ * `::-moz-range-progress` has no WebKit twin, so a track that fills behind the
+ * thumb is a picture Firefox draws and Chrome does not. The accent is spent on
+ * the thumb instead, which is exactly where the switch already spends it, and
+ * the empty track takes the switch's own off-track fill -- an unlit track and
+ * an unlit switch are the same claim about the same kind of control.
+ *
+ * STYLED NATIVE, NOT REDRAWN. The alternative is a drawn track and a drawn knob
+ * under a transparent input, which is what `settings.css` does and which costs
+ * a hand-written rule per stop to place the knob. Styling the engine's own
+ * pseudo-elements gets a correct thumb position for free, in every engine, at
+ * every number of stops -- and the two engines need two rules per part, because
+ * a selector list containing one engine's pseudo-element is dropped whole by
+ * the other.
+ * ====================================================================== */
+
+.fwm-menu-row[data-fwm-row='slider'] {
+  flex-direction: column;
+  align-items: stretch; /* keyword */
+  height: auto; /* keyword */
+  padding-bottom: var(--fwm-menu-row-pad); /* 12 */
+}
+
+.fwm-menu-slider-head {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-menu-row-gap-word); /* 10 */
+  height: var(--fwm-menu-row-h); /* 44 */
+}
+
+/* The reading is pinned to the far end for the reason the navigate row's value
+   is: it is an answer, and an answer that tracked the thumb would move every
+   time the thumb did -- a nicer picture, and one the eye has to find again at
+   arm's length in a mount. */
+.fwm-menu-row[data-fwm-row='slider'] .fwm-menu-value {
+  text-align: right; /* keyword */
+}
+
+/* THE BAND IS A ROW TALL AND THE WHOLE OF IT DRAGS. See the height note above:
+   the visible track is 8, and 8 is not a target. */
+.fwm-menu-slider {
+  appearance: none; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  width: 100%;
+  height: var(--fwm-menu-row-h); /* 44 */
+  margin: 0; /* keyword */
+  background: transparent; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The one focus ring in the language, and it is here because this is the one
+   control a keyboard reaches that is not a `<button>` carrying the UA's own.
+   Accent, a hairline wide, held off the track by the panel's 4. */
+.fwm-menu-slider:focus-visible {
+  outline: var(--fwm-rule-w) solid var(--dr-accent);
+  outline-offset: var(--fwm-space-1);
+}
+
+.fwm-menu-slider::-webkit-slider-runnable-track {
+  height: var(--fwm-menu-slider-track); /* 8 */
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-row-hover);
+}
+
+.fwm-menu-slider::-moz-range-track {
+  height: var(--fwm-menu-slider-track); /* 8 */
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-row-hover);
+}
+
+/* `margin-top` centres the disc on the track, which WebKit requires and Firefox
+   does for itself -- half the difference between the two, so the arithmetic
+   follows if either number ever moves. Physical rather than logical because
+   `::-webkit-slider-thumb` is a legacy pseudo-element and `margin-top` is the
+   spelling every engine that has one honours; this is also the only offset in
+   the file, and it centres a disc rather than placing a control -- the switch's
+   knob is still flex alignment keyed off `aria-checked`. */
+.fwm-menu-slider::-webkit-slider-thumb {
+  appearance: none; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  width: var(--fwm-menu-slider-thumb); /* 23 */
+  height: var(--fwm-menu-slider-thumb); /* 23 */
+  margin-top: calc((var(--fwm-menu-slider-track) - var(--fwm-menu-slider-thumb)) / 2);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-accent);
+}
+
+.fwm-menu-slider::-moz-range-thumb {
+  width: var(--fwm-menu-slider-thumb); /* 23 */
+  height: var(--fwm-menu-slider-thumb); /* 23 */
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-accent);
+}

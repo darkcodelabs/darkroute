@@ -1,0 +1,560 @@
+/* THE SCREEN LANGUAGE -- section C of `the_rest_of_the_app.dc.html`, brief 4.
+ *
+ * A 56px title track that does not scroll, a content band that does, and a
+ * 150px reserve at the foot for the dock. Inside the band: 44px hairlined rows
+ * under 11px tracked-caps group headers, 18-radius cards, 32px chips in a
+ * horizontal scroller, and a 36-in-44 segmented control. That is the whole
+ * vocabulary, and the five tab screens are built out of it rather than each
+ * inventing its own.
+ *
+ * =============================================================================
+ * WHY THIS IS ONE FILE AND NOT FIVE
+ * =============================================================================
+ * Brief 4 opens by naming the defect it exists to close: "DarkRoute's non-map
+ * screens were each designed on their own, so the app has five different ideas
+ * of what a list is". Transcribing the same 44/12/hairline row into four
+ * feature stylesheets would rebuild that defect on the day the refactor landed,
+ * with the drift merely deferred to whoever edits one of the four next.
+ *
+ * `features/chrome/menu.css` is the precedent: brief 2's menu is one file that
+ * six row types read, not six files that agree by hand.
+ *
+ * =============================================================================
+ * THE LOCALS ARE DECLARED AND CONSUMED HERE, NEVER EXPORTED
+ * =============================================================================
+ * `--fwm-sc-*` below are COMPONENT LOCALS on `.fwm-screen`, not tokens, and no
+ * other file may read them. `scripts/check-design-values.mjs` enforces exactly
+ * that: its `unresolved-var` rule resolves a `var(--fwm-*)` against tokens.css
+ * and against the declaring file only, and it says so in the failure text --
+ * "is a component local of <file>, not a token; that component is not an
+ * ancestor here, so this resolves to nothing". So the shared thing is the
+ * CLASS, and a feature stylesheet adds its own rules with its own locals.
+ *
+ * =============================================================================
+ * OPAQUE. NO backdrop-filter IN THIS FILE OR IN ANY SCREEN THAT READS IT
+ * =============================================================================
+ * Brief 4: "Glass is for chrome floating over the map. A full screen has
+ * nothing behind it, so blurring it costs a compositor pass and buys nothing.
+ * Blur everywhere is blur nowhere." The only glass the brief keeps is the abuse
+ * menu and the two map modals, which are not in this section. The ground is
+ * `--dr-screen`, opaque, and every surface on it is a flat token fill.
+ *
+ * That is also why the five tab screens were pruned out of the
+ * `[data-fwm-liquid="on"]` selector list in `tokens.css`: the liquid skin adds
+ * a sheen gradient and an inset rim, and brief 4 publishes this section's
+ * material outright rather than leaving it to a skin.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE SCALE, AND THE SPEC'S PIXEL IS BESIDE IT
+ * =============================================================================
+ * `check-design-values.mjs` fails the build on a raw length as hard as on a raw
+ * hex, so a literal 44px height cannot be written even though 44 is the spec's
+ * number. Geometry is `calc(var(--fwm-space-1) * n)` off the 4px step and type
+ * is read off the type scale or derived from it -- the idiom `dock.css` and
+ * `menu.css` already use. The pixel value is written beside each one because
+ * the ratio is the compliant spelling and the pixel is the design.
+ *
+ * `--fwm-space-4` is NEVER read here: two skins re-cut it to 12, so 16 is
+ * spelled as four steps. `--fwm-space-1` (4), `--fwm-rule-w` (1),
+ * `--fwm-radius-full` (999) and `--fwm-card-track-tight` (-0.01em) are declared
+ * once at `:root` and re-cut by no skin, so everything below is exact on all
+ * seventeen.
+ *
+ * =============================================================================
+ * HOVER IS `:active`, AND THAT IS THE GATE'S RULE RATHER THAN A PREFERENCE
+ * =============================================================================
+ * The spec carries `style-hover` on every row. `check-design-values.mjs` rejects
+ * `:hover` outright -- rule `hover`, "this is a touch-first product; hover never
+ * fires on the target device". Brief 4 also publishes `--dr-row-hover` and
+ * `--dr-hairline-row-hover` as real tokens, which brief 2 did not, so unlike
+ * `menu.css` there IS a pressed state to draw. It is drawn on `:active`, where
+ * a finger can reach it.
+ * ========================================================================== */
+
+/* =========================================================================
+ * 1. THE FRAME
+ *
+ * 56 / 1fr / 150, straight off the spec's own `grid-template-rows`.
+ * ====================================================================== */
+
+.fwm-screen {
+  /* --- the type ladder, in the spec's own sizes ------------------------- *
+   * Read off `--fwm-text-*` where the scale has the size and derived off it
+   * where it does not, the way `dock.css` derives its own `--fwm-dk-t-*`. */
+  --fwm-sc-t-10: calc(var(--fwm-text-micro) * 10 / 11); /* 10 */
+  --fwm-sc-t-10-5: calc(var(--fwm-text-micro) * 21 / 22); /* 10.5 */
+  --fwm-sc-t-11: var(--fwm-text-micro); /* 11 */
+  --fwm-sc-t-11-5: calc(var(--fwm-text-micro) * 23 / 22); /* 11.5 */
+  --fwm-sc-t-12: var(--fwm-text-plate); /* 12 */
+  --fwm-sc-t-12-5: calc(var(--fwm-text-plate) * 25 / 24); /* 12.5 */
+  --fwm-sc-t-13: var(--fwm-text-forecast); /* 13 */
+  --fwm-sc-t-13-5: calc(var(--fwm-text-forecast) * 27 / 26); /* 13.5 */
+  --fwm-sc-t-14: var(--fwm-text-label); /* 14 */
+  --fwm-sc-t-15: var(--fwm-text-body); /* 15 */
+  --fwm-sc-t-17: var(--fwm-text-subtitle); /* 17 */
+  --fwm-sc-t-19: calc(var(--fwm-text-title) * 19 / 24); /* 19 */
+  --fwm-sc-t-22: calc(var(--fwm-text-title) * 11 / 12); /* 22 */
+  --fwm-sc-t-24: var(--fwm-text-title); /* 24 */
+  --fwm-sc-t-46: calc(var(--fwm-text-title) * 23 / 12); /* 46 */
+
+  /* --- tracking, derived ----------------------------------------------- *
+   * There are exactly two letter-spacing tokens in the product and none of
+   * the spec's five values is one of them, so each is a multiple of
+   * `--fwm-card-track-tight` (-0.01em). The arithmetic is exact, not near. */
+  --fwm-sc-track-caps: calc(var(--fwm-card-track-tight) * -14); /* 0.14em */
+  --fwm-sc-track-caps-12: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+  --fwm-sc-track-caps-10: calc(var(--fwm-card-track-tight) * -10); /* 0.10em */
+  --fwm-sc-track-caps-6: calc(var(--fwm-card-track-tight) * -6); /* 0.06em */
+  --fwm-sc-track-title: calc(var(--fwm-card-track-tight) * 2); /* -0.02em */
+
+  /* --- the frame ------------------------------------------------------- */
+  --fwm-sc-title-h: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-sc-pad-x: calc(var(--fwm-space-1) * 3.5); /* 14 -- screen side padding */
+  --fwm-sc-title-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+
+  /* --- rows ------------------------------------------------------------ */
+  --fwm-sc-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-sc-row-radius: var(--fwm-space-3); /* 12 */
+  --fwm-sc-row-pad: var(--fwm-space-3); /* 12 */
+  /* Two gaps, and which one a row takes is fixed by what leads it: 11 where a
+     round owner mark does, 10 where a word does. `menu.css` splits the same
+     two the same way, from the same spec. */
+  --fwm-sc-row-gap-mark: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-sc-row-gap-word: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-sc-dot: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-sc-glyph: calc(var(--fwm-space-1) * 4); /* 16 -- the chevron */
+
+  /* --- groups, cards, notes -------------------------------------------- */
+  --fwm-sc-group-pad-t: var(--fwm-space-3); /* 12 */
+  --fwm-sc-group-pad-x: var(--fwm-space-1); /* 4 */
+  --fwm-sc-group-pad-b: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-sc-card-radius: calc(var(--fwm-space-1) * 4.5); /* 18 */
+  --fwm-sc-card-pad: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-sc-stack-gap: calc(var(--fwm-space-1) * 2.5); /* 10 -- between cards */
+
+  /* --- chips ----------------------------------------------------------- */
+  --fwm-sc-chip-h: calc(var(--fwm-space-1) * 8); /* 32 */
+  --fwm-sc-chip-radius: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-sc-chip-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-sc-chip-dot: calc(var(--fwm-space-1) * 1.75); /* 7 */
+  --fwm-sc-chip-tail: var(--fwm-space-2); /* 8 -- the trailing gutter */
+
+  /* --- the segmented control ------------------------------------------- *
+   * 36px items in a 44px shell: 36 + 4 padding top + 4 bottom = 44 exactly,
+   * which is why the shell has no height of its own. Radius 12 inside 16. */
+  --fwm-sc-seg-pad: var(--fwm-space-1); /* 4 */
+  --fwm-sc-seg-gap: var(--fwm-space-1); /* 4 */
+  --fwm-sc-seg-radius: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-sc-seg-key-h: calc(var(--fwm-space-1) * 9); /* 36 */
+  --fwm-sc-seg-key-radius: var(--fwm-space-3); /* 12 */
+
+  /* =====================================================================
+   * THE DOCK RESERVE, AND THE ONE PLACE THIS FILE IS NOT A LITERAL
+   * =====================================================================
+   * Brief 4: "150 px at the bottom of every screen", non-negotiable. The
+   * spec drew that against a dock that is 147px tall BROWSING -- but the
+   * shipped dock has three heights, not one: `styles/global.css` re-cuts
+   * `--fwm-dock-h` to 147 browsing, 288 expanded and 168 driving, following
+   * the `data-fwm-family` the dock sets on itself.
+   *
+   * A flat 150 is right in the state the spec drew and wrong in the other
+   * two: at 288 it puts 138px of a screen's last rows underneath the dock,
+   * which is the exact defect the reserve exists to prevent.
+   *
+   * So the reserve is a FLOOR of the spec's 150 rather than a ceiling. It is
+   * never less than 150 -- the brief's number is honoured in every state --
+   * and it grows with the dock when the dock is taller than the brief's
+   * phone. The max() is the whole of the deviation and it is named here
+   * rather than done quietly.
+   *
+   * The safe-area inset is added on top and never folded in: the home
+   * indicator is BELOW the dock, not part of it. Same rule as
+   * `.fwm-safe-dock-gutter`. */
+  --fwm-sc-dock-floor: calc(var(--fwm-space-1) * 37.5); /* 150 -- the brief's */
+  --fwm-sc-dock-reserve: calc(
+    max(var(--fwm-sc-dock-floor), var(--fwm-dock-h)) + env(safe-area-inset-bottom, 0px)
+  );
+
+  display: grid;
+  grid-template-rows: var(--fwm-sc-title-h) 1fr var(--fwm-sc-dock-reserve);
+  /* The frame is the slot, not its contents: `.fwm-shell-screen > *` hands
+     every screen `flex: 1; min-height: 0`, so this bounds itself at the
+     viewport and the BAND below is what scrolls. Without the min-height the
+     band's `overflow-y: auto` is silently defeated. */
+  min-height: 0;
+  /* OPAQUE, and the point of the section. See the header. */
+  background: var(--dr-screen);
+  font-family: var(--fwm-font-ui);
+  /* Counts sit in fixed columns and must not shuffle as they tick. */
+  font-variant-numeric: tabular-nums; /* keyword */
+  color: var(--dr-ink);
+}
+
+/* =========================================================================
+ * 2. THE TITLE TRACK -- 56px, and nothing scrolls under it
+ * ====================================================================== */
+
+.fwm-screen-title {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-sc-title-gap);
+  min-width: 0;
+  padding: 0 var(--fwm-sc-pad-x);
+}
+
+.fwm-screen-title-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-sc-t-24); /* 24 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-sc-track-title); /* -0.02em */
+  color: var(--dr-ink);
+}
+
+/* =========================================================================
+ * 3. THE CONTENT BAND -- the only thing on the screen that scrolls
+ *
+ * "The title track and the dock reserve are fixed; the content band between
+ * them is `overflow-y: auto`. Hide the scrollbar inside the frame -- the
+ * content is the affordance."
+ * ====================================================================== */
+
+.fwm-screen-band {
+  display: grid;
+  align-content: start; /* keyword */
+  min-height: 0;
+  padding: 0 var(--fwm-sc-pad-x) var(--fwm-sc-pad-x);
+  overflow-y: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-screen-band::-webkit-scrollbar {
+  /* Zero rather than a display keyword: WebKit keeps reserving the gutter for
+     a hidden scrollbar in a grid container, and the band's side padding is the
+     spec's 14 on both edges. */
+  width: 0;
+  height: 0;
+}
+
+/* The reserve itself. It is a spacer and it draws NOTHING: the spec's dashed
+   DOCK RESERVE track and its label are a spec annotation, and brief 4 says in
+   as many words not to ship them. */
+.fwm-screen-dock-reserve {
+  pointer-events: none; /* keyword */
+}
+
+/* =========================================================================
+ * 4. THE GROUP HEADER -- 11 / 700 / 0.14em tracked caps
+ *
+ * `padding: 12px 4px 6px` off the spec, which is the 10-14px of air above its
+ * rows the geometry table asks for once the band's own 4px gap is counted.
+ * ====================================================================== */
+
+.fwm-screen-group {
+  padding: var(--fwm-sc-group-pad-t) var(--fwm-sc-group-pad-x) var(--fwm-sc-group-pad-b);
+}
+
+.fwm-screen-group-label {
+  margin: 0;
+  font-size: var(--fwm-sc-t-11); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-sc-track-caps); /* 0.14em */
+  /* The rule is in the stylesheet, not in the caller's string: a header typed
+     in sentence case is still drawn as the design draws it. */
+  text-transform: uppercase; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+/* THE FOUR HUES ARE THE SPEC'S OWN, off its `moreGroups` data block.
+ *
+ * Only two of the four have a `--dr-*` token, because brief 4 publishes the
+ * screen SURFACES as `--dr-*` and leaves the alert hues where every other
+ * screen already reads them. So the two that do take it, and the two that do
+ * not resolve to the nearest published `--fwm-alert-*` -- which is also the
+ * token every other surface in the app uses for that meaning, and which
+ * follows the skin where a literal could not. The spec's value and the
+ * substitute are recorded, because minting a colour is the one thing this file
+ * may not do:
+ *
+ *   red    ff9aa6  ->  --fwm-alert-in-range-text  FF8DA5
+ *   amber  f5a524  ->  --fwm-alert-approaching    FFC02E
+ *   cyan   2fd4d4  ->  --dr-accent                2fd4d4   exact
+ *   muted  98a2ac  ->  --dr-ink-muted             8d97a1
+ */
+.fwm-screen-group-label[data-fwm-hue='red'] {
+  color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-screen-group-label[data-fwm-hue='amber'] {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-screen-group-label[data-fwm-hue='cyan'] {
+  color: var(--dr-accent);
+}
+
+/* =========================================================================
+ * 5. THE ROW -- 44 tall, radius 12, `--dr-row-fill` on `--dr-hairline-row`
+ *
+ * The one row this section has. Brief 4's checklist: "Every row is 44 px with
+ * radius 12 and a hairline. No row anywhere has a left-border stripe."
+ * ====================================================================== */
+
+.fwm-screen-row {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-sc-row-gap-word);
+  min-width: 0;
+  width: 100%;
+  height: var(--fwm-sc-row-h);
+  padding: 0 var(--fwm-sc-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sc-row-radius);
+  background: var(--dr-row-fill);
+  /* A button carries the UA's centred text and its own font. Both are undone
+     so the same declarations draw a row whether it is a button or not. */
+  color: inherit; /* keyword */
+  font-family: inherit; /* keyword */
+  text-align: left; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* THE PRESSED STATE, on `:active` rather than `:hover`. See the header: the
+   gate rejects `:hover`, and brief 4 published both halves of this state as
+   tokens where brief 2 shipped only the fill. */
+.fwm-screen-row:active {
+  border-color: var(--dr-hairline-row-hover);
+  background: var(--dr-row-hover);
+}
+
+/* A row led by an owner mark takes the wider of the two gaps. */
+.fwm-screen-row[data-fwm-lead='mark'] {
+  gap: var(--fwm-sc-row-gap-mark);
+}
+
+.fwm-screen-row-title {
+  flex: none; /* keyword */
+  font-size: var(--fwm-sc-t-14); /* 14 */
+  font-weight: 500;
+  color: var(--dr-ink-2);
+}
+
+/* THE META GIVES, ALWAYS. It is the one thing on a row that can be arbitrarily
+   long, and a fixed-height pill cannot wrap. */
+.fwm-screen-row-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-sc-t-13); /* 13 */
+  color: var(--dr-ink-muted);
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The 16px chevron the spec draws at the tail of every navigate row. */
+.fwm-screen-chevron {
+  flex: none; /* keyword */
+  width: var(--fwm-sc-glyph);
+  height: var(--fwm-sc-glyph);
+}
+
+/* The 9px solid owner mark. NEVER the same object as a 15px radio -- the mark
+   says WHOSE and a radio says WHICH ONE. */
+.fwm-screen-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-sc-dot);
+  height: var(--fwm-sc-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-ink-muted);
+}
+
+/* THE OWNER TAXONOMY, and it is the ONE place colour is not a `--dr-*` screen
+   surface: whose hardware is on the pole is a fact, and it keeps resolving
+   through `--dr-owner-*` the way brief 2 kept it.
+
+   `inter_agency` takes the police hue because it IS an agency feed shared out;
+   the archive's own class list has no separate colour for it and inventing one
+   would put a fifth meaning on the map's legend.
+
+   UNRECORDED IS NOT UNVERIFIED. A record that carries no owner class is an
+   absence, and it is grey. `unverified` is a class somebody assigned, and it
+   is purple -- see `--dr-owner-unverified` and the owner decision written
+   beside it in tokens.css. */
+.fwm-screen-dot[data-fwm-owner='police'],
+.fwm-screen-dot[data-fwm-owner='inter_agency'] {
+  background: var(--dr-owner-police);
+}
+
+.fwm-screen-dot[data-fwm-owner='hoa'] {
+  background: var(--dr-owner-hoa);
+}
+
+.fwm-screen-dot[data-fwm-owner='private'] {
+  background: var(--dr-owner-private);
+}
+
+.fwm-screen-dot[data-fwm-owner='unverified'] {
+  background: var(--dr-owner-unverified);
+}
+
+/* =========================================================================
+ * 6. THE CARD -- radius 18, `--dr-card-fill` on `--dr-card-line`
+ *
+ * "A card is quieter than a row, which is the whole distinction: a row is a
+ * target and a card is a statement, so the card sits back." (tokens.css)
+ * ====================================================================== */
+
+.fwm-screen-card {
+  min-width: 0;
+  padding: var(--fwm-sc-card-pad);
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-sc-card-radius);
+  background: var(--dr-card-fill);
+}
+
+/* A run of cards and rows down the band. 10 between cards is the spec's own
+   gap on EXPOSURE and MESH; 4 is its gap on MORE's row stack. */
+.fwm-screen-stack {
+  display: grid;
+  gap: var(--fwm-sc-stack-gap);
+  align-content: start; /* keyword */
+  min-width: 0;
+}
+
+.fwm-screen-stack[data-fwm-gap='rows'] {
+  gap: var(--fwm-space-1); /* 4 */
+}
+
+/* The 12px closing note. FAINT, and it never carries meaning -- brief 4's
+   checklist puts a 4.5:1 floor on every text node and calls the faint tier out
+   by name, so nothing that is only said here is said only here. */
+.fwm-screen-note {
+  margin: 0;
+  font-size: var(--fwm-sc-t-12); /* 12 */
+  line-height: 1.45;
+  color: var(--dr-ink-faint);
+}
+
+/* =========================================================================
+ * 7. THE HORIZONTAL SCROLLER -- and its 8px trailing gutter
+ *
+ * "A partial chip must read as more-to-the-right, never as a cut glyph."
+ * The spacer is a real element in the spec's markup, not a padding: a padding
+ * on a scroll container is collapsed at the end of the scroll range by every
+ * engine, which is precisely the case it is for.
+ * ====================================================================== */
+
+.fwm-screen-scroller {
+  display: flex;
+  gap: var(--fwm-sc-chip-gap);
+  min-width: 0;
+  overflow-x: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-screen-scroller::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.fwm-screen-scroller-tail {
+  flex: none; /* keyword */
+  width: var(--fwm-sc-chip-tail);
+}
+
+.fwm-screen-chip {
+  display: flex;
+  flex: none; /* keyword */
+  align-items: center; /* keyword */
+  gap: var(--fwm-sc-chip-dot);
+  height: var(--fwm-sc-chip-h);
+  padding: 0 var(--fwm-sc-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-sc-chip-radius);
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-sc-t-12-5); /* 12.5 */
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* THE ONLY THING IN THIS FILE THAT FILLS WITH ACCENT is the current selection.
+   Cyan means system positive and active selection, and after the 2026-09-08
+   hue decision it means nothing else -- unverified is purple now. */
+.fwm-screen-chip[data-fwm-selected='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  font-weight: 700;
+  color: var(--dr-accent);
+}
+
+.fwm-screen-chip-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-sc-chip-dot);
+  height: var(--fwm-sc-chip-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-ink-muted);
+}
+
+.fwm-screen-chip-dot[data-fwm-owner='police'],
+.fwm-screen-chip-dot[data-fwm-owner='inter_agency'] {
+  background: var(--dr-owner-police);
+}
+
+.fwm-screen-chip-dot[data-fwm-owner='hoa'] {
+  background: var(--dr-owner-hoa);
+}
+
+.fwm-screen-chip-dot[data-fwm-owner='private'] {
+  background: var(--dr-owner-private);
+}
+
+.fwm-screen-chip-dot[data-fwm-owner='unverified'] {
+  background: var(--dr-owner-unverified);
+}
+
+/* =========================================================================
+ * 8. THE SEGMENTED CONTROL -- 36px items in a 44px shell, 12 inside 16
+ * ====================================================================== */
+
+.fwm-screen-seg {
+  display: flex;
+  gap: var(--fwm-sc-seg-gap);
+  min-width: 0;
+  padding: var(--fwm-sc-seg-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-sc-seg-radius);
+  background: var(--dr-row-fill);
+}
+
+.fwm-screen-seg-key {
+  display: grid;
+  flex: 1 1 0;
+  place-items: center; /* keyword */
+  min-width: 0;
+  height: var(--fwm-sc-seg-key-h);
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-sc-seg-key-radius);
+  background: none; /* keyword */
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-sc-t-13-5); /* 13.5 */
+  color: var(--dr-ink-faint);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-screen-seg-key[data-fwm-selected='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  font-weight: 700;
+  color: var(--dr-accent);
+}
+
+/* A KEY THAT IS PRESENT AND LOCKED, which is the whole of MESH's Chat and
+   Config while unpaired. It is drawn in the faint tier and it is `disabled`,
+   so it announces as unavailable rather than merely looking quiet. */
+.fwm-screen-seg-key:disabled {
+  color: var(--dr-ink-faint);
+}

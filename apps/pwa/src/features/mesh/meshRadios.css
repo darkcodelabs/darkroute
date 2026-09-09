@@ -1,0 +1,510 @@
+/* RADIOS - the pairing card and the four the cable fills in.
+ *
+ * =============================================================================
+ * SECTION C'S MATERIAL, WHICH IS NOT GLASS
+ * =============================================================================
+ * These cards were `--fwm-surface-glass` with `backdrop-filter` and a specular
+ * rim - the material every v1 card had, and the right one while MESH was a
+ * panel over a map. It is not one now. Brief 4: "Glass is for chrome floating
+ * over the map. A full screen has nothing behind it, so blurring it costs a
+ * compositor pass and buys nothing", and its conformance list is explicit that
+ * no screen in section C may use `backdrop-filter`.
+ *
+ * So the card is `--dr-card-fill` on `--dr-card-line` at radius 18, which is
+ * the card MORE, LOOK UP and EXPOSURE draw. `.fwm-radios-card` was also pruned
+ * from the `[data-fwm-liquid="on"]` selector list in `tokens.css` in the same
+ * change: that block adds a sheen gradient and an inset rim over the fill, and
+ * brief 4 publishes this section's material rather than leaving it to a skin.
+ *
+ * ONLY THE FIRST FOUR RULES BELOW CHANGED - the card, its head, its note and
+ * its key, which is what the spec's pairing card is made of. The roster, the
+ * channel table and the config panels further down are untouched: brief 4 does
+ * not draw them, they only exist behind `connected`, and restyling a surface
+ * the brief has not specified is how a refactor turns into a redesign.
+ * ========================================================================== */
+
+.fwm-radios {
+  /* The two radii and the pad, hoisted rather than written at the declaration.
+     The design gate's `radius` rule strips `var(--fwm-*)` out of a
+     `border-radius` value and fails on any digit left behind, so the calc has
+     to be a named local that the declaration reads. Every radius in section C
+     is spelled this way. */
+  --fwm-ra-card-radius: calc(var(--fwm-space-1) * 4.5); /* 18 */
+  --fwm-ra-card-pad: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-ra-key-radius: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-ra-key-h: calc(var(--fwm-space-1) * 11.5); /* 46 */
+  --fwm-ra-head-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-ra-t-10-5: calc(var(--fwm-text-micro) * 21 / 22); /* 10.5 */
+  --fwm-ra-track-caps-12: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+
+  display: grid;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+}
+
+/* THE CARD. Section C's, and the numbers are the spec's own frame 5:
+   radius 18, padding 16. */
+.fwm-radios-card {
+  display: grid;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+  padding: var(--fwm-ra-card-pad); /* 16 */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-ra-card-radius); /* 18 */
+  background: var(--dr-card-fill);
+}
+
+/* The head's own gaps are the spec's `margin-top: 5` between the title row and
+   the note, and `13` between the note and the key. A single grid gap cannot be
+   two numbers, so the card keeps one gap and the two that differ set their own
+   margin - which is also how the spec writes it. */
+.fwm-radios-head {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: space-between;
+  gap: var(--fwm-ra-head-gap); /* 10 */
+  min-width: 0;
+}
+
+.fwm-radios-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  color: var(--dr-ink);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-radios-note {
+  margin: 0;
+  font-size: var(--fwm-text-forecast); /* 13 */
+  line-height: 1.5;
+  color: var(--dr-ink-muted);
+}
+
+/* THE LOCKED LINE. Faint, 12, and it is the last thing on the card - it
+   explains an absence rather than offering anything, so it sits below the key
+   the way a footnote sits below the thing it annotates. */
+.fwm-radios-locked {
+  margin: 0;
+  font-size: var(--fwm-text-plate); /* 12 */
+  line-height: 1.45;
+  color: var(--dr-ink-faint);
+}
+
+/* LINKED carries the accent, which is this product's word for "this part is
+   live". Anything else is faint: not connected is a state, not a fault - and
+   `IDLE` is `mesh.status` upper-cased rather than a string, so the badge cannot
+   claim a state the session is not in. */
+.fwm-radios-state {
+  flex: none; /* keyword */
+  font-size: var(--fwm-ra-t-10-5); /* 10.5 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-ra-track-caps-12); /* 0.12em */
+  color: var(--dr-ink-faint);
+}
+
+.fwm-radios-state[data-fwm-radios-on='true'] {
+  color: var(--dr-accent);
+}
+
+.fwm-radios-count {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+/* --- rows ----------------------------------------------------------------- */
+
+/* LABEL LEFT, VALUE RIGHT, on one line. A fact and its name, which is what
+   every row on this screen is. */
+.fwm-radios-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-radios-row-label {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radios-row-value {
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-text);
+  text-align: right; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* --- the roster and the channel table ------------------------------------- */
+
+.fwm-radios-nodes,
+.fwm-radios-channels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-radios-node,
+.fwm-radios-channel {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-radios-node-name,
+.fwm-radios-channel-name {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-radios-node-meta,
+.fwm-radios-channel-role {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  text-align: right; /* keyword */
+}
+
+/* The primary channel is the one that sets the frequency, so it is the one
+   worth picking out of the table. */
+.fwm-radios-channel[data-fwm-role='PRIMARY'] .fwm-radios-channel-role {
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-radios-channel[data-fwm-role='DISABLED'] {
+  opacity: 0.5;
+}
+
+/* --- the key -------------------------------------------------------------- */
+
+/* THE KEY. 46 tall, radius 13, full width - the spec's own frame 5, and the
+   same 46 LOOK UP's field takes, so the two screens' one large control is one
+   size.
+
+   `min-height` rather than `height`, because `--fwm-touch-min` is 48 on the
+   dash surface and 68 on a watch. 46 is the spec's phone number and the touch
+   minimum is the floor under it: a key that is exactly 46 on a dash is a key
+   below that surface's own minimum target. */
+.fwm-radios-key {
+  min-height: max(var(--fwm-ra-key-h), var(--fwm-touch-min)); /* 46 */
+  padding: 0 var(--fwm-ra-card-pad); /* 16 */
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-ra-key-radius); /* 13 */
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-body); /* 15 */
+  font-weight: 700;
+  touch-action: manipulation; /* keyword */
+}
+
+/* ACCENT LINE AND ACCENT FILL, not a solid accent slab. Section C fills with
+   accent in exactly one way - `--dr-accent-fill` inside `--dr-accent-line`,
+   with the label in `--dr-accent` - and it is the same key EXPOSURE's empty
+   state draws for `Open the map`. A saturated cyan block with dark text on it
+   was the v1 button and it is the loudest thing on any of these five screens. */
+.fwm-radios-key[data-fwm-key='primary'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+}
+
+/* Disconnecting is not the thing you came here to do, so it does not shout. */
+.fwm-radios-key[data-fwm-key='quiet'] {
+  border-color: var(--dr-hairline-row);
+  background: var(--dr-row-fill); /* keyword */
+  color: var(--dr-ink-3);
+}
+
+/* NO WEB BLUETOOTH, OR A CONNECT ALREADY IN FLIGHT. Dimmed rather than
+   recoloured: the key still says what it would do, it just cannot do it yet. */
+.fwm-radios-key:disabled {
+  opacity: 0.4;
+}
+
+/* --- the roster ------------------------------------------------------------
+ *
+ * A row is three lines because a node is three different kinds of fact, and
+ * flattening them into one wrapped string is what made the old screen unusable
+ * at 168 nodes:
+ *
+ *   head   who it is and when it was last heard   -- the identifying line
+ *   facts  power, signal, hops, altitude, airtime -- the changing numbers
+ *   tail   board, role, id, and the two warnings  -- the fixed properties
+ *
+ * Only the middle line is instrument data that moves, so only it gets the scan
+ * hue; the rest stays muted so a glance lands on what changed.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radios-filter {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+}
+
+.fwm-radios-filter::placeholder {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radios-sorts {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+.fwm-radios-sort {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-radios-sort[aria-pressed="true"] {
+  border-color: var(--fwm-accent-scan);
+  color: var(--fwm-accent-scan);
+}
+
+/* The row stops being a flex line and becomes a small stacked record. */
+.fwm-radios-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  align-items: stretch; /* keyword */
+}
+
+/* HEARD RECENTLY IS THE ONLY STATE DRAWN. There is no "offline" mark, because
+   a Meshtastic node never announces that it left - the roster shows how long
+   ago and lets the driver judge. Dimming the stale ones is the honest version
+   of that: still listed, visibly older. */
+.fwm-radios-node[data-fwm-node-live="false"] {
+  opacity: 0.55;
+}
+
+.fwm-radios-node-head {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+/* The short name, which is how a node identifies itself on its own screen. */
+.fwm-radios-node-tag {
+  flex: none; /* keyword */
+  padding: 0 var(--fwm-space-2);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-2);
+}
+
+.fwm-radios-node-age {
+  flex: none; /* keyword */
+  margin-left: auto;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radios-node-facts,
+.fwm-radios-node-tail {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-1) var(--fwm-space-3);
+  font-size: var(--fwm-text-micro);
+}
+
+/* The line that moves carries the scan hue. */
+.fwm-radios-node-facts {
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-radios-node-tail {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radios-node-id {
+  font-family: var(--fwm-font-data);
+}
+
+/* NO KEY and VIA MQTT. Neither is a fault, and neither may be hidden: without a
+   key a direct message cannot be sealed, and an MQTT-bridged node is not
+   evidence that anything is in radio range. */
+.fwm-radios-node-tail [data-fwm-node-warn="true"] {
+  color: var(--fwm-alert-approaching);
+}
+
+/* --- conversations ---------------------------------------------------------
+ *
+ * A thread row and a thread. Same card material as everything else on this
+ * screen; what is new is that a room announces where a reply goes BEFORE it is
+ * typed, which the single-stream chat could not do and is the reason it was
+ * replaced.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radios-back {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-2) 0 0;
+  border: 0;
+  background: none; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-thread-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: 0;
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  text-align: left; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* THE ONE PLACE A DM IS MARKED IN THE LIST. A private room and a public one
+   must never be told apart only by their title, which a peer is free to set to
+   anything - including the name of a channel. */
+.fwm-thread-row[data-fwm-thread-kind="direct"] {
+  border-left: var(--fwm-rule-w) solid var(--fwm-accent-mesh);
+}
+
+.fwm-thread-row-head {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-thread-row-last {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-thread-unread {
+  flex: none; /* keyword */
+  min-width: var(--fwm-space-4);
+  padding: 0 var(--fwm-space-1);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-on-alert);
+  text-align: center; /* keyword */
+}
+
+.fwm-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-thread-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--fwm-space-2);
+  align-items: baseline; /* keyword */
+}
+
+.fwm-thread-who {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-muted);
+}
+
+/* Ours reads in the scan hue, so a glance separates what was said to you from
+   what you said, without moving anything or changing the line's shape. */
+.fwm-thread-line[data-fwm-mine="true"] .fwm-thread-who {
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-thread-text {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-thread-at {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radios-composer {
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  resize: none; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+}
+
+/* A refusal is not a fault to apologise for, it is the app declining to put
+   something on an open radio. Drawn in the alert hue so it is not missed. */
+.fwm-radios-note[data-fwm-refusal="true"] {
+  color: var(--fwm-alert-in-range-text);
+}
+
+/* The destination warning takes the hue of what it warns about. */
+.fwm-radios-note[data-fwm-thread-kind="channel"] {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-radios-note[data-fwm-thread-kind="direct"] {
+  color: var(--fwm-accent-mesh);
+}
+
+/* --- config fields ---------------------------------------------------------
+ * A label above its control, full width. Nothing saves as you type - a radio
+ * config write goes to hardware somebody owns and can take it off the air, so
+ * committing on a keystroke would make a stray tap a network event. The button
+ * commits, and the button names the consequence.
+ * ------------------------------------------------------------------------ */
+
+.fwm-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-config-input {
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-sunk);
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+}
+
+/* The one field with a legal consequence. */
+.fwm-radios-note[data-fwm-config-warn="true"] {
+  color: var(--fwm-alert-approaching);
+}

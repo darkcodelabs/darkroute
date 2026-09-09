@@ -1,0 +1,59 @@
+{
+  "schema": "darkroute-deflock-source-review/v2",
+  "repository": "flockhopper3/deflock-data",
+  "headSha": "8d156b24db7090e870af3f007b0caece9b3c0951",
+  "territories": ["US", "PR"],
+  "fetchRun": {
+    "id": 33556526679,
+    "url": "https://github.com/flockhopper3/deflock-data/actions/runs/33556526679",
+    "workflowPath": ".github/workflows/fetch-data.yml",
+    "runStartedAt": "2026-09-01T20:38:43.000Z",
+    "observationStartedAt": "2026-09-01T20:38:57.476Z",
+    "datasetWrittenAt": "2026-09-01T20:41:20.656Z"
+  },
+  "buildRun": {
+    "id": 33556808975,
+    "url": "https://github.com/flockhopper3/deflock-data/actions/runs/33556808975",
+    "workflowPath": ".github/workflows/build-tiles.yml",
+    "runStartedAt": "2026-09-01T20:41:40.000Z",
+    "positionsIndexedAt": "2026-09-01T20:43:25.905Z",
+    "completedAt": "2026-09-01T20:43:45.000Z"
+  },
+  "expectedSource": {
+    "country": "us",
+    "manifestVersion": "5f2c3cce79f2e4ca",
+    "generatedAt": "2026-09-01T20:42:40.924Z",
+    "total": 137707,
+    "manifest": {
+      "url": "https://tiles.dontgetflocked.com/cameras-us-hourly-manifest.json?build=5f2c3cce79f2e4ca",
+      "bytes": 107693,
+      "sha256": "91256a51ede7062aa2a4b0b5b9f5e9a336b40b16d336ebbc01d5c3b0abefa9fb"
+    },
+    "index": {
+      "url": "https://tiles.dontgetflocked.com/cameras-us-hourly-index.json?build=5f2c3cce79f2e4ca",
+      "bytes": 1767,
+      "sha256": "8e58e1260806cdae2cb7a924d2b7e4cf291a78611a5f41928da7ea5d729646cb"
+    },
+    "archive": {
+      "url": "https://tiles.dontgetflocked.com/cameras-us-hourly.pmtiles?build=5f2c3cce79f2e4ca",
+      "bytes": 48311654,
+      "sha256": "1afae12a059b179f730e7b6242b87612bba00506992f0290660835b4794f734a"
+    }
+  },
+  "expectedTransformation": {
+    "sourceFeatures": 137707,
+    "excludedNonNodes": 18,
+    "excludedTerritory": 218,
+    "tombstonesBlocked": 0,
+    "tombstonesCleared": 5,
+    "outputElements": 137471,
+    "elementsSha256": "bdd501207473ee30151b810684b91d398c91dee8dfdcf486cc155c0c1a67b63d"
+  },
+  "sourceWatermark": {
+    "status": "unapproved",
+    "reason": "fetch run 33556526679 did not retain osm3s.timestamp_osm_base for its constituent Overpass responses; observationStartedAt is runner wall time and cannot authorize a replication floor",
+    "minimumOsmBase": null,
+    "responseLedger": null
+  },
+  "replicationFloor": null
+}
