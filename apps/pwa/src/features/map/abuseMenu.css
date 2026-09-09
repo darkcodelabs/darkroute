@@ -1,0 +1,209 @@
+/* THE ABUSE MENU -- brief 4 section A, and the only place the abuse tone is
+ * painted.
+ *
+ * =============================================================================
+ * TWO HALVES, AND THEY ARE DIFFERENT KINDS OF THING
+ * =============================================================================
+ * The first half is the SHELL: where the panel sits over the map, how tall it
+ * is allowed to get, and how it arrives and leaves. That is DRIVE's business
+ * and it is `fwm-drive-*`, for the reason `mapControlPanel.css` states at its
+ * own head -- the panel is positioned in `.fwm-drive`'s coordinate space and is
+ * meaningless anywhere else, so the class names follow the screen while the
+ * file follows the subject.
+ *
+ * The second half is the TONE: the menu language's `abuse` variant, which is
+ * red on the thin glass. That is a variant of `features/chrome/menu.css` and it
+ * is written HERE rather than there, deliberately. Two of `Menu.test.tsx`'s
+ * assertions are rules and not measurements -- the accent fill may appear in
+ * exactly two places, and no shadow may do a hairline's work -- and this cut
+ * draws a third fill and a cast shadow. Putting it in the language file would
+ * either break those pins or quietly weaken what they protect. `Menu.tsx`
+ * declares `MenuTone` so the attribute exists and a reader knows the variant
+ * does; nothing outside this file selects on it.
+ *
+ * =============================================================================
+ * WHAT IS NOT HERE
+ * =============================================================================
+ * A SURFACE ON THE SHELL. The `.fwm-menu` inside draws the glass, the hairline
+ * and the radius, so the shell has no background, no border and no padding of
+ * its own. One definition of what this panel looks like, in the file that owns
+ * the look.
+ *
+ * HOVER. The spec cut carries `style-hover` on its two navigate rows. The gate
+ * rejects `:hover` outright, this is a touch-first product, and inventing an
+ * `:active` in its place would be adding a state the spec does not draw --
+ * exactly the call `menu.css`, `dock.css` and `topBar.css` already made.
+ * ========================================================================== */
+
+/* =========================================================================
+ * 1. THE SHELL
+ *
+ * Copied from `.fwm-drive-panel`'s arithmetic on purpose rather than shared
+ * with it: that rule set carries a surface, a border, a radius, a padding and
+ * a gap, all of which the menu inside draws for itself, so borrowing the class
+ * would mean undoing six properties to use four.
+ * ====================================================================== */
+
+.fwm-drive-abuse {
+  /* Where the row under the top bar starts. `--fwm-drive-row-2` already counts
+     the bar, the gap and the CHIP ROW, so a panel anchored to it opens clear of
+     the chip that opened it rather than over it. Written once and read twice
+     below, because the top and the height must move together. */
+  --fwm-drive-abuse-top: var(--fwm-drive-row-2);
+
+  position: absolute;
+  top: var(--fwm-drive-abuse-top);
+  /* THE LEFT EDGE, WHICH IS THE OTHER PANELS' MIRROR AND NOT AN ACCIDENT.
+     Abuse is the leftmost of three centred chips; the layers panel is inset
+     from the right by the rail's width so it cannot paint over the key that
+     opens it, and the map-view panel sits on the right inset. This one takes
+     the left inset, which is `.fwm-drive-top`'s own, so the panel's edge lines
+     up with the search bar above it. */
+  left: var(--fwm-space-4);
+  /* 300. The spec cut's own column is `min-width: 300px` in both themes, and
+     the rows need it: at the layers panel's 240 the value column resolves to
+     about eight pixels and "on the map" ellipsises to nothing. */
+  width: calc(var(--fwm-space-1) * 75);
+  /* Never the whole width, whatever the phone -- two key-widths and an inset
+     are held back, which is `.fwm-drive-panel`'s own expression, so the rail
+     on the far edge is never covered. */
+  max-width: calc(100% - var(--fwm-space-12) - var(--fwm-space-12) - var(--fwm-space-4));
+  /* Clear of the dock. `dvh` rather than a percentage for the reason
+     `mapControlPanel.css` records at length: a percentage max-height resolves
+     to `none` unless every ancestor has a definite height, and when that chain
+     broke the panel grew to its content and was clipped with no way to scroll.
+     `dvh` needs no ancestor to cooperate and tracks a collapsing address bar. */
+  max-height: calc(
+    100dvh - var(--fwm-drive-abuse-top) - var(--fwm-dock-h) - var(--fwm-space-12)
+  );
+  overflow-y: auto; /* keyword */
+  /* HIDDEN, NOT THIN, and that is the opposite of what the layers panel does.
+     Brief 4's scroll contract asks for a hidden scrollbar on its surfaces, and
+     the reason the layers panel overrules it does not apply here: that panel is
+     eleven rows and is taller than its space on most phones, so an
+     indicator-less scroll box reads as a clipped one. This is seven rows, a
+     header and a note, and it fits. */
+  scrollbar-width: none; /* keyword */
+  /* A flick that runs out of panel must not then scroll the map underneath. */
+  overscroll-behavior: contain; /* keyword */
+  opacity: 0;
+  /* IN FROM THE LEFT, because that is the edge it is anchored to. The layers
+     panel slides in from the right for the same reason with the same number. */
+  transform: translateX(calc(var(--fwm-space-4) * -1));
+  /* VISIBILITY, NOT `display`, which is what makes the close animate:
+     `visibility` interpolates discretely but honours the duration, and it takes
+     the rows out of the tab order and out of the accessibility tree while the
+     panel is shut, which `opacity: 0` alone does not. */
+  visibility: hidden; /* keyword */
+  transition:
+    opacity var(--fwm-dur-fast) var(--fwm-ease-mech),
+    transform var(--fwm-dur-fast) var(--fwm-ease-mech),
+    visibility var(--fwm-dur-fast) var(--fwm-ease-mech);
+}
+
+.fwm-drive-abuse::-webkit-scrollbar {
+  width: 0; /* keyword */
+}
+
+.fwm-drive-abuse[data-fwm-open='true'] {
+  opacity: 1;
+  transform: none; /* keyword */
+  visibility: visible; /* keyword */
+}
+
+/* The slide is decoration; the arrival is not. Matching `drive.css`'s own
+   reduced-motion block, the panel still appears, it just appears at once. */
+@media (prefers-reduced-motion: reduce) {
+  .fwm-drive-abuse {
+    transform: none; /* keyword */
+    transition: none; /* keyword */
+  }
+}
+
+/* =========================================================================
+ * 2. THE TONE -- red, on the thin glass
+ *
+ * Six declarations, and every colour in them is a published `--dr-*`. The
+ * spec's own drawn value and the delta are written beside each substitution,
+ * which is the discipline `menu.css` runs on: resolve to the nearest published
+ * token and record what moved, because minting a colour outside `tokens.css`
+ * is the one thing a stylesheet in this repo may not do.
+ * ====================================================================== */
+
+/* THE MATERIAL. The abuse menu is one of only three glass surfaces in brief 4 --
+   with the two map modals -- and everything else in that brief is opaque, on
+   the argument that a full screen has nothing behind it so blurring it costs a
+   compositor pass and buys nothing. This floats over the map, so it is glass.
+
+   `--dr-surface-thin` is 0.72, not the menu language's 0.90, and the brief says
+   in as many words that the 0.72 is not a rounding error but the entire effect.
+   The grain over it is the same pair of repeating gradients the chips already
+   draw; `chrome.css` writes the identical shorthand for the identical material.
+
+   THE SHADOW IS THE ONE THING THIS TONE ADDS THAT THE LANGUAGE BANS. `menu.css`
+   carries none at all and a test pins that, on the brief's rule that if you can
+   see an edge it is a hairline. This cut draws one under both themes --
+   `0 14px 40px` at 0.5 dark, `0 12px 34px` at 0.14 light -- and it is the only
+   thing here that lifts a 0.72 surface off a moving map. Resolved to
+   `--dr-lift`, the published lift, which is `0 10px 30px` at the same 0.5 in
+   dark and `0 8px 24px` at 0.12 in light: four pixels shallower and ten
+   narrower than drawn, in the same direction at the same weight. */
+.fwm-menu[data-fwm-tone='abuse'] {
+  background: var(--dr-grain), var(--dr-surface-thin);
+  box-shadow: var(--dr-lift);
+}
+
+/* THE HEADER, WHICH IS THE ONLY THING THAT SAYS WHAT THE PANEL IS ABOUT.
+   `menu.css` paints it `--dr-accent`; here it is the abuse hue.
+   Spec draws `#ff7a8a` dark and `#a3162c` light. `--dr-abuse` is `#ff5a6e` and
+   `#a3162c` -- light is exact, dark is one step deeper than drawn. */
+.fwm-menu[data-fwm-tone='abuse'] .fwm-menu-head-label {
+  color: var(--dr-abuse);
+}
+
+/* THE ONE FILLED ROW. `Show abuse areas` is the layer the menu exists for, and
+   the spec draws it filled while the three toggles under it sit on row ground.
+   Exactly one, which is the language's "one selection, ever" kept rather than
+   broken -- the fill has moved hue, not multiplied.
+
+   Both values are the spec's own alphas. The dark line is drawn over
+   `255,122,138` and `--dr-abuse-line` carries that rgb verbatim; the light pair
+   are alphas of `#a3162c` and are exact. */
+.fwm-menu[data-fwm-tone='abuse'] .fwm-menu-row[data-fwm-filled='true'] {
+  border-color: var(--dr-abuse-line);
+  background: var(--dr-abuse-fill);
+}
+
+/* 14/700 in the abuse ink -- `#ff9aa6` dark, `#8f1226` light, which is
+   `--dr-abuse-text` exactly in both. The size comes from the toggle row's own
+   rule and is not restated; only the weight and the colour move. */
+.fwm-menu[data-fwm-tone='abuse'] .fwm-menu-row[data-fwm-filled='true'] .fwm-menu-label {
+  color: var(--dr-abuse-text);
+  font-weight: 700;
+}
+
+/* GAP -- THE FILLED ROW'S VALUE HAS NO TOKEN, so it keeps the language's muted
+   ink. The spec draws it `#cf8f97` dark and `#7d4048` light: a desaturated red
+   that is neither `--dr-abuse` nor `--dr-abuse-text` nor any published `--dr-*`.
+   `--dr-ink-muted` is `#8d97a1` / `#59636d`, which is the value slot's colour
+   on every other row in the panel. Reported rather than minted -- a fifth and
+   sixth red are the brief author's call, and one line in `tokens.css` beside
+   the four already there closes it. */
+
+/* THE SWITCH, ON. Built on the same two tokens as the row it may sit in, which
+   is how `menu.css` builds the accent switch off `--dr-accent-line` and
+   `--dr-accent-fill`, and it inherits the same recorded delta: the spec draws
+   the on track denser than the row fill -- edge `rgba(255,122,138,0.5)` over
+   the token's 0.30, fill `rgba(255,90,110,0.24)` over the token's 0.10, and
+   `rgba(163,22,44,0.45)` / `rgba(163,22,44,0.2)` in light over 0.32 / 0.09.
+   The knob is solid `--dr-abuse`, so the switch still reads unambiguously ON. */
+.fwm-menu[data-fwm-tone='abuse'] .fwm-menu-switch[aria-checked='true'] {
+  border-color: var(--dr-abuse-line);
+  background: var(--dr-abuse-fill);
+}
+
+/* Spec `#ff7a8a` / `#a3162c`; `--dr-abuse` is `#ff5a6e` / `#a3162c`. Same
+   substitution as the header, for the same reason, in the same direction. */
+.fwm-menu[data-fwm-tone='abuse'] .fwm-menu-switch[aria-checked='true'] .fwm-menu-switch-knob {
+  background: var(--dr-abuse);
+}

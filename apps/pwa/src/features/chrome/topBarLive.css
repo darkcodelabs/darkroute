@@ -1,0 +1,62 @@
+/* ==========================================================================
+   THE TOP BAR, MOUNTED -- everything the live bar adds to section A.
+   ==========================================================================
+
+   `topBar.css` IS THE DRAWING AND IT DOES NOT MOVE. Every length in it was
+   measured against `searchbar_and_buttons.dc.html` in a browser at real size,
+   and its own test file holds it to six declarations plus a contract: no raw
+   colour, no raw length, no hover, and exactly ONE `box-shadow` in the file.
+   None of that is this file's to spend, so nothing here is written there.
+
+   WHAT IS HERE is the shell, and only the shell. The RESULTS SHEET that used
+   to live below it has been replaced by the search entry panel, which owns its
+   own stylesheet -- see section 2. The controls the mounted bar adds INSIDE
+   the pill (the folded state, the clear key, the mark's target, the reload
+   control's box) are in `topBar.css` section 8 instead: every one of them reads
+   that file's own `--fwm-tb-*` geometry, and a local is only readable inside
+   the component that declares it -- reading one from here resolves to nothing,
+   silently, which is exactly what the gate's `unresolved-var` rule exists to
+   stop.
+
+   THE SAME RULES APPLY ANYWAY. Not one hex, not one length -- `--fwm-*` and
+   `--dr-*` only, and `scripts/check-design-values.mjs` fails the build on
+   either.
+   ========================================================================== */
+
+/* =========================================================================
+ * 1. THE SHELL
+ *
+ * The bar and whatever it opens. It stays a positioned box: the panel that
+ * replaced the sheet anchors itself to the PHONE rather than to the bar, but
+ * this is still the element a host measures the bar by, and taking the
+ * `position` off it would change what `.fwm-drive-top` lays out.
+ * ====================================================================== */
+
+.fwm-topbar-shell {
+  position: relative;
+}
+
+/* =========================================================================
+ * 2. THE RESULTS SHEET IS GONE, AND WHAT REPLACED IT IS NOT THIS FILE'S
+ *
+ * The bar used to hang a flat listbox of places-then-cameras under itself, and
+ * this section resolved it: `.fwm-topbar-hits`, `.fwm-topbar-hit` and its three
+ * lines, `.fwm-topbar-lookup` and `.fwm-topbar-none`.
+ *
+ * `DarkRoute Search Entry.html` replaces that whole surface with the SEARCH
+ * ENTRY PANEL -- 366 x 470 bottom-anchored to the phone in portrait, 336 x 418
+ * in the landscape left column, with a field of its own, a camera count on
+ * every row and a footer. It is one component serving both orientations, so its
+ * stylesheet is `features/search/searchPanel.css` and it belongs to the panel
+ * rather than to a host that happens to open it.
+ *
+ * DELETED RATHER THAN LEFT IN PLACE. Thirteen rules nothing selects are
+ * thirteen rules the next person reads as live, and the two surfaces would have
+ * drifted the first time somebody tuned a row height in the wrong file. The one
+ * decision worth carrying forward is recorded in the panel's own stylesheet:
+ * the outbound key is an outlined row rather than a filled accent, because it
+ * is a considered press and not the thing the list is for.
+ *
+ * WHAT IS LEFT IN THIS FILE is section 1 -- the shell -- and that is enough:
+ * the panel positions itself against the phone, not against the bar.
+ * ====================================================================== */

@@ -1,0 +1,679 @@
+/* MONITOR MODE'S CARD. See `MonitorCard.tsx` for what each column holds and why
+   there is no longer a collapsed variant of it. */
+
+/* THREE COLUMNS. ONE ROW. ALWAYS HORIZONTAL.
+   ==========================================================================
+   From the owner's `Dynamic Cards.dc.html`, which is the source of truth for
+   this card and settles an argument this file lost three times:
+
+     "Monitor and navigation mode stay three columns wide, always horizontal."
+     "Three columns hold their shape at min(84cqw, 340px) and snap-scroll
+      sideways when the phone is narrower."
+
+   THE CARD IS A RAIL, NOT A GRID. Every earlier attempt tried to make three
+   columns FIT across a 366px phone - by stacking them, by scrolling the card
+   vertically, or by shrinking the type until it did. The design does none of
+   those. A column keeps a readable width, and when three of them do not fit
+   the card scrolls SIDEWAYS one column at a time. The instrument panel does
+   not fold up; you look across it.
+
+   So: `display: flex` with `overflow-x: auto` and `scroll-snap-type: x
+   mandatory`, and each column `scroll-snap-align: center`. On a wide card all
+   three are visible at once and it is the render exactly; on a phone it is the
+   same three columns at the same size with two of them off to the right.
+
+   `overscroll-behavior-x: contain` keeps a swipe that runs out of rail from
+   turning into a browser back-gesture, which on a card you swipe by design is
+   not a nicety. The scrollbar is hidden because the snap and the half-visible
+   next column already say the rail moves. */
+.fwm-monitor {
+  display: flex;
+  gap: var(--fwm-card-rail-pad);
+  padding: var(--fwm-card-rail-pad);
+  /* LOCKED. 180px, from the design, and it never moves with content - which is
+     what the two-child reader column is for: four pinned children did not fit
+     and the list was crushed to nothing. See `closestPanel.css`. */
+  height: var(--fwm-card-rail-h);
+  overflow-x: auto; /* keyword */
+  overflow-y: hidden; /* keyword */
+  overscroll-behavior-x: contain; /* keyword */
+  scroll-snap-type: x mandatory; /* keyword */
+  scrollbar-width: none; /* keyword */
+  border-radius: var(--fwm-card-rail-radius);
+  /* THE HAIRLINE, THE FILL, THE BLUR AND THE SHADOW ARE NOT HERE. They come
+     from the shared floating-control chrome in `drive.css`, which `.fwm-monitor`
+     is now named in - so the glass level, the transparency, the tone and the
+     liquid switch move this card with the search bar and the dock instead of
+     leaving it as the one surface those settings cannot reach. It was opaque
+     with its own border, on the design's reading that a card over a live map
+     wants a solid ground; the owner's ruling is that every element is bound by
+     the material settings, and the biggest element on the screen most of all. */
+}
+
+.fwm-monitor::-webkit-scrollbar { display: none; /* keyword */ }
+
+/* The card and its page dots are one object. */
+.fwm-monitor-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+/* MONITOR'S COPY OF THE READER COLUMN CARRIES THE RULE; navigation's does not.
+   That is the single difference between the two, so it lives on the host rather
+   than as a variant prop on a shared component. */
+.fwm-monitor > .fwm-closest {
+  padding-right: var(--fwm-card-col-pad);
+  border-right: var(--fwm-rule-w) solid var(--fwm-line);
+}
+
+/* --- column two: the record ----------------------------------------------- */
+
+.fwm-monitor-col {
+  container-type: inline-size;
+  min-width: 0;
+  min-height: 0;
+  /* START, NOT CENTER. With `scroll-snap-type: x mandatory` the browser rests
+     on the nearest snap point, and CENTRING a column wider than the rail puts
+     that point at a positive scrollLeft - so the card opened on column two.
+     Snapping to the start means the rail rests at 0, on the reader. */
+  scroll-snap-align: start; /* keyword */
+}
+
+.fwm-monitor-passes {
+  flex: var(--fwm-card-col-grow) 0 var(--fwm-card-col-stats);
+  display: grid;
+  gap: var(--fwm-space-2);
+  align-content: start; /* keyword */
+  overflow-y: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-monitor-passes::-webkit-scrollbar { display: none; /* keyword */ }
+
+/* Every "there is nothing here" sentence on the card, in one voice. Muted
+   rather than red: an empty list is not a fault - and unboxed, because a frame
+   drawn around the absence of content is the most decorative container on the
+   card. It is a sentence, so it is set as one. */
+/* THE NO-FIX STATE IS A COLUMN, NOT A PARAGRAPH, AND THAT IS WHY THE CARD
+ * STOPPED JUMPING TO COLUMN TWO WHEN THE DATA ARRIVED.
+ *
+ * This sentence stands where the reader column goes before the first GPS fix.
+ * It used to be a bare `<p>` with no flex basis and NO `scroll-snap-align` -
+ * which made it, in a rail declared `scroll-snap-type: x mandatory`, not a snap
+ * target at all. The only snap target in the card was column two.
+ *
+ * That is invisible while the card is empty: the note is narrow, both columns
+ * fit, the rail cannot scroll, and it sits at 0 looking correct. But the
+ * browser has recorded COLUMN TWO as the snapped target, because it was the
+ * only candidate. Then the fix lands, this paragraph is replaced by the full
+ * reader, the rail starts overflowing - and the re-snap that a layout change
+ * triggers takes the scroller to the target it had recorded. The card loads on
+ * column one, loads its data, and slides to column two on its own.
+ *
+ * Making the empty state carry the reader's own basis and its own snap
+ * alignment means the first child is a snap target in BOTH states, so the
+ * recorded target is column one from the first paint and the swap changes
+ * nothing about where the rail rests.
+ */
+.fwm-monitor-empty {
+  margin: 0;
+  padding: var(--fwm-space-2) 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.5;
+  color: var(--fwm-text-muted);
+}
+
+/* ...BUT ONLY COLUMN ONE'S COPY SNAPS, and the direct-child selector is doing
+ * real work rather than being tidy. The same class also sets the "nothing
+ * recorded yet" note inside column two, which is a flex COLUMN - and the whole
+ * rule applied there would have given a paragraph the reader column's basis
+ * read on the block axis. Measured in headless Chrome 151 against the real
+ * tokens: that note goes from 31px tall to 323px and column two's scroll height
+ * from 180 to 399, which is 220px of blank space under RECENT in the state
+ * every new install starts in.
+ *
+ * The alignment alone is also the whole fix. Measured on a repro of this card:
+ * with no alignment the rail lands at scrollLeft 317 (column two) the moment
+ * the reader mounts; with it, 12 - the rail's own padding, which is column
+ * one's start. Giving the note the reader's 340px basis as well would fix it
+ * too, and would also make the pre-fix card wide where it is currently a short
+ * narrow sentence. The card keeps the look it has.
+ *
+ * The rail is still swipeable to column two: setting scrollLeft by hand to 300
+ * still settles on 317.
+ */
+.fwm-monitor > .fwm-monitor-empty {
+  scroll-snap-align: start; /* keyword */
+}
+
+/* --- column one: what is coming up ---------------------------------------- */
+
+/* THE HEADING STACKS, because the row it used to be does not fit.
+   In the render the title and "Within 5 miles" sit on one line across 750px.
+   The same column on a phone is 150px, where a side-by-side pair turns the
+   title into a three-line stack of single words - which is what shipped. Down
+   the column they are two short lines instead. */
+.fwm-monitor-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.fwm-monitor-head-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* AT THE LEGIBILITY FLOOR, NOT AT THE RENDER'S SCALE. The render sets this at
+   28px on a 1790px canvas; the proportional equivalent here is 4px. The label
+   step is the smallest thing that still reads as a heading, and the weight is
+   what separates it from the line under it now that the size cannot. */
+.fwm-monitor-title {
+  margin: 0;
+  font-size: var(--fwm-card-text-title);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: var(--fwm-card-track-tight);
+  overflow-wrap: anywhere; /* keyword */
+  color: var(--fwm-text);
+}
+
+.fwm-monitor-sub,
+.fwm-monitor-within {
+  font-size: var(--fwm-card-text-sub);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-monitor-within {
+  flex: none; /* keyword */
+  text-align: left; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* ONE OF THE TWO REGIONS ON THIS CARD THAT MAY SCROLL, and it scrolls INSIDE
+   its column rather than moving anything around it. The heading above it and
+   the "show more" key below it are pinned; only the rows move.
+
+   `flex: 1` claims the space those two leave, `min-height: 0` lets that space
+   be less than the rows want - the same override as on the column, because
+   `min-height: auto` is a flex item's default too and it is the reason a
+   nested `overflow-y` so often does nothing. The card's fixed height is what
+   both of them are ultimately measured against. */
+.fwm-monitor-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+/* A HAIRLINE BETWEEN ROWS, not around them. Seven boxed rows read as seven
+   cards; seven ruled rows read as one list, which is what this is. It is a
+   border-TOP on every row but the first, which is what leaves no rule hanging
+   under the last row and none drawn between the heading and the first. */
+.fwm-monitor-rows > li + li .fwm-monitor-row {
+  border-top: var(--fwm-hairline) solid var(--fwm-line-soft);
+}
+
+/* THE ROW IS TWO LINES ON A PHONE, AND ONE IN THE RENDER.
+   The design lays a row out across 750px as dot / distance / street / operator
+   / chevron, all on one line. The same five things in 150px is what produced
+   the column of single letters: "FLOCK SAFETY" alone wants half the column, so
+   the street track collapses to nothing and then breaks per character.
+
+   So the operator drops to a second line under the street and the row keeps
+   every fact the design shows. It is placed rather than reordered - the markup
+   still reads dot, distance, street, operator, chevron, which is the order the
+   row should be announced in - and the dot, the distance and the chevron stay
+   on the first line beside the street. */
+.fwm-monitor-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  color: var(--fwm-text);
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-monitor-row > .fwm-monitor-dot { grid-area: 1 / 1; }
+.fwm-monitor-row-miles { grid-area: 1 / 2; }
+.fwm-monitor-row-text { grid-area: 1 / 3; }
+.fwm-monitor-row > .fwm-monitor-glyph { grid-area: 1 / 4; }/* The second line, under the street and clear of the dot and the distance. */
+.fwm-monitor-row-operator { grid-area: 2 / 3; }
+
+.fwm-monitor-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+}
+
+.fwm-monitor-row-miles {
+  font-size: var(--fwm-card-text-dist);
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-monitor-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-width: 0;
+}
+
+/* `break-word`, NOT `anywhere`. The difference is the whole "W / 1 / 1 / 1 / T"
+   render: `anywhere` lets the browser break mid-word whenever it makes the line
+   box narrower, so in a squeezed track it breaks EVERY word at every character
+   and sets the street name as a vertical column of letters. `break-word` breaks
+   at spaces first and only splits a word that genuinely cannot fit on a line of
+   its own, which is the behaviour the guard was reaching for. */
+.fwm-monitor-row-street {
+  font-size: var(--fwm-card-text-row);
+  font-weight: 600;
+  color: var(--fwm-text);
+  overflow-wrap: break-word; /* keyword */
+}
+
+.fwm-monitor-row-facing {
+  font-size: var(--fwm-card-text-sub);
+  color: var(--fwm-text-muted);
+  overflow-wrap: break-word; /* keyword */
+}
+
+/* On its own line under the street, so it reads left with everything else
+   rather than being pushed to a right edge 150px away that it does not fit
+   inside. It keeps `nowrap`: an operator name broken across lines is worse
+   than one that runs to the chevron. */
+.fwm-monitor-row-operator {
+  font-size: var(--fwm-card-text-tiny);
+  font-weight: 600;
+  color: var(--fwm-text-2);
+  text-align: left; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE FOOTER RUNS THE FULL WIDTH of the column because it is not a row in the
+   list - it is what to do when the list is not enough. */
+/* PINNED: the heading at the top of the nearby column and the key at the
+   bottom of it. The rows between them are what moves. */
+.fwm-monitor-head,
+.fwm-monitor-more {
+  flex: none; /* keyword */
+}
+
+.fwm-monitor-more {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-2);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  color: var(--fwm-text-2);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-monitor-more-label {
+  flex: 1;
+  font-size: var(--fwm-card-text-row);
+  font-weight: 600;
+  text-align: left; /* keyword */
+}
+
+/* Marks are geometry only in `MonitorCard.tsx`; the paint is here so a mark
+   takes the colour of whatever carries it. Same division as
+   `components/dock/icons.css`. */
+.fwm-monitor-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-space-4);
+  height: var(--fwm-space-4);
+  fill: none; /* keyword */
+  stroke: currentcolor; /* keyword */
+  /* The design's 1.6 stroke grid. Unitless SVG user units, not a CSS length,
+     so no --fwm-* token exists for it - see `components/dock/icons.css`. */
+  stroke-width: 1.6;
+  stroke-linecap: round; /* keyword */
+  stroke-linejoin: round; /* keyword */
+}
+
+.fwm-monitor-glyph-fill {
+  fill: currentcolor; /* keyword */
+  stroke: none; /* keyword */
+}
+
+/* --- column two: what has already happened -------------------------------- */
+
+/* A SECTION, NOT A BOX. Sunk rather than raised: this column is the record, and
+   the record should sit behind the column that is about the road ahead.
+
+   IT IS A BACKGROUND CHANGE AND NOTHING ELSE NOW. It had a hairline border and
+   a 10px radius, which made it a rounded rectangle inside the card's rounded
+   rectangle - a decorative container around information nobody can press. The
+   tint alone does the same separating work without drawing a second object, and
+   the card keeps exactly one outer border. Only controls are boxed here.
+
+   The padding is asymmetric on purpose: it holds the content off the section's
+   left edge and its top, and gives back the space on the right and the bottom
+   where there is nothing to hold it off from. */
+.fwm-monitor-panel {
+  display: flex;
+  flex-direction: column;
+  /* One step, not two. In a 102px column the label and the note each wrap to
+     two or three lines, and the gaps between five stacked children were costing
+     more height than the week chart itself. */
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-2) var(--fwm-space-1) var(--fwm-space-1) var(--fwm-space-2);
+  /* ROUNDED, because the design rounds them and a square-cornered fill inside a
+     24px card reads as a crop rather than a panel. The flattening pass took the
+     radius off with the border; the border stays off - the tint alone is the
+     section - and the radius comes back. */
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-sunk);
+}
+
+.fwm-monitor-handle {
+  align-self: center; /* keyword */
+  width: var(--fwm-space-8);
+  height: var(--fwm-mark-w);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line-strong);
+}
+
+.fwm-monitor-hero-unit {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* THE HERO, AT COLUMN SCALE. `--fwm-text-readout` is 40px, which is the render's
+   figure on a 565px column; this column is 102px and 40px of "87" over a
+   wrapped label left no room for the week chart under it. */
+.fwm-monitor-hero {
+  font-size: var(--fwm-card-text-hero);
+  letter-spacing: var(--fwm-card-track-tighter);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+/* THE COUNT IS NOT A NUMBER YET, so it is not drawn at the number's size. Type
+   the size of the figure would make the sentence look like the reading. */
+/* "not counted yet" is a SENTENCE standing where a figure goes, so it takes the
+   sentence step. At the figure's size it set three enormous words down the
+   middle of a 102px column. */
+.fwm-monitor-hero-pending {
+  font-size: var(--fwm-card-text-row);
+  font-weight: 600;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-monitor-hero-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-monitor-week {
+  display: flex;
+  align-items: flex-end; /* keyword */
+  gap: var(--fwm-space-1);
+  margin: 0;
+  margin-top: var(--fwm-space-2);
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-monitor-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+/* THE BOX THE SHARE IS A SHARE OF. It has a definite height, which is the only
+   reason a percentage on the bar inside it resolves to anything at all. */
+.fwm-monitor-track {
+  display: flex;
+  align-items: flex-end; /* keyword */
+  width: 100%;
+  /* The bars' drawn band. Two steps down from the render's, because the chart
+     now shares 112px with a label, a figure and a note. */
+  height: var(--fwm-space-8);
+}
+
+/* A DAY WITH NOTHING ON IT STILL DRAWS. `min-height` is the floor, and it is
+   here rather than in the component so there is exactly one of it: a week of
+   zeroes has to read as a quiet week, and seven invisible bars read as a chart
+   that failed. The fallback share of zero means a bar with no inline style is
+   the stub rather than nothing at all. */
+.fwm-monitor-bar {
+  --fwm-monitor-bar-share: 0;
+  width: 100%;
+  height: calc(var(--fwm-monitor-bar-share) * 100%);
+  min-height: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-accent-mesh);
+  opacity: 0.4;
+}
+
+/* THE TALLEST BAR IS THE ACCENT and the rest are quieter, so the shape of the
+   week is readable before any of the labels are. */
+.fwm-monitor-day[data-fwm-monitor-peak='true'] .fwm-monitor-bar {
+  background: var(--fwm-accent-scan);
+  opacity: 1;
+}
+
+.fwm-monitor-day-name {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+/* THEY STACK, because two of them side by side in a 102px column is 47px each
+   and "HOTTEST" alone is wider than that - which is why they rendered on top of
+   one another. `wrap` rather than a breakpoint: side by side wherever there is
+   room for it, stacked where there is not. */
+.fwm-monitor-tiles {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-1);
+}
+
+/* THE TWO STAT READOUTS, SEPARATED BY A RULE RATHER THAN BOXED.
+   They were two bordered, rounded, filled tiles sitting inside the card's own
+   rounded frame - three nested rectangles deep in a card that is meant to read
+   as one instrument face. A single hairline between them says "two figures"
+   just as clearly and draws no object at all. */
+.fwm-monitor-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.fwm-monitor-tile {
+  flex: 1 1 var(--fwm-space-12);
+}
+
+/* The rule goes where the seam actually is. Side by side that is the left
+   edge; stacked it is the top, and a left border on a full-width tile draws a
+   stub of a line beside nothing. */
+.fwm-monitor-tile + .fwm-monitor-tile {
+  padding-top: var(--fwm-space-1);
+  border-top: var(--fwm-hairline) solid var(--fwm-line-soft);
+}
+
+/* ONE LINE EACH, TRUNCATED. These are captions under a figure, and in a 102px
+   column "nothing repeated yet" wrapped to two lines and pushed the second tile
+   out of the module entirely. A caption that has to be cut is still a caption;
+   a readout that is not on the card is missing data. */
+.fwm-monitor-tile-note {
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-monitor-tile-kicker,
+.fwm-monitor-kicker {
+  margin: 0;
+  /* RECENT sits beside "See all" in a 90px header, and a kicker that will not
+     shrink is what pushed that key's chevron out of the module. */
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-monitor-tile-value {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+.fwm-monitor-tile-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* THE MIDDLE COLUMN'S MODULES TAKE THEIR NATURAL HEIGHT.
+   They used to divide a fixed allocation with `flex: <n> 1 0`, which was the
+   right answer for a card with a fixed height and is the wrong one for a rail:
+   the column scrolls now, so the chart is the size the chart is and RECENT is
+   as long as RECENT is. Nothing is squeezed and nothing is clipped. */
+.fwm-monitor-recent-head {
+  flex: none; /* keyword */
+  display: flex;
+  min-width: 0;
+  align-items: center; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+/* It keeps the touch floor and gives up its padding and its wrapping: "See all"
+   broken over two lines in a 102px header is what pushed the chevron out of the
+   module. */
+.fwm-monitor-seeall {
+  display: inline-flex;
+  align-items: center; /* keyword */
+  flex: none; /* keyword */
+  gap: var(--fwm-space-1);
+  min-height: var(--fwm-touch-min);
+  padding: 0;
+  white-space: nowrap; /* keyword */
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  color: var(--fwm-accent-scan);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-monitor-seeall-label {
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+}
+
+.fwm-monitor-recent-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-monitor-recent-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-2) 0;
+}
+
+.fwm-monitor-recent-rows > li + li {
+  border-top: var(--fwm-hairline) solid var(--fwm-line-soft);
+}
+
+.fwm-monitor-recent-ago {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-monitor-recent-label {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text);
+  min-width: 0;
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-monitor-recent-operator {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* --- the page indicator --------------------------------------------------- */
+
+/* THE DOTS AND THE WORD, both as `Dynamic Cards (3)` draws them. Without them
+   a rail reads as one column with dead space beside it: the scrollbar is hidden
+   by design and on a narrow phone the next column is off-screen entirely. */
+.fwm-monitor-swipe {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+.fwm-monitor-swipe-dot {
+  width: var(--fwm-card-dot-w);
+  height: var(--fwm-card-dot-h);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-line-strong);
+}
+
+/* The lit dot takes the accent the rest of this screen uses for "this is the
+   live one", so it needs no explaining. */
+.fwm-monitor-swipe-dot[data-fwm-on='true'] {
+  background: var(--fwm-accent-scan);
+}
+
+
+/* Said, not drawn. The dots are `aria-hidden` because they are a readout and
+   not a control; this is the same fact as a sentence, in a live region, so a
+   screen reader is told which column the rail moved to. */
+.fwm-monitor-swipe-said {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  overflow: hidden; /* keyword */
+  clip-path: inset(50%);
+  white-space: nowrap; /* keyword */
+}

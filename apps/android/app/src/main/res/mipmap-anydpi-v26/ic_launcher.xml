@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Adaptive icon. The launcher masks this to whatever shape the device uses,
+    so the eye is drawn inside the 66dp safe circle of the 108dp canvas — see
+    scripts/generate-android-assets.mjs, which renders the foreground from the
+    same master raster the web icons come from.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/backgroundColor" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
+</adaptive-icon>

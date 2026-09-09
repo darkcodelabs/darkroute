@@ -1,0 +1,1056 @@
+/* ==========================================================================
+   THE SEARCH ENTRY PANEL -- `DarkRoute Search Entry.html`, sections A to F.
+   ==========================================================================
+
+   ONE STYLESHEET, BOTH ORIENTATIONS, AND THE ORIENTATION IS AN ATTRIBUTE.
+   Section 1 declares every length the panel has as a local on the panel
+   itself; section 1a anchors it in portrait, section 2 anchors it in landscape
+   and re-cuts the eight locals that differ there. Nothing below section 2 reads
+   `[data-fwm-orient]` at all, so there is one set of rules for the field, the
+   rows, the badges and the footer and the two orientations cannot drift apart
+   in a rule somebody forgot to write twice.
+
+   THE ONE PLACE THE COMPONENT DIFFERS IS THE FIELD, and it is the owner's
+   correction of 2026-09-08: portrait has a frozen top search bar, which IS the
+   input, so the panel draws no field there and is a dropdown hung off it.
+   Landscape has no bar, so there the panel owns the field, exactly as drawn.
+   Everything else is the same tree, so rotating is still a REFLOW -- the
+   attribute changes and the browser relays out. Nothing is remounted, so the
+   query, the scroll offset and the picked route survive it.
+
+   EVERY NUMBER HERE WAS READ OUT OF CHROMIUM against that file at real size,
+   not copied from its prose, and the spec's own pixel is written beside each
+   one.
+
+   =============================================================================
+   WHY THE TYPE IS A RATIO AND NOT A STEP OFF THE TYPE SCALE
+   =============================================================================
+   `topBar.css` reads its prompt off `--fwm-text-body` and says why. This file
+   cannot: four of the panel's six type sizes are HALF-PIXEL -- 12.5, 13.5, and
+   11.5 and 12.5 again in landscape -- and the scale has no half steps, so
+   three sizes would come off the scale and three would be calculated and the
+   dense list would be sized two different ways. All six are ratios off
+   `--fwm-space-1`, which is 4px at `:root` and is re-cut by no skin, so the
+   list is exactly the drawing on all seventeen.
+
+   The cost is that these six do not follow a raised reading floor the way
+   `--fwm-text-micro` does on the two watch surfaces. That is the right trade
+   for a panel that is 336 wide on a phone and has never been drawn on a watch.
+
+   =============================================================================
+   NOT ONE HEX, NOT ONE LENGTH
+   =============================================================================
+   `--fwm-*` and `--dr-*` only. `scripts/check-design-values.mjs` fails the
+   build on either. The panel's own colours -- the tier hues, the field's fill,
+   the typing wash, the picked row's green, the two shadows -- were added to
+   `tokens.css` under `--dr-*` with the spec's rgb beside each.
+   ========================================================================== */
+
+/* =========================================================================
+ * 1. THE PANEL -- everything both orientations share.
+ *
+ * Radius 22, 10px of padding, a 1px hairline, thin glass, and a column of four
+ * things: the field, the list, a hairline and the footer. WHERE it sits and how
+ * tall it is are section 1a's in portrait and section 2's in landscape, because
+ * the two anchor to different things and always did.
+ *
+ * FIXED, NOT ABSOLUTE. The panel is portalled out of its host
+ * (`features/search/useSearchPortal.ts` argues why), so it is positioned
+ * against the VIEWPORT in both orientations. Absolute positioning would make
+ * the anchor a property of whichever element happened to open it.
+ *
+ * THE PORTRAIT SHEET IS GONE, AND THE HISTORY IS THE POINT. This block used to
+ * carry `366 x 470, bottom-anchored, 12px inset on three sides` and a height
+ * whose arithmetic closed on the spec's drawn list -- all of it faithfully
+ * copied from `navigation mode search entry behavior.dc.html`. That drawing
+ * assumes the panel owns the input, and it does not: the portrait bar is frozen
+ * and is already the field, so the copy put a second input 500px below the
+ * first and mirrored the typing between them. Owner correction, 2026-09-08,
+ * which supersedes that page FOR PORTRAIT ONLY:
+ *
+ *   "The panel hangs from the bar. It is a dropdown, not a bottom sheet."
+ *
+ * `features/search/anchor.ts` holds the correction in full and publishes the
+ * three numbers this needs.
+ * ====================================================================== */
+
+.fwm-search-panel {
+  /* --- geometry, all of it, in one place ------------------------------ */
+  --fwm-sp-inset: var(--fwm-space-3); /* 12 */
+  --fwm-sp-radius: calc(var(--fwm-space-1) * 5.5); /* 22 */
+  --fwm-sp-pad: calc(var(--fwm-space-1) * 2.5); /* 10 */
+
+  --fwm-sp-field-h: calc(var(--fwm-space-1) * 11.5); /* 46 */
+  --fwm-sp-field-pad: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-sp-field-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-sp-field-text: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  /* THE FIELD'S RADIUS IS A RATIO AND NOT A STEP OFF THE RADIUS SCALE, WHICH
+     IS 14 AT `:root` AND IS NOT 14 EVERYWHERE. Three skins re-cut that scale --
+     the 8px step is 0 on one and 11 on another -- and F. GEOMETRY publishes
+     "field 46 · radius 14" as a property of this drawing rather than of the
+     palette. The panel's own 22, its rows' 12 and the landscape badge's 8 are
+     ratios for the same reason, so all four radii in this file are exact on all
+     seventeen skins. */
+  --fwm-sp-field-radius: calc(var(--fwm-space-1) * 3.5); /* 14 */
+
+  --fwm-sp-gap: calc(var(--fwm-space-1) * 1.5); /* 6 -- list to field */
+  --fwm-sp-row-h: calc(var(--fwm-space-1) * 13); /* 52 */
+  --fwm-sp-row-pad: var(--fwm-space-2); /* 8 */
+  --fwm-sp-row-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-sp-row-radius: var(--fwm-space-3); /* 12 */
+
+  --fwm-sp-badge: calc(var(--fwm-space-1) * 7.5); /* 30 */
+  --fwm-sp-badge-radius: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-sp-badge-text: var(--fwm-space-3); /* 12 */
+
+  --fwm-sp-name: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-sp-sub: calc(var(--fwm-space-1) * 3.125); /* 12.5 */
+  --fwm-sp-count: calc(var(--fwm-space-1) * 3.375); /* 13.5 */
+  /* THE ONE PIXEL BETWEEN A NAME AND ITS SUB-LINE, and it is a length rather
+     than `--fwm-mark-w`. That token is `--fwm-space-1 * 3 / 4`, which is 3 --
+     it is the width of a MARK, and this rule read it for a year under a comment
+     saying 1. Every frame in both files draws `gap: 1px` here, and three
+     pixels between two lines of a two-line row is a visibly looser row than the
+     drawing has. The right-hand meta stack takes the same 1. */
+  --fwm-sp-text-gap: calc(var(--fwm-space-1) / 4); /* 1 */
+
+  /* THE GROUP HEADER -- section D, and it is the one part of the panel drawn
+     at only ONE size, because D is where the mixed list appears and D is
+     portrait. The eight locals section 2 re-cuts do not include these, so a
+     landscape group header is set at the same 10.5 as a portrait one. */
+  --fwm-sp-head-pad: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-sp-head-gap: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-sp-head-text: calc(var(--fwm-space-1) * 2.625); /* 10.5 */
+  /* The verb is a half-step under the label it sits opposite, in the header
+     and again on a camera row's right side. */
+  --fwm-sp-verb-text: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  /* The word that replaces the mic once a destination is picked. Section B
+     draws it at 11.5, which is a step under the footer's 12.5 rather than the
+     same size -- a key inside the field is smaller than the sentence under the
+     list. */
+  --fwm-sp-key-text: calc(var(--fwm-space-1) * 2.875); /* 11.5 */
+
+  /* FIRST RUN. Section C's panel is a 5px grid with a 3px step above the card
+     and above Set home, so the card and the first key each sit 8 clear of what
+     is above them and the two keys sit 5 apart. */
+  --fwm-sp-first-gap: calc(var(--fwm-space-1) * 1.25); /* 5 */
+  --fwm-sp-first-step: calc(var(--fwm-space-1) * 0.75); /* 3 */
+
+  --fwm-sp-foot-h: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-sp-foot-gap: var(--fwm-space-3); /* 12 */
+  --fwm-sp-foot-text: calc(var(--fwm-space-1) * 3.125); /* 12.5 */
+  --fwm-sp-rule-gap: var(--fwm-space-1); /* 4, above and below the hairline */
+
+  --fwm-sp-lift: var(--dr-panel-lift);
+
+  position: fixed;
+  right: var(--fwm-sp-inset);
+  bottom: calc(var(--fwm-sp-inset) + env(safe-area-inset-bottom, 0px));
+  left: var(--fwm-sp-inset);
+  /* ABOVE THE CHROME AND BELOW A FULL-SCREEN OVERLAY. The bar's own sheet sat
+     at 6 and the documentation overlay sits at 40; a destination panel is a
+     modal-ish surface over the map but it is not a screen. */
+  z-index: 30;
+  display: flex;
+  flex-direction: column; /* keyword */
+  /*
+   * NO HEIGHT IS DECLARED HERE ANY MORE, AND THE TWO ANCHORS DECLARE THEIR OWN.
+   *
+   * `--fwm-sp-h: 470` and a `max-height` off the frame used to sit here, and
+   * they were not the same kind of dead. Both were the portrait bottom sheet's
+   * in INTENT, and section 1a replaces that sheet with a dropdown whose height
+   * is the gap between the bar and the keyboard -- "it fills the gap, it does
+   * not have a fixed height".
+   *
+   * THE HEIGHT WAS ALREADY INERT IN LANDSCAPE: section 2 has declared
+   * `height: auto` since it was written, at (0,2,0) over this rule's (0,1,0).
+   *
+   * THE `max-height` WAS NOT, and a first version of this comment claimed it
+   * was. Section 2 declares no `max-height`, so the shared one applied there
+   * too, and deleting it silently un-clamped the landscape panel: with the
+   * keyboard flag up and a non-zero `env(safe-area-inset-bottom)`, the panel
+   * went from 397 to 418 and put its lower edge under the home indicator. That
+   * state is reachable -- `TopBar` derives `keyboardUp` from FOCUS, not from a
+   * measurement, so a hardware keyboard or the frames before a soft one opens
+   * both land in it. Section 2 now carries the clamp itself, which is where a
+   * rule only one orientation reads belongs.
+   *
+   * Found by an adversarial verifier measuring both stylesheets side by side in
+   * Chromium, not by reading either of them.
+   */
+  padding: var(--fwm-sp-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-sp-radius);
+  /* THE MATERIAL, and it is the chrome's own: thin glass, a static one-pixel
+     grain so the surface has a texture to catch the light, and a read-back
+     blur. NO DEVIATION HERE, and an earlier version of this comment claimed
+     one: it said the spec draws its grain ink at 0.024 against the token's
+     0.022. `DarkRoute Search Entry.html` draws
+     `rgba(255,255,255,0.022)` twelve times and the string `0.024` zero times,
+     which is `--dr-grain-ink` exactly. The 0.024 was a READBACK, not a
+     drawing -- Chromium stores a legacy `rgba()` alpha as one byte, so 0.022
+     becomes 6/255 and `getComputedStyle` prints it back as 0.024. Both
+     numbers serialise to the same string and neither can be told from the
+     other through the CSSOM. */
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  /* The lift and the specular edge in ONE declaration: `box-shadow` does not
+     accumulate, so the two cannot be set by two rules. */
+  box-shadow: var(--fwm-sp-lift), var(--dr-specular);
+  font-family: var(--fwm-font-ui);
+}
+
+/* =========================================================================
+ * 1a. PORTRAIT -- the dropdown, hung off the bar.
+ *
+ *   top     the bar's bottom + 8
+ *   left    the bar's left; right, the bar's right inset -- to the pixel, so
+ *           the two edges line up with the bar rather than nearly doing so
+ *   bottom  8 above whatever is covering the bottom of the page, which is the
+ *           soft keyboard when there is one and the safe area when there is not
+ *   height  what is left between those two. It fills the gap; it has no fixed
+ *           height, it never grows and it never moves. The ROW LIST scrolls
+ *           inside it -- `.fwm-search-list` is the column's only `flex: 1`.
+ *
+ * NO WIDTH AND NO HEIGHT IS DECLARED, which is the same discipline the old
+ * block kept for the width and the reason its 366-versus-364 note existed: two
+ * insets and a phone produce a number that is right on every phone, and a
+ * declared length produces a number that is right on one.
+ *
+ * THE FOUR VALUES ARE MEASURED, WITH THE BAR'S OWN TOKENS AS FALLBACKS.
+ * `anchor.ts` writes the bar's rect onto the root while the panel is open in
+ * portrait; unset -- a browser with no `ResizeObserver`, the first paint before
+ * the effect runs, a unit test that renders the panel with no bar -- these fall
+ * back to the tokens the bar is laid out from, `--fwm-drive-top-inset +
+ * --fwm-search-h` and `--fwm-space-4`, so the panel is never unanchored. The
+ * measurement is preferred because the tokens carry `env(safe-area-inset-top)`
+ * and cannot see the bar folding.
+ *
+ * `max()` AND NOT A SUM on the bottom edge: the keyboard covers the safe area
+ * it is drawn over, so adding the two would push the panel up by a home
+ * indicator that is underneath a keyboard. Whichever is deeper is the one to
+ * clear.
+ * ====================================================================== */
+
+.fwm-search-panel[data-fwm-orient='portrait'] {
+  top: calc(
+    var(--fwm-sp-anchor-t, calc(var(--fwm-drive-top-inset) + var(--fwm-search-h))) +
+      var(--fwm-space-2)
+  );
+  right: var(--fwm-sp-anchor-r, var(--fwm-space-4));
+  /*
+   * IT HANGS FROM THE BAR AND STOPS WHERE ITS ROWS STOP.
+   *
+   * The brief said "height = from there down to the top of the keyboard, minus
+   * 8 -- it fills the gap", and taking that literally meant anchoring `bottom`
+   * as well, so three results drew a 740px sheet with 600px of empty glass
+   * under them and the map gone. Owner, on seeing it: "why is that search box
+   * taking up the full screen?"
+   *
+   * So the gap is a CEILING, not a height. The panel is as tall as its content
+   * and never taller than the room between the bar and whatever is covering the
+   * bottom of the page -- which is the keyboard when there is one, and the safe
+   * area when there is not. Nine recents still reach the ceiling and the list
+   * scrolls inside it, which is the case the sentence was written for; three
+   * results now look like three results, with live map underneath them.
+   *
+   * `bottom` is explicitly released. It is inherited from section 1, and a
+   * `top` and a `bottom` together are a height that ignores `max-height`.
+   */
+  bottom: auto; /* keyword */
+  max-height: calc(
+    100dvh - var(--fwm-sp-anchor-t, calc(var(--fwm-drive-top-inset) + var(--fwm-search-h))) -
+      var(--fwm-space-2) -
+      max(var(--fwm-sp-kb-inset, 0px), env(safe-area-inset-bottom, 0px)) - var(--fwm-space-2)
+  );
+  left: var(--fwm-sp-anchor-l, var(--fwm-space-4));
+  height: auto; /* keyword -- the rows decide it, up to the ceiling above */
+  /* The list is what scrolls, so a row's press feedback must not paint over a
+     22px corner on its way past. Landscape has clipped since it was written;
+     this is the same rule arriving for the same reason. */
+  overflow: hidden; /* keyword */
+}
+
+/* =========================================================================
+ * 2. LANDSCAPE -- the left column.
+ *
+ * Section 1a reads the orientation too, since the owner's correction gave the
+ * two anchors nothing in common. Those two blocks are the only ones that do:
+ * everything below -- the field, the rows, the badges, the footer -- is written
+ * once and re-cut through the locals above, so the two surfaces still cannot
+ * drift apart in a rule somebody forgot to write twice.
+ *
+ * The brief names six legal differences: the anchor, the size, the row height,
+ * the badge, the inset and what the keyboard does. The rendered document draws
+ * FOUR MORE, consistently, in both spec files -- the type scales down, the
+ * badge radius goes 9 to 8, the shadow is shorter and softer, and the panel
+ * clips. They are values on the same block rather than branches, so they cost
+ * nothing; they are reported in the gaps note because the difference table
+ * needs them added or they need blessing.
+ *
+ * 336 x 418, AND THE DRAWING SAYS 416. Same arithmetic slip as the portrait
+ * width, in the same document: the panel declares `top: 8; bottom: 8` inside a
+ * 434px frame with a 1px bezel, so it draws 432 - 8 - 8 = 416 and the chip
+ * claims 434 - 16 = 418. The height is not declared here either -- the two
+ * insets are, and on a real 434pt viewport they yield 418.
+ *
+ * LEFT 68 = 8 + 52 + 8: the inset, the tab rail, and the inset again. Written
+ * as that sum rather than as 68, because it is not a position, it is what is
+ * to the left of it.
+ * ====================================================================== */
+
+.fwm-search-panel[data-fwm-orient='landscape'] {
+  --fwm-sp-inset: var(--fwm-space-2); /* 8 */
+  --fwm-sp-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-sp-badge: calc(var(--fwm-space-1) * 6.5); /* 26 */
+  --fwm-sp-badge-radius: var(--fwm-space-2); /* 8 */
+  --fwm-sp-badge-text: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-sp-name: calc(var(--fwm-space-1) * 3.375); /* 13.5 */
+  --fwm-sp-sub: calc(var(--fwm-space-1) * 2.875); /* 11.5 */
+  --fwm-sp-count: calc(var(--fwm-space-1) * 3.125); /* 12.5 */
+  --fwm-sp-lift: var(--dr-panel-lift-tight);
+
+  top: calc(var(--fwm-sp-inset) + env(safe-area-inset-top, 0px));
+  right: auto; /* keyword */
+  left: calc(
+    var(--fwm-space-2) + var(--fwm-space-12) + var(--fwm-space-1) + var(--fwm-space-2) +
+      env(safe-area-inset-left, 0px)
+  ); /* 8 rail-inset + 52 rail + 8 = 68 */
+  width: calc(var(--fwm-space-1) * 84); /* 336 */
+  height: auto; /* keyword -- top and bottom decide it, the way the spec does */
+  /* The spec sets it, portrait does not. Kept because it is drawn: the left
+     column sits against a tab rail and a map edge, and a row's press feedback
+     bleeding past a 22px corner into either is what it is for. */
+  overflow: hidden; /* keyword */
+  /*
+   * NEVER TALLER THAN THE FRAME IT IS INSET INTO, which is the clamp section 1
+   * used to carry for both orientations and which only this one ever read.
+   *
+   * It matters in exactly one state and that state is reachable: keyboard up,
+   * on a phone with a home indicator. `top` and `bottom` do not decide the
+   * height there -- the keyboard-up rule below sets an explicit `height` from
+   * `--fwm-sp-kb-h`, and that measurement is taken when the field takes FOCUS
+   * rather than when a keyboard is measured, so with a hardware keyboard
+   * attached it resolves to the whole viewport less two insets and the panel's
+   * lower edge lands under the indicator.
+   *
+   * `--fwm-search-keyboard` is NOT carried over from the old expression. It was
+   * a host-set hook with zero references anywhere in `src`, and the keyboard is
+   * measured now -- see `features/search/keyboard.ts`, which publishes
+   * `--fwm-sp-kb-h` from `visualViewport` for exactly this panel.
+   */
+  max-height: calc(
+    100% - var(--fwm-sp-inset) * 2 - env(safe-area-inset-top, 0px) -
+      env(safe-area-inset-bottom, 0px)
+  );
+}
+
+/*
+ * THE KEYBOARD IS UP IN LANDSCAPE: 336 x 218 at left 8, top 8.
+ *
+ * "Landscape: tab rail and right rail hide, panel reflows to 336 x 218." The
+ * rails going is the LANDSCAPE LAYOUT's to do; what belongs to the panel is
+ * moving into the space they leave and giving up two thirds of its height.
+ *
+ * 218 IS THE DRAWN HEIGHT AND THE PUBLISHED ONE. F. GEOMETRY also publishes
+ * "keyboard reserve 200 landscape", which does not agree with it: a 200px
+ * reserve under a 432px frame at top 8 leaves 224, not 218. The height is
+ * drawn and the reserve is not, so the height wins. In the gaps note.
+ */
+.fwm-search-panel[data-fwm-orient='landscape'][data-fwm-keyboard='up'] {
+  bottom: auto; /* keyword */
+  left: calc(var(--fwm-space-2) + env(safe-area-inset-left, 0px)); /* 8 */
+  /* MEASURED, WITH THE DRAWN 218 AS THE FALLBACK.
+     `features/search/keyboard.ts` publishes `--fwm-sp-kb-h` from
+     `window.visualViewport` while this state is up, because 200 is what one
+     keyboard on one device reserves: a suggestion strip, a candidate row or a
+     third-party keyboard is taller, and a panel pinned to 218 under a 260px
+     keyboard keeps its last rows underneath it. The fallback is the spec's own
+     declared height, so a browser without `visualViewport` draws exactly what
+     the document draws.
+
+     AND THE NOTE ABOVE IS WITHDRAWN: 218 and "keyboard reserve 200" do agree.
+     The 224 came from dropping the GAP between the panel and the keyboard,
+     which is drawn -- panel bottom 226, keyboard top 232 in the spec's mock, so
+     8 on a real viewport, the same inset every other edge takes. Put it back
+     and the frame closes exactly: 8 + 218 + 8 + 200 = 434.
+     `landscapeKeyboardCloses()` asserts it. */
+  height: var(--fwm-sp-kb-h, calc(var(--fwm-space-1) * 54.5)); /* 218 */
+}
+
+/* THE HAIRLINE AND THE FOOTER GO WITH THE HEIGHT. A5 draws neither: at 218
+   there is one screenful of rows and no room for a sentence explaining the
+   column of numbers beside them. This is a behaviour difference the spec's own
+   six-item list does not carry, and it is drawn. */
+.fwm-search-panel[data-fwm-orient='landscape'][data-fwm-keyboard='up'] .fwm-search-divider,
+.fwm-search-panel[data-fwm-orient='landscape'][data-fwm-keyboard='up'] .fwm-search-footer {
+  display: none; /* keyword */
+}
+
+/* =========================================================================
+ * 3. THE FIELD -- 46 at radius 14, with the mic inside it.
+ *
+ * Identical in both orientations, which is the one piece of geometry the spec
+ * does NOT scale: 46 tall, radius 14, padding 0 13, gap 10, a 17px glyph on
+ * the left and an 18px mic on the right, in both frames.
+ *
+ * `color` ON THE FIELD rather than on the glyph: `ChromeIcon` paints in
+ * `currentColor`, so the state rules below move the search mark and the
+ * placeholder together with one declaration -- muted at rest, full accent
+ * while typing, a step brighter once a destination is chosen.
+ * ====================================================================== */
+
+.fwm-search-field {
+  flex: none; /* keyword */
+  display: flex;
+  gap: var(--fwm-sp-field-gap);
+  align-items: center; /* keyword */
+  min-width: 0;
+  height: var(--fwm-sp-field-h);
+  padding: 0 var(--fwm-sp-field-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-sp-field-radius); /* 14 */
+  background: var(--dr-field-fill);
+  color: var(--dr-field-placeholder);
+}
+
+/* 2 · TYPING. The field lights: an accent edge over an accent wash, and the
+   search mark comes up to full accent with it. */
+.fwm-search-panel[data-fwm-state='typing'] .fwm-search-field {
+  border-color: var(--dr-accent-edge);
+  background: var(--dr-accent-wash);
+  color: var(--dr-accent);
+}
+
+/* 3 · PICKED. The edge drops back and the mark goes a step brighter than
+   muted -- the field is now showing an answer rather than asking a question. */
+.fwm-search-panel[data-fwm-state='picked'] .fwm-search-field {
+  color: var(--dr-ink-3);
+}
+
+.fwm-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  border: none; /* keyword */
+  background: transparent; /* keyword */
+  color: var(--dr-ink-2);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-sp-field-text); /* 14 */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-search-input::placeholder {
+  color: var(--dr-field-placeholder);
+  /* Safari drops a placeholder to 0.54 alpha unless told not to. */
+  opacity: 1;
+}
+
+/* The field draws its own state on the ring around it; a second focus ring
+   inside that ring is two edges saying one thing. */
+.fwm-search-input:focus,
+.fwm-search-input:focus-visible {
+  outline: none; /* keyword */
+}
+
+/* WebKit's own clear "x" inside a `type="search"` field. It is a text-character
+   glyph, and the trailing slot of this field is the MIC. `topBar.css` removes
+   it for the same reason. */
+.fwm-search-input::-webkit-search-cancel-button {
+  display: none; /* keyword */
+}
+
+/* THE MIC, AT FULL ACCENT, INSIDE THE FIELD. A peer of the search glyph and
+   not a fallback -- so it does not dim with the field's state and it does not
+   wait for a query. Sized by the mark it holds; no target padding, because
+   padding here would push the 18px mark off the field's right inset and the
+   spec draws it ON that inset. */
+.fwm-search-mic {
+  display: flex;
+  flex: none; /* keyword */
+  align-items: center; /* keyword */
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  color: var(--dr-accent);
+  cursor: pointer; /* keyword */
+}
+
+/* PICKED puts a word where the mic was. Amber, because it undoes a choice
+   rather than making one -- the spec's own colour for it. */
+.fwm-search-undo {
+  flex: none; /* keyword */
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  color: var(--dr-tier-some);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-sp-key-text); /* 11.5 */
+  font-weight: 700;
+  cursor: pointer; /* keyword */
+}
+
+/* =========================================================================
+ * 4. THE LIST
+ *
+ * The only thing in the panel that scrolls, and the only thing that flexes:
+ * everything above and below it is `flex: none` at a stated height, so the
+ * list is what is left over. `min-height: 0` because a flex child will not
+ * shrink below its content without it and the list would push the footer off
+ * the bottom of a 470px sheet.
+ * ====================================================================== */
+
+.fwm-search-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: var(--fwm-sp-gap); /* 6 */
+  overflow-y: auto;
+}
+
+.fwm-search-rows,
+.fwm-search-group {
+  display: flex;
+  flex-direction: column; /* keyword */
+}
+
+/* THE GROUP HEADER -- section D, and only on a mixed list. A caption, a rule
+   that takes the rest of the row, and the verb that says what tapping anything
+   under it does.
+
+   IT IS NOT A ROW AND IT IS NOT SET AT A ROW'S NUMBERS. It had been reading
+   `--fwm-sp-row-pad` and `--fwm-sp-row-gap` -- 8 and 11, the row's -- and D
+   draws 6 and 9 on a header, which pulls the caption OUT past the badges under
+   it so the two read as different kinds of line. */
+.fwm-search-head {
+  display: flex;
+  gap: var(--fwm-sp-head-gap);
+  align-items: center; /* keyword */
+  height: calc(var(--fwm-space-1) * 7.5); /* 30 */
+  padding: 0 var(--fwm-sp-head-pad);
+}
+
+/* 10.5, WHICH IS SMALLER THAN ANYTHING ELSE ON THE SURFACE AND MEANT TO BE.
+   These were set at `--fwm-text-forecast`, 13 -- a whole point over the row
+   sub-line under them, so the header shouted and the names it was captioning
+   were the quiet things. D draws 10.5 with the tracking doing the work. */
+.fwm-search-head-label,
+.fwm-search-head-verb {
+  flex: none; /* keyword */
+  font-size: var(--fwm-sp-head-text); /* 10.5 */
+  font-weight: 700;
+}
+
+.fwm-search-head-label {
+  color: var(--dr-accent);
+  letter-spacing: var(--fwm-card-track-caps); /* 0.14em */
+}
+
+/* Tracked a step tighter than the label opposite it, which is the whole of
+   what makes one the heading and the other the aside at the same size. */
+.fwm-search-head-verb {
+  color: var(--dr-field-placeholder);
+  letter-spacing: var(--fwm-card-track-verb); /* 0.1em */
+}
+
+/* THE RULE IS THE GROUP'S, NOT THE FOOTER'S. `--dr-divider` is the 8% hairline
+   that closes the list; D draws the header's rule at 7%, one step under it, so
+   the line inside the list does not read as the line that ends it. */
+.fwm-search-head-rule {
+  flex: 1 1 auto;
+  height: var(--fwm-rule-w);
+  background: var(--dr-group-line);
+}
+
+/* THE CAMERAS GROUP IS TINTED TO WHAT IT HOLDS, which is the one thing that
+   tells a scanning eye that these rows do not route. */
+.fwm-search-group[aria-label='CAMERAS · INDEXED'] .fwm-search-head-label {
+  color: var(--dr-owner-flock);
+}
+
+/* =========================================================================
+ * 5. ONE ROW -- badge, name, sub-line, count.
+ *
+ * 52 in portrait and 44 in landscape, radius 12, padding 0 8, gap 11. NO
+ * border and NO background at rest, and the file is of two minds about that.
+ *
+ * A (the 1:1 portrait phone) and the landscape file's A3 (the 1:1 940 x 434
+ * phone) draw the row with no border and no background at all, and let the
+ * badge and the count carry every bit of the colour -- which is what keeps a
+ * list of nine readable at a glance.
+ *
+ * B AND D DRAW EVERY ROW EDGED, at `rgba(255,255,255,0.07)` over
+ * `rgba(255,255,255,0.035)`, and an earlier version of this comment claimed B
+ * drew a plain row. It does not. A and A3 win here because they are the two
+ * drawings at ship geometry -- the ones the F. GEOMETRY chips describe and the
+ * ones the row heights above were read out of -- and B and D are catalogues
+ * whose rows are 44 and 46 on a portrait-sized field. Recorded in the gaps
+ * note as a contradiction in the document rather than a choice made here.
+ * ====================================================================== */
+
+.fwm-search-row {
+  display: flex;
+  gap: var(--fwm-sp-row-gap);
+  align-items: center; /* keyword */
+  min-width: 0;
+  width: 100%;
+  height: var(--fwm-sp-row-h);
+  padding: 0 var(--fwm-sp-row-pad);
+  border: var(--fwm-rule-w) solid transparent; /* keyword */
+  border-radius: var(--fwm-sp-row-radius);
+  background: none; /* keyword */
+  color: var(--dr-ink-2);
+  font-family: inherit; /* keyword */
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* `:active`, not `:hover` -- this is a touch product, hover never fires on the
+   device it ships to, and the gate rejects the selector outright. What a thumb
+   needs is confirmation the press landed. */
+.fwm-search-row:active {
+  background: var(--dr-row-fill);
+}
+
+/* 2 · TYPING, A HISTORY MATCH. Somewhere you have already been, edged and
+   washed in accent so it reads as the answer without being filled -- and it
+   KEEPS ITS RECENT BADGE, which is the badge's own rule and not this one's. */
+.fwm-search-row[data-fwm-emphasis='history'] {
+  border-color: var(--dr-accent-row-line);
+  background: var(--dr-accent-row-fill);
+}
+
+/* 3 · PICKED, THE DEFAULT ROUTE. Green rather than accent, because the row's
+   own count is drawn in that same green an inch to the right and a cyan row
+   with a green number on it would be saying "chosen" and "clear" in two
+   colours for one fact. See `--dr-keep-row-line` in `tokens.css`. */
+.fwm-search-row[data-fwm-emphasis='default'] {
+  border-color: var(--dr-keep-row-line);
+  background: var(--dr-keep-row-fill);
+  color: var(--dr-keep-title);
+}
+
+.fwm-search-row:focus-visible {
+  outline: var(--fwm-rule-w) solid var(--dr-accent);
+}
+
+/* THE BADGE, AND IT CARRIES MEANING. A character in a bordered box, tinted to
+   what the row IS: cyan for a saved place, amber for a starred one, muted for
+   a recent and for a map result, the operator's own hue for an indexed camera,
+   purple for an unverified one, red for an abuse area, green for the default
+   route. The tint paints both the glyph and the edge, at 40% for the edge. */
+.fwm-search-badge {
+  display: grid;
+  flex: none; /* keyword */
+  place-items: center; /* keyword */
+  width: var(--fwm-sp-badge);
+  height: var(--fwm-sp-badge);
+  border: var(--fwm-rule-w) solid var(--dr-badge-line);
+  border-radius: var(--fwm-sp-badge-radius);
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-sp-badge-text);
+  font-weight: 700;
+}
+
+.fwm-search-badge[data-fwm-tone='saved'] {
+  border-color: var(--dr-accent-badge-line);
+  color: var(--dr-accent);
+}
+
+.fwm-search-badge[data-fwm-tone='other-saved'] {
+  border-color: var(--dr-tier-some-line);
+  color: var(--dr-tier-some);
+}
+
+.fwm-search-badge[data-fwm-tone='keep'] {
+  border-color: var(--dr-keep-badge-line);
+  color: var(--dr-tier-clear);
+}
+
+.fwm-search-badge[data-fwm-tone='flock'] {
+  border-color: var(--dr-owner-flock);
+  color: var(--dr-owner-flock);
+}
+
+.fwm-search-badge[data-fwm-tone='police'] {
+  border-color: var(--dr-owner-police);
+  color: var(--dr-owner-police);
+}
+
+.fwm-search-badge[data-fwm-tone='hoa'] {
+  border-color: var(--dr-owner-hoa);
+  color: var(--dr-owner-hoa);
+}
+
+.fwm-search-badge[data-fwm-tone='private'] {
+  border-color: var(--dr-owner-private);
+  color: var(--dr-owner-private);
+}
+
+/* PURPLE, AND NEVER MERGED INTO THE VERIFIED GROUP. Owner decision,
+   2026-09-08: cyan means system-positive and an unverified camera is not
+   that. `--dr-owner-unverified-text` is the readable step of the pair. */
+.fwm-search-badge[data-fwm-tone='unverified'] {
+  border-color: var(--dr-owner-unverified);
+  color: var(--dr-owner-unverified-text);
+}
+
+.fwm-search-badge[data-fwm-tone='abuse'] {
+  border-color: var(--dr-abuse-line);
+  color: var(--dr-abuse-text);
+}
+
+/* THE TWO LINES. A grid rather than a column flex so the 1px between them is
+   a gap and not a margin somebody has to remember to cancel on the last child.
+   The gap was `--fwm-mark-w` under a comment saying 1; that token is 3. */
+.fwm-search-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--fwm-sp-text-gap); /* 1 */
+  min-width: 0;
+}
+
+.fwm-search-name,
+.fwm-search-sub {
+  overflow: hidden; /* keyword */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-search-name {
+  color: inherit; /* keyword -- the default route row tints the whole row */
+  font-size: var(--fwm-sp-name);
+  font-weight: 500;
+}
+
+.fwm-search-sub {
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-sp-sub);
+}
+
+/* THE COUNT. The reason the panel exists, and the reason it is on the right:
+   a column of numbers down one edge can be read without reading the names
+   beside them. Tabular figures so the column does not shuffle between rows. */
+.fwm-search-count {
+  flex: none; /* keyword */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-sp-count);
+  font-variant-numeric: tabular-nums; /* keyword */
+  font-weight: 700;
+}
+
+.fwm-search-count[data-fwm-tier='clear'] {
+  color: var(--dr-tier-clear);
+}
+
+.fwm-search-count[data-fwm-tier='some'] {
+  color: var(--dr-tier-some);
+}
+
+.fwm-search-count[data-fwm-tier='many'] {
+  color: var(--dr-tier-many);
+}
+
+/* NOT MEASURED YET, AND IT SAYS SO. A dash in the muted ink -- never a blank,
+   and never a zero, because zero is the answer this product is looking for and
+   printing it before anybody measured would be a lie about a road. */
+.fwm-search-count[data-fwm-tier='unknown'] {
+  color: var(--dr-ink-muted);
+}
+
+/* A CAMERA ROW'S RIGHT SIDE IS NOT A COUNT. How far away it is over what
+   tapping it does -- because "cameras on the route to this camera" is not a
+   question, and the verb is what distinguishes a row that reveals a marker
+   from a row that starts a drive. */
+.fwm-search-meta {
+  display: grid;
+  flex: none; /* keyword */
+  gap: var(--fwm-sp-text-gap); /* 1 */
+  justify-items: end; /* keyword */
+}
+
+/* THE DISTANCE IS BOLD, the same as the count it stands in for on the other
+   kind of row. It is the number a scanning eye is here for either way. */
+.fwm-search-far {
+  color: var(--dr-ink-3);
+  font-size: var(--fwm-sp-sub);
+  font-variant-numeric: tabular-nums; /* keyword */
+  font-weight: 700;
+}
+
+/* 10, UNDER THE DISTANCE IT EXPLAINS. It had been 13 at the pill's 0.06em,
+   which drew the verb larger than the sub-line on every other row and made the
+   word compete with the distance above it instead of labelling it. */
+.fwm-search-verb {
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-sp-verb-text); /* 10 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-verb); /* 0.1em */
+}
+
+/* =========================================================================
+ * 6. THE ONE KEY THAT LEAVES THE DEVICE
+ *
+ * Under the local results, because the local results are free and this is not.
+ * Deliberately quiet -- an outlined row rather than a filled accent -- because
+ * it is a considered press and not the thing the list is for. `topBarLive.css`
+ * drew the same key the same way for the same reason.
+ * ====================================================================== */
+
+.fwm-search-lookup {
+  display: flex;
+  flex-direction: column; /* keyword */
+  gap: var(--fwm-space-1);
+  align-items: flex-start; /* keyword */
+  width: 100%;
+  margin-top: var(--fwm-space-1);
+  padding: var(--fwm-space-2) var(--fwm-sp-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-sp-row-radius);
+  background: none; /* keyword */
+  color: var(--dr-ink);
+  font-family: inherit; /* keyword */
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-search-lookup:disabled {
+  color: var(--dr-ink-muted);
+  cursor: default; /* keyword */
+}
+
+.fwm-search-lookup-label {
+  font-size: var(--fwm-sp-sub);
+  font-weight: 600;
+}
+
+.fwm-search-lookup-note {
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro);
+}
+
+/* A SENTENCE WHERE THE ROWS WOULD HAVE BEEN. Never a blank panel: "no reader
+   in the tiles this phone has loaded" is a thing a person can act on and an
+   empty box is not. */
+.fwm-search-none {
+  margin: 0;
+  padding: var(--fwm-space-3) var(--fwm-sp-row-pad);
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-sp-sub);
+}
+
+/* =========================================================================
+ * 7. FIRST RUN -- "no zero, no em-dashes, no empty list"
+ *
+ * A card with a heading and one sentence, then the two actions. The sentence
+ * carries the promise -- "on this phone" -- so it is set in the body ink at
+ * 13.5 and given room to be two lines rather than being squeezed onto one.
+ * ====================================================================== */
+
+.fwm-search-first {
+  display: flex;
+  flex-direction: column; /* keyword */
+  gap: var(--fwm-sp-first-gap); /* 5 */
+}
+
+.fwm-search-first-card {
+  padding: calc(var(--fwm-space-1) * 3.75) calc(var(--fwm-space-1) * 3.5); /* 15 14 */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-sp-field-radius); /* 14 */
+  background: var(--dr-card-fill);
+}
+
+.fwm-search-first-head {
+  margin: 0;
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-figure); /* 16 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em */
+}
+
+.fwm-search-first-body {
+  margin: calc(var(--fwm-space-1) * 1.5) 0 0; /* 6 */
+  color: var(--dr-ink-body);
+  font-size: calc(var(--fwm-space-1) * 3.375); /* 13.5 */
+  line-height: 1.5;
+}
+
+/* THE TWO ACTIONS. 44 tall at radius 12, each led by a 17px pin and carrying
+   NO badge and NO count -- there is nothing to count yet, and a dash against
+   "Set home" would be answering a question nobody asked.
+
+   WEIGHT ON THE KEY AND NOT ON ITS LABEL. Section C sets Set work's label at
+   500 and Set home's at 700; declaring either on `.fwm-search-set-label` would
+   let the child win over the home rule below and flatten both to one weight. */
+.fwm-search-set {
+  display: flex;
+  gap: var(--fwm-sp-field-gap);
+  align-items: center; /* keyword */
+  min-width: 0;
+  width: 100%;
+  height: calc(var(--fwm-space-1) * 11); /* 44 */
+  padding: 0 var(--fwm-space-3); /* 12 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sp-row-radius);
+  background: var(--dr-row-fill);
+  color: var(--dr-ink-2);
+  font-family: inherit; /* keyword */
+  font-weight: 500;
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* SET HOME CARRIES THE ACCENT, AND CARRIES IT QUIETLY. It is the one almost
+   everybody wants, so the spec fills it and leaves Set work plain -- but at
+   0.35 over 0.10 rather than at the field's 0.42 over 0.13, which is what it
+   had been borrowing. On a surface with nothing else coloured on it, the one
+   accent key is drawn a step DOWN from a focused field, not up.
+
+   The 3 above it is section C's own step, and it puts the key 8 clear of the
+   card, the same 8 the card takes under the field in that drawing. */
+.fwm-search-set[data-fwm-kind='home'] {
+  margin-top: var(--fwm-sp-first-step); /* 3 */
+  border-color: var(--dr-first-key-line);
+  background: var(--dr-first-key-fill);
+  color: var(--dr-accent);
+  font-weight: 700;
+}
+
+/* THE PIN IS A STEP UNDER THE LABEL ON SET WORK, and is the label's own ink on
+   Set home. Section C strokes the two 17px pins separately from the runs beside
+   them:
+
+     home  <svg width="17" height="17" stroke="#2fd4d4">  <span ... color: #2fd4d4>
+     work  <svg width="17" height="17" stroke="#c3cbd3">  <span ... color: #e8ecf0>
+
+   Home's two agree, so `color` on the key carries both. Work's do not, and the
+   pin paints in `currentColor`, so the one row where they differ is the one row
+   that has to say so. `--dr-ink-3` is `#c3cbd3` and `--dr-ink-2`, which
+   `.fwm-search-set` sets, is `#e8ecf0` -- the file's own pair. */
+.fwm-search-set[data-fwm-kind='work'] .fwm-chrome-icon {
+  color: var(--dr-ink-3);
+}
+
+/* DISABLED DOES NOT REPAINT THE KEY, and it used to.
+
+   `color: var(--dr-ink-muted)` here out-specified nothing -- it is (0,2,0)
+   against `[data-fwm-kind='home']`'s (0,2,0) and won on source order -- so it
+   flattened Set home's accent AND both pins to `#8d97a1` in every install,
+   because `SearchPanel.tsx` disables both keys whenever no host passes
+   `onSetSaved` and nothing in this app passes it yet. Section C draws one
+   appearance for these two rows and no second, greyed one, so the appearance
+   follows the drawing and the affordance follows the wiring: the cursor still
+   says the key is not pressable, and `disabled` still says it to the
+   accessibility tree. THAT NOTHING WIRES THEM IS A BEHAVIOUR GAP, and painting
+   it into the colour is not the same as closing it. */
+.fwm-search-set:disabled {
+  cursor: default; /* keyword */
+}
+
+.fwm-search-set-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-sp-field-text); /* 14 */
+}
+
+/* =========================================================================
+ * 8. THE HAIRLINE AND THE FOOTER
+ *
+ * 1px of rule with 4 above and below it, then 40px holding one sentence and
+ * one key. The sentence explains the column of numbers above it, which is the
+ * only place in the product that says what the count on a row means.
+ * ====================================================================== */
+
+.fwm-search-divider {
+  flex: none; /* keyword */
+  height: var(--fwm-rule-w);
+  margin: var(--fwm-sp-rule-gap) 0;
+  background: var(--dr-divider);
+}
+
+.fwm-search-footer {
+  display: flex;
+  flex: none; /* keyword */
+  gap: var(--fwm-sp-foot-gap);
+  align-items: center; /* keyword */
+  height: var(--fwm-sp-foot-h);
+  padding: 0 var(--fwm-sp-row-pad);
+}
+
+.fwm-search-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-sp-foot-text);
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-search-pin,
+.fwm-search-pin-note {
+  flex: none; /* keyword */
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  color: var(--dr-accent);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-sp-foot-text);
+  font-weight: 700;
+}
+
+.fwm-search-pin {
+  cursor: pointer; /* keyword */
+}
+
+/* A READING RATHER THAN A CONTROL when no host wired it -- a `<span>` instead
+   of a `<button>`, which is what section B draws in the first place:
+
+     <span style="flex: none; font-size: 12.5px; font-weight: 700;
+                  color: #2fd4d4;">Drop a pin</span>
+
+   IT IS NOT REPAINTED FOR IT, and it used to be. This rule set the run in
+   `--dr-ink-muted`, so the footer key read `#8d97a1` in every install -- the
+   span is the only branch this app ever renders, because nothing passes
+   `onDropPin`. The file draws the run at the accent in the one frame it draws,
+   so both branches take the rule above. That nothing wires the press is a
+   behaviour gap and a muted colour is not a way of closing it. */
+
+/* =========================================================================
+ * THE PORTAL CONTAINER -- `features/search/useSearchPortal.ts`
+ *
+ * An empty box, appended to `<body>`, that exists only so the panel's ELEMENTS
+ * are parented somewhere no surface rule ever hides or filters. That file
+ * argues why at length; the short version is that the landscape surface both
+ * `display: none`s the panel's host and puts a `backdrop-filter` between it and
+ * the viewport, and either one alone is fatal to an element that has to be
+ * `position: fixed` and visible while its host is hidden.
+ *
+ * IT DECLARES ALMOST NOTHING, AND THE OMISSIONS ARE THE POINT.
+ *
+ *   NO Z-INDEX. The panel carries its own (30) and that is the one that should
+ *   decide, exactly as it did when the panel was parented inside the screen. A
+ *   z-index here would create a stacking context around it and silently clamp
+ *   the panel's own -- changing a paint order this move is trying to leave
+ *   alone. See the run notes: the alert takeover's relationship to this panel
+ *   is an open question, and it is not one to answer by accident here.
+ *
+ *   NO SIZE, NO PAINT, NO POSITION. A block box with one absolutely positioned
+ *   child is zero-height and draws nothing. Given a position it would become a
+ *   containing block for that child, which is the exact bug it was created to
+ *   escape.
+ *
+ * `pointer-events` is declared, and only because it is cheap insurance: a
+ * zero-height box cannot be pressed, and a future edit that gives this
+ * container a size should not be able to start eating presses meant for the map
+ * without somebody deleting this line first.
+ * ====================================================================== */
+
+.fwm-search-portal {
+  pointer-events: none; /* keyword */
+}
+
+/* The panel takes its own presses back, the way every landscape surface does. */
+.fwm-search-portal > .fwm-search-panel {
+  pointer-events: auto; /* keyword */
+}

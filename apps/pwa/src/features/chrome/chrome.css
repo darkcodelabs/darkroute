@@ -1,0 +1,263 @@
+/* THE CHIPS, THE RAIL, AND THE MARKS THEY DRAW.
+ *
+ * Section B of `searchbar_and_buttons.dc.html`, transcribed. Every number below
+ * is written in the spec and every number that is not written there is not here
+ * either. `topBar.css` is section A of the same page and this file is written
+ * to sit beside it.
+ *
+ * =============================================================================
+ * THE ONE RULE
+ * =============================================================================
+ * Every surface is translucent near-black (or near-white) glass with a 1px
+ * hairline. No solid fills. A chip is `--dr-surface` + `--dr-hairline`, a rail
+ * key is the same surface on a circle, and the ACTIVE chip is not a filled pill
+ * -- it is `--dr-accent-fill` behind `--dr-accent-line`, both translucent, both
+ * still reading the map through the glass.
+ *
+ * NO `box-shadow` ANYWHERE IN THIS FILE, and that is the rule rather than an
+ * omission. The spec gives the lift and the specular rim to the BAR alone; it
+ * writes neither on a chip and neither on a rail key. A shadow doing a
+ * hairline's work is the thing the brief bans by name.
+ *
+ * =============================================================================
+ * COLOUR IS `var(--dr-*)`, AND THOSE TOKENS ARE LITERAL
+ * =============================================================================
+ * The chrome brief withdraws the dock brief's instruction to resolve colour
+ * onto the app's skins and publishes the values it wants in production. They
+ * are in `tokens.css` under `--dr-*`; this file only reads them. No operator or
+ * marker hue appears in section B, so unlike `topBar.css` this file has no
+ * palette reference at all.
+ *
+ * AND THERE IS NO LIGHT BLOCK, which is the point of doing it that way. Every
+ * `--dr-*` name is re-cut inside the three light skins, so the chip that is
+ * `rgba(14,17,21,0.84)` on `night-watch` is `rgba(255,255,255,0.86)` on
+ * `refinement` without one selector here knowing it happened. The one thing a
+ * token could not carry -- the mark's near-black disc -- belongs to the bar and
+ * `topBar.css` reports it.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE SCALE
+ * =============================================================================
+ * `scripts/check-design-values.mjs` fails the build on a raw length as hard as
+ * on a raw hex, so `height: 36px` cannot be written even though 36 is the
+ * spec's number. Geometry is `calc(var(--fwm-space-1) * n)` -- the 4px step --
+ * with the spec's own pixel written beside it, because the ratio is the
+ * compliant spelling and the pixel is the design.
+ *
+ * `--fwm-space-1` (4px), `--fwm-space-2` (8), `--fwm-rule-w` (1),
+ * `--fwm-radius-full` (999) and `--fwm-text-label` (14) are declared once at
+ * `:root` and re-cut by no skin, so the geometry below is exact on all
+ * seventeen surfaces.
+ *
+ * THE RADII GO THROUGH LOCALS rather than straight into `border-radius`,
+ * because the gate reads a digit inside a radius declaration as a raw one --
+ * `calc(var(--fwm-space-1) * 4.5)` included. A local custom property is not a
+ * radius declaration, so the arithmetic happens there and `border-radius` reads
+ * a name. The rail key's is `--fwm-radius-full`: 999 on a 40px square is the
+ * same circle `border-radius: 50%` would draw, and a percentage is a raw value
+ * the gate rejects for the same reason.
+ *
+ * =============================================================================
+ * WHAT IS DELIBERATELY ABSENT
+ * =============================================================================
+ * HOVER. The spec carries `style-hover` on every chip and every rail key --
+ * `rgba(24,29,35,0.9)` grounds and brighter hairlines. This is a touch-first
+ * product, the gate rejects `:hover` outright, and inventing an `:active` in
+ * its place would be adding a state the spec does not draw. Dropped, not
+ * translated -- the call `topBar.css` and `dock.css` already made.
+ * `--dr-row-hover` exists for the menus and is not read here.
+ *
+ * A DISABLED CHIP, A BUSY CHIP, A CHIP WITH A COUNT. None are drawn. The spec
+ * renders three chips in two states between them and that is the whole set.
+ *
+ * =============================================================================
+ * EIGHT MORE BACKDROP FILTERS, AND THAT IS THE SPEC'S CALL
+ * =============================================================================
+ * `backdrop-filter` is a per-element per-frame read-back over a live MapLibre
+ * canvas; `tokens.css` records that 32px "cooked the phone" and that the app's
+ * own glass runs at 16. The chrome brief states `blur(22px) saturate(150%)` and
+ * the spec writes it on all three chips and all five rail keys, so it is here
+ * on all eight. `topBar.css` says "one element, once, at the top of the map";
+ * with this file that is nine. Transcribed as drawn and reported rather than
+ * quietly reduced -- the radius is the designer's, the budget is not this
+ * file's to spend.
+ * ========================================================================== */
+
+/* =========================================================================
+ * 1. THE MARKS
+ *
+ * ALMOST NOTHING IS HERE, AND THAT IS THE POINT. `fill`, `stroke`, the two
+ * round joins and the stroke width are presentation ATTRIBUTES on the `<svg>`
+ * in `icons.tsx` -- where the spec writes them, and where `TopBar.tsx` writes
+ * them -- so a mark that loses this stylesheet is still a stroke drawing. What
+ * is left are the two things that attribute cannot do.
+ * ====================================================================== */
+
+/* A 16px mark in a flex chip beside a label that may be wider than the room
+   left for it. Without this the mark is the thing that gives. */
+.fwm-chrome-icon {
+  flex: none; /* keyword */
+}
+
+/* The one part the spec draws filled rather than stroked: the point under
+   HELP's question mark, written `fill="#c3cbd3" stroke="none"`. Declared on
+   the child, so it beats the `fill="none"` it would otherwise inherit from the
+   `<svg>` -- a declaration on an element always outranks a value handed down
+   to it. The same arrangement as `.fwm-dock-icon-fill`. */
+.fwm-chrome-icon-fill {
+  fill: currentcolor; /* keyword */
+  stroke: none; /* keyword */
+}
+
+/* =========================================================================
+ * 2. THE CHIP ROW
+ *
+ * "Row is CENTRED under the bar." `justify-content: center` on a flex row, and
+ * the row wraps -- three chips at their widest still fit a phone, but the set
+ * is not fixed at three and a fourth must fall to a second line rather than
+ * push the first one off the screen.
+ *
+ * THE 14 IS THE SPEC'S OWN, written on this element in both panels: the row
+ * sits 14 under the bar. It is a margin rather than the parent's gap because
+ * that is where the drawing puts it, and because the row is a sibling of the
+ * bar rather than a child of it.
+ * ====================================================================== */
+
+.fwm-chip-row {
+  --fwm-chip-row-gap: var(--fwm-space-2); /* 8 */
+  --fwm-chip-row-top: calc(var(--fwm-space-1) * 3.5); /* 14 */
+
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-chip-row-gap);
+  margin-top: var(--fwm-chip-row-top);
+}
+
+/* =========================================================================
+ * 3. THE CHIP
+ *
+ * 36 tall on a radius of 18 -- a true pill, because half the height is the
+ * radius. `padding: 0 14`, a 16 mark and a 14 label at 500 with 8 between
+ * them.
+ *
+ * `white-space: nowrap` IS LOAD-BEARING. The height is fixed at 36; a label
+ * that wraps to two lines inside it is clipped or bursts the pill, which is
+ * why the brief states it in the same breath as the height.
+ * ====================================================================== */
+
+.fwm-chip {
+  --fwm-chip-h: calc(var(--fwm-space-1) * 9); /* 36 */
+  --fwm-chip-r: calc(var(--fwm-space-1) * 4.5); /* 18 -- half the height */
+  --fwm-chip-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-chip-gap: var(--fwm-space-2); /* 8 */
+
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-chip-gap);
+  height: var(--fwm-chip-h);
+  padding: 0 var(--fwm-chip-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-chip-r);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  color: var(--dr-ink-2);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 500;
+  white-space: nowrap; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* THE MARK IS A TIER DIMMER THAN THE LABEL. The spec strokes a resting chip's
+   icon `#c3cbd3` against a `#e8ecf0` label -- `--dr-ink-3` under `--dr-ink-2`
+   -- so the word leads and the drawing supports it. `currentColor` cannot do
+   that from the button alone, so the mark carries its own `color`. */
+.fwm-chip .fwm-chrome-icon {
+  color: var(--dr-ink-3);
+}
+
+/* =========================================================================
+ * 4. THE ACTIVE CHIP, WHICH IS NEVER A SOLID PILL
+ *
+ * Accent text at 700, `--dr-accent-line` for the edge and `--dr-accent-fill`
+ * behind it. Three changes and no fourth: the height, the radius, the padding
+ * and the gap are the resting chip's, because the brief escalates a chip in
+ * colour and weight and never in size.
+ *
+ * AND THE MARK GOES FULL ACCENT. The spec strokes the active chip's icon
+ * `#2fd4d4` -- the label's own colour, not the dimmer tier -- which is the
+ * inherited `color` again, so the override from section 3 is lifted rather
+ * than replaced.
+ *
+ * `aria-pressed` IS THE SELECTOR ON PURPOSE. A `data-` attribute would draw
+ * the same chip and say nothing to a screen reader; the state a sighted driver
+ * reads as an accent fill has to be the state a blind one hears. See the note
+ * in `Chips.tsx` about what the spec does and does not settle here.
+ * ====================================================================== */
+
+.fwm-chip[aria-pressed='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+  font-weight: 700;
+}
+
+.fwm-chip[aria-pressed='true'] .fwm-chrome-icon {
+  color: inherit; /* keyword */
+}
+
+/* =========================================================================
+ * 5. THE RAIL
+ *
+ * A vertical stack, `gap: 10`, right-aligned. `justify-items: end` on a grid,
+ * which is what the spec writes -- and it matters: the keys are 40 wide in a
+ * column that may be wider than they are, and left-aligned keys would drift
+ * off the screen's right edge that the rail is pinned to.
+ *
+ * NOT THE OTHER RAIL. `--fwm-rail-w` in `tokens.css` is 88px and belongs to the
+ * `dash` surface, where the DOCK stands on its end down the left of a wide
+ * screen. That one is navigation and it is on the left; this one is five
+ * utility keys and it is on the right. The word is overloaded and nothing else
+ * is: no selector called `.fwm-rail` existed before this file.
+ * ====================================================================== */
+
+.fwm-rail {
+  --fwm-rail-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+
+  display: grid;
+  justify-items: end; /* keyword */
+  gap: var(--fwm-rail-gap);
+}
+
+/* =========================================================================
+ * 6. THE RAIL KEY, AND THERE IS ONLY ONE KIND
+ *
+ * 40px circle, hairline, surface, blur, an 18 mark. Every key in the rail is
+ * this rule -- the theme control included, which the brief calls out by name:
+ * "a plain round button like the rest -- no label, no bespoke tile."
+ *
+ * NOTE ON THE TARGET. 40 is under the `--fwm-touch-min` of 44 the rest of the
+ * app builds to. It is the spec's number, written twice, and the brief lists
+ * "rail buttons 40" in its own conformance check, so it is transcribed rather
+ * than rounded up. Recorded here because a reader who knows the 44 will
+ * otherwise read this as a slip.
+ * ====================================================================== */
+
+.fwm-rail-key {
+  --fwm-rail-key-size: calc(var(--fwm-space-1) * 10); /* 40 */
+
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-rail-key-size);
+  height: var(--fwm-rail-key-size);
+  padding: 0;
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  /* 999 on a 40px square is the circle `border-radius: 50%` would draw, and a
+     percentage is a raw value the gate rejects. */
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  color: var(--dr-ink-3);
+  cursor: pointer; /* keyword */
+}

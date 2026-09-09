@@ -1,0 +1,275 @@
+/* OFFLINE -- the screen that admits what it cannot do.
+ *
+ * SOURCE: `Flockys Screens II.dc.html`, screen `A2 · OFFLINE - DEGRADED`
+ * (lines 80-126).
+ *
+ * Every colour, length, radius, duration and easing below is `var(--fwm-*)` or
+ * a `calc()` over one. Where the design renders a value the token set does not
+ * carry, the line is marked `GAP:` and the entry is filed in
+ * `docs/gaps-inbox/offline.md`. Nothing here is a literal.
+ *
+ * =============================================================================
+ * THIS FILE DECLARES RADAR'S LOCALS, BECAUSE IT BORROWS RADAR'S COMPONENTS
+ * =============================================================================
+ * The amber strip, the hero readout and the action button are RADAR's, imported
+ * rather than rebuilt. Their rules live in `radar.css` and read four
+ * component-scoped custom properties off their nearest ancestor. `.fwm-offline`
+ * is that ancestor here, so it declares the same four, with the same
+ * derivations, rather than importing `.fwm-radar`'s layout along with them.
+ *
+ * =============================================================================
+ * ON THIS SCREEN THE HUE MEANS PROVENANCE, NOT ALERT STATE
+ * =============================================================================
+ * A2 draws the direction line amber -- the same amber as the `NO NETWORK ·
+ * RUNNING ON CACHE` strip -- while the readout under it is a real distance to a
+ * real camera. The colour is saying "this came out of a cache", not "a camera
+ * is approaching". So the hue follows connectivity: amber with no network,
+ * clear-green once the network is back and the readout is live again.
+ * GAP: see docs/gaps-inbox/offline.md#no-online-variant-of-a2
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * ========================================================================== */
+
+.fwm-offline {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design draws everywhere,
+   * /2 is the 2px rule down the left of the DB-age warning. Derived, so a mode
+   * that rescales space rescales the strokes with it. Component-scoped locals,
+   * NOT new tokens. */
+  --fwm-radar-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-offline-rule-w: calc(var(--fwm-space-1) / 2);
+  /* GAP: see docs/gaps-inbox/radar-screen.md#status-dot-size-has-no-token
+   * The strip's 6px pulse dot, derived the same way RADAR derives it. */
+  --fwm-radar-dot: calc(var(--fwm-space-1) * 1.5);
+  /* GAP: see DESIGN-GAPS.md#animations-are-not-tokens
+   * Rendered `fwmPulse 1.6s`, which is 4x --fwm-dur-alert, the longest
+   * duration the system exports. Same derivation as `radar.css`. */
+  --fwm-radar-dur-strip: calc(var(--fwm-dur-alert) * 4);
+
+  --fwm-radar-hue: var(--fwm-alert-approaching);
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden; /* keyword */
+}
+
+.fwm-offline[data-fwm-offline-network="online"] {
+  --fwm-radar-hue: var(--fwm-alert-clear);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `RADAR` left, the connectivity word right.
+ * Rendered: height 52px (= --fwm-header-h exactly), padding 0 16px, 1px rule,
+ * title 17px/700/.1em (= --fwm-text-subtitle exactly) in --fwm-text, and the
+ * word `OFFLINE` at 10px mono .1em in amber.
+ *
+ * The title is NOT hue-coloured here. A2 leaves it inheriting the body colour,
+ * unlike screen 01 where it carries the alert hue.
+ * ------------------------------------------------------------------------ */
+
+.fwm-offline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none; /* keyword */
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-radar-rule-w) solid var(--fwm-line);
+}
+
+.fwm-offline-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) / 10);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-offline-connectivity {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack gap.
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * The scale steps 12 -> 16, so the 14px stack gap takes the nearest step below
+ * and the column reads slightly tighter than the reference.
+ * ------------------------------------------------------------------------ */
+
+.fwm-offline-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+}
+
+/* Rendered `padding:10px 0 4px`; --fwm-space-3 (12px) is the nearest step up
+ * and --fwm-space-1 is exactly 4px. */
+.fwm-offline-hero {
+  flex: none; /* keyword */
+  padding: var(--fwm-space-3) 0 var(--fwm-space-1);
+}
+
+/* ---------------------------------------------------------------------------
+ * WHAT STILL WORKS -- the capability card.
+ * Rendered: 1px --fwm-line edge, --fwm-surface-1 fill, 2px radius, 16px pad,
+ * a 10px/.2em caption with 12px of space under it, then 12px mono rows at
+ * line-height 2.1.
+ * ------------------------------------------------------------------------ */
+
+.fwm-offline-card {
+  flex: none; /* keyword */
+  padding: var(--fwm-space-4);
+  border: var(--fwm-radar-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  min-width: 0;
+}
+
+/* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-offline-card-heading {
+  margin: 0 0 var(--fwm-space-3);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  font-weight: 400;
+  /* Rendered .2em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 12px; --fwm-text-micro (11px) is the nearest step.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-offline-caps {
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-offline-cap {
+  display: flex;
+  align-items: baseline; /* keyword */
+  /* Rendered 10px; the scale steps 8 -> 12, so 8 is the nearest below. */
+  gap: var(--fwm-space-2);
+  line-height: 2.1;
+}
+
+/* The mark carries the verdict. Grey is "not known yet", and it is the only
+ * one of the three the design never draws -- see `capabilities.ts`.
+ *
+ * IT IS A TWO-CHARACTER COLUMN. A2 draws `OK` and `NO`, both two characters
+ * wide, and the row is a flex line with a gap -- so the label column starts at
+ * one x only while every mark is the same width. The undrawn third verdict is a
+ * one-character em dash, which pulled the labels on those rows a character to
+ * the left while the cache read was in flight. `ch` is the width of one
+ * character of the row's own monospace face, so the slot tracks the type rather
+ * than a hardcoded length.
+ * GAP: see docs/gaps-inbox/offline.md#mark-column-width-has-no-token */
+.fwm-offline-cap-mark {
+  flex: none; /* keyword */
+  min-width: 2ch;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-offline-cap[data-fwm-offline-verdict="ok"] .fwm-offline-cap-mark {
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-offline-cap[data-fwm-offline-verdict="no"] .fwm-offline-cap-mark {
+  color: var(--fwm-destructive);
+}
+
+.fwm-offline-cap-label {
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * CACHED CAMS / MAP TILES.
+ * Rendered: two equal columns, 8px gutter, 14px pad, a 9px/.18em caption over
+ * a 28px mono value at line-height 1.3.
+ * ------------------------------------------------------------------------ */
+
+.fwm-offline-counters {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+/* Rendered 14px of padding; the scale steps 12 -> 16. */
+.fwm-offline-counter {
+  padding: var(--fwm-space-3);
+  border: var(--fwm-radar-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  font-family: var(--fwm-font-data);
+  min-width: 0;
+}
+
+/* Rendered 9px, below the stated 11px phone type floor.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-offline-counter-label {
+  font-size: var(--fwm-text-micro);
+  /* Rendered .18em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 28px; --fwm-text-title (24px) is the nearest step.
+ * GAP: see DESIGN-GAPS.md#token-set-does-not-cover-rendered-hero-sizes */
+.fwm-offline-counter-value {
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * The DB-age warning.
+ * Rendered: `border-left:2px solid #FFC02E; padding-left:12px`, 11px mono
+ * --fwm-text-2 at line-height 1.8. The amber is the cache's colour on this
+ * screen and stays amber for all three sentences -- the design draws one, and
+ * inventing a second colour for the two it does not draw would make the
+ * undrawn cases look like a different kind of warning.
+ * ------------------------------------------------------------------------ */
+
+.fwm-offline-notice {
+  flex: none; /* keyword */
+  margin: 0;
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-offline-rule-w) solid var(--fwm-alert-approaching);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-text-2);
+}
+
+/* The database layer's own account of why there is no storage: a second,
+ * quieter line under the sentence, in the muted colour the rest of the screen
+ * uses for a subordinate fact. The design draws no such line -- it draws a
+ * device whose storage works.
+ * GAP: see docs/gaps-inbox/offline.md#no-storage-reason-is-undrawn */
+.fwm-offline-notice-detail {
+  display: block;
+  color: var(--fwm-text-muted);
+}

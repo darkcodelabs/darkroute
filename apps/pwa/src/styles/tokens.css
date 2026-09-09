@@ -1,0 +1,3459 @@
+/* THE TWO BUNDLED FACES, BOTH SELF-HOSTED.
+ *
+ * `index.html` used to pull these from fonts.googleapis.com, so every cold
+ * start handed Google the driver's IP and a timestamp -- from an app whose
+ * whole pitch is reducing what gets recorded about where somebody drives. One
+ * Bundling both faces avoids that request entirely.
+ *
+ * It also made first paint depend on a third party: offline, the faces never
+ * arrived and the app fell back to system-ui at exactly the moment a driver is
+ * most likely to be looking at it. Seven files, 134 KB in total. */
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap; /* keyword */
+  src: url('/fonts/chakra-petch-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap; /* keyword */
+  src: url('/fonts/chakra-petch-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap; /* keyword */
+  src: url('/fonts/chakra-petch-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap; /* keyword */
+  src: url('/fonts/chakra-petch-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap; /* keyword */
+  src: url('/fonts/jetbrains-mono-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap; /* keyword */
+  src: url('/fonts/jetbrains-mono-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap; /* keyword */
+  src: url('/fonts/jetbrains-mono-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap; /* keyword */
+  src: url('/fonts/google-sans-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* DarkRoute design tokens.
+ *
+ * Extracted verbatim from `Flockys Design System.dc.html` section 08 (Tokens).
+ * SOURCE OF TRUTH. Do not edit a value here to make a component look right --
+ * change the component. New values require a DESIGN-GAPS.md entry first.
+ *
+ * This is the only file in apps/pwa/src allowed to contain raw hex, raw
+ * lengths, raw durations or raw easing curves. scripts/check-design-values.mjs
+ * enforces that.
+ */
+
+:root {
+  --fwm-bg:            #000000;
+
+  /* ---------------------------------------------------------------------
+   * THE MAP'S GROUND -- deliberately its own tokens, not --fwm-bg.
+   *
+   * The basemap ships Protomaps' BLACK flavour, whose ground is NOT black:
+   * `earth` is #141414, `water` #333333 and its own `background` layer
+   * #2b2b2b, and that background paints over the app's own. Measured in a
+   * running map: two background layers, `fwm-background` (#000) at order 0 and
+   * `background` (#2b2b2b) at order 1. The grey the map reads as is all three
+   * of these, none of it app code.
+   *
+   * Bound to --fwm-bg instead, the map would invert with the CHROME: --fwm-bg
+   * is #1A1E25 under cartridge-96 and #EAF0EE under refinement, and a near-
+   * white ground under BLACK's mid-grey label palette is unreadable. Separate
+   * tokens let a mode tint the map without a light chrome dragging it along.
+   *
+   * A mode that wants a tinted map overrides these, and `refinement` does --
+   * it is the one LIGHT theme in the set, and a light chrome over a black map
+   * is the map ignoring the theme. It also switches the Protomaps FLAVOUR, not
+   * just these two keys: BLACK's cartography is tuned for a dark ground
+   * (`city_label` #999999, `highway` #292929) and on #EAF0EE every one of
+   * those is a smear. See `flavorForMode` in MapCanvas.tsx.
+   *
+   * Opaque 6-digit hex in every mode, always: HeatLayer's parser reads hex
+   * only and silently falls back on anything else.
+   * ------------------------------------------------------------------- */
+  --fwm-map-earth:     var(--fwm-map-earth-default);
+
+  /* ---------------------------------------------------------------------
+   * THE GROUND IS THE SAME IN EVERY THEME UNLESS SOMEBODY CHANGES IT.
+   * ---------------------------------------------------------------------
+   * Owner call, 2026-09-08: the base map defaults to the dark cartography in
+   * BOTH the light and the dark app themes, and a colour picked in SETTINGS is
+   * respected in both.
+   *
+   * The chrome and the map are different objects with different jobs. Chrome is
+   * read at a glance in whatever light the driver is in, so it follows the
+   * theme. The map is a picture of the road, it is looked at for minutes at a
+   * time, and the cameras, the route and every alert hue are drawn ON it - all
+   * of which were tuned against a dark ground. A light map does not merely look
+   * different; it moves every one of those hues to a background they were not
+   * chosen for.
+   *
+   * `applyMapEarth` in `app/mapEarth.ts` overwrites this one custom property on
+   * the root element when a user has chosen a colour, which is why it is a
+   * single indirection rather than a value repeated per theme. Every theme
+   * block that binds `--fwm-map-earth` to its own flavour still does; the
+   * override lands above all of them because it is an inline style. */
+  --fwm-map-earth-default: #141A22;
+  /* Not black: a river the same colour as the land is not a river. Dark
+   * enough to carry no glare at night, blue enough to read as water. */
+  --fwm-map-water:     #0A1620;
+
+  /* ---------------------------------------------------------------------
+   * THE TWO CARTOGRAPHIES THIS PROJECT DRAWS ITSELF.
+   * ---------------------------------------------------------------------
+   * `--fwm-map-earth` above is the ground the app paints UNDER the archive,
+   * and it is per-mode. These are something else: the whole 74-key Protomaps
+   * flavour that SLATE and REFINEMENT draw, collapsed to the twenty decisions
+   * it actually contains. `features/map/flavors.ts` reads them by name and
+   * expands them; the roles are documented there, not here.
+   *
+   * DEFINED ON `:root`, NOT UNDER `[data-fwm-mode]`, and that is load-bearing.
+   * A flavour is not a theme. `flavorForMode(mode, view)` lets an explicit
+   * view OUTRANK the theme -- the reason to pick WHITE is that the sun is on
+   * the screen -- so a flavour has to resolve to the same colours whichever
+   * palette the chrome happens to be wearing. Nested under the mode they came
+   * from, slate's navy would silently become whatever mode was live.
+   *
+   * The two modes then bind their map ground to these rather than repeating
+   * the hex, so the flavour's own `earth` and the ground painted beneath it
+   * cannot disagree and leave a seam while tiles load.
+   *
+   * EVERY VALUE HERE WAS MEASURED off the owner's two reference screenshots,
+   * not eyeballed -- pixel histograms over the map area with the chrome
+   * cropped off, then per-colour masks to find out WHICH FEATURE each colour
+   * belonged to. That last step changed several answers: the dark reference's
+   * #000D2A reads as "some dark navy" and turns out to trace every creek and
+   * pond on the map, and #141823 is not a colour at all, it is the label halo.
+   *
+   * Opaque 6-digit hex, same rule as the two above.
+   * ------------------------------------------------------------------- */
+
+  /* SLATE -- the navy reference.
+     Ground first, and it is a deep NAVY rather than a neutral: 48.6% of the
+     reference's map area is exactly this, at 49% saturation on a blue hue. A
+     grey ground with blue roads on it was the thing to avoid. */
+  /* WAS #162640, WHICH WAS TOO BLUE - owner call, 2026-09-08.
+     The reasoning above still holds for the ROADS: a grey ground under blue
+     roads is the thing to avoid, and slate's cartography is tuned around a
+     cool ground. What was wrong was the AMOUNT. At 49% saturation the ground
+     was competing with the water it is supposed to sit behind, and on a phone
+     at night the whole map read as navy rather than as ground.
+     This keeps the hue and drops the saturation to about 22%: still unmistakably
+     cool, no longer the loudest thing on the glass. It is also now the default
+     for BOTH themes - see `--fwm-map-earth-default` below - and any user who
+     wants a different one sets it in SETTINGS rather than asking for a commit. */
+  --fwm-carto-slate-earth:            #141A22;
+  /* DARKER than the land, not lighter, which is what the reference does and
+     the opposite of the assumption. Water is the only thing on this map more
+     saturated than the ground (100% against 49%), so a creek reads as a deep
+     seam through the navy and still carries no glare at night. */
+  --fwm-carto-slate-water:            #000D2A;
+  /* The green everything else is arranged around. Masked across the whole
+     screenshot it lands on the freeway network and nothing else -- ramps
+     included, which is why `link` is drawn with it too. */
+  --fwm-carto-slate-motorway:         #388D3A;
+  /* Only ever visible as the seam between two carriageways in the reference,
+     so it is taken from the greenish end of that 6px blend rather than the
+     slate end: a dark green, dark enough to separate the ribbons and read as
+     the motorway's own edge instead of as a third road. */
+  --fwm-carto-slate-motorway-casing:  #16382A;
+  /* The section-line grid. Masking this proved the hierarchy the owner asked
+     for: it is a clean continuous arterial network, sitting a clear 10 points
+     of lightness above the residential streets below. */
+  --fwm-carto-slate-arterial:         #314359;
+  --fwm-carto-slate-arterial-casing:  #23354D;
+  /* "A desaturated slate that sits BACK from the arterials" -- five points of
+     lightness above the ground, ten below the arterials. Present, not read. */
+  --fwm-carto-slate-minor:            #212E4E;
+  --fwm-carto-slate-minor-casing:     #1B2740;
+  --fwm-carto-slate-quiet:            #1E2B49;
+  --fwm-carto-slate-rail:             #2B3A55;
+  --fwm-carto-slate-boundary:         #4E5F78;
+  /* City names, measured off `Overland Park` and `Shawnee`: near-white. */
+  --fwm-carto-slate-ink:              #F2F3F7;
+  /* Neighbourhood names, measured off four of them, all within a point of
+     each other. The owner called this a light WARM grey and the pixels say
+     H=214 -- a light COOL grey. Both are true: at 18% saturation against a
+     49%-saturated navy it reads warm, and that relative reading is the one
+     the eye makes. The measured value is used. */
+  --fwm-carto-slate-ink-2:            #B7C1CD;
+  --fwm-carto-slate-ink-3:            #93A3B7;
+  --fwm-carto-slate-ink-4:            #6E8091;
+  /* Not the ground and not black: the reference halos every label in a near-
+     black navy, which is what stops a street name breaking up when it crosses
+     its own road. */
+  --fwm-carto-slate-halo:             #11141A;
+  --fwm-carto-slate-park:             #0D3848;
+  --fwm-carto-slate-park-2:           #0E4957;
+  --fwm-carto-slate-built:            #1E2A44;
+  --fwm-carto-slate-sand:             #22304A;
+
+  /* REFINEMENT -- the near-white reference.
+     The reference ground measures #F5F3F4, a true neutral. This is that
+     lightness (95%) carrying refinement's own green cast, because the mode's
+     documented contract is that THE MAP MATCHES THE CHROME and the chrome is
+     Lumon's sage paper. A neutral rectangle inside a green-paper app is the
+     map ignoring the theme, which is the exact bug this mode's flavour switch
+     was introduced to fix. Near-white, as asked; still refinement. */
+  --fwm-carto-refinement-earth:           #F2F6F2;
+  /* Blue, and the one saturated thing on the whole map -- measured off a pond
+     in the reference, and within a point of the stock `light` flavour's own
+     water, which is a good sign rather than a coincidence. */
+  --fwm-carto-refinement-water:           #8FDAED;
+  /* THE SAME GREEN ARTERIAL TREATMENT, in the other light. Slate's #388D3A is
+     H=121; the light reference's motorway green is H=157, a colder emerald.
+     This sits between them at H=142 and is darkened and saturated to hold
+     against near-white instead of against navy. Two values on one hue ramp is
+     what makes the two skins read as one product. */
+  --fwm-carto-refinement-motorway:        #1E8A46;
+  /* The light reference edges its green with a darker green, not with grey.
+     Same relationship as slate's casing, so the treatment really is the same
+     in both. */
+  --fwm-carto-refinement-motorway-casing: #15693A;
+  /* "Minor roads white with a grey casing" -- and the arterials are white
+     too. On this ground the hierarchy is carried by the CASING rather than by
+     the fill, which is the inverse of how slate does it. */
+  --fwm-carto-refinement-arterial:        #FFFFFF;
+  --fwm-carto-refinement-arterial-casing: #C6D2DC;
+  --fwm-carto-refinement-minor:           #FFFFFF;
+  /* Measured. Bluer than the stock light flavour's neutral #E0E0E0. */
+  --fwm-carto-refinement-minor-casing:    #D7E0E7;
+  --fwm-carto-refinement-quiet:           #FDFDFD;
+  --fwm-carto-refinement-rail:            #B7C3C6;
+  --fwm-carto-refinement-boundary:        #A9B6C2;
+  /* Dark grey labels, measured off four of them at #2B2B2F. Cities take a
+     little more weight than neighbourhoods; the reference draws them at the
+     same value and only separates them by size. */
+  --fwm-carto-refinement-ink:             #232428;
+  --fwm-carto-refinement-ink-2:           #2B2B2F;
+  /* Street names measured lighter and bluer than place names -- and this is
+     also the number inside a white shield, so it cannot go any lighter. */
+  --fwm-carto-refinement-ink-3:           #485362;
+  --fwm-carto-refinement-ink-4:           #6B7686;
+  /* White halos, as asked, and as measured. */
+  --fwm-carto-refinement-halo:            #FFFFFF;
+  --fwm-carto-refinement-park:            #D9F0E1;
+  --fwm-carto-refinement-park-2:          #A9EAC2;
+  /* The tan commercial blocks. Measured, and never drawn -- see flavors.ts. */
+  --fwm-carto-refinement-built:           #F7F0DE;
+  --fwm-carto-refinement-sand:            #F2EEDF;
+  --fwm-bg-sunken:     #07080B;
+  --fwm-surface-1:     #0E0F13;
+  --fwm-surface-2:     #16181E;
+  --fwm-line:          #23262F;
+  --fwm-line-strong:   #3A3F4B;
+  /* The compass ring on RADAR's top block. Between --fwm-line and
+   * --fwm-line-strong: it has to read as a drawn instrument rather than a
+   * panel edge, without becoming a bright circle competing with the needle. */
+  --fwm-line-instrument: #2C313C;
+  /* The compass ring as the v3 block actually draws it -- lighter than
+   * --fwm-line-instrument, because a ring that never spins still has to be
+   * legible enough for the needle to be read AGAINST something. */
+  --fwm-line-compass:  #4A5060;
+  /* The ladder's own ground: below --fwm-surface-1, so the corridor panel sits
+   * INTO the block rather than on top of it. */
+  --fwm-surface-sunk:  #0B0D11;
+  /* The needle's south half. Not --fwm-text: the tail must read as the quieter
+   * end of one object, or the needle looks like two triangles. */
+  --fwm-needle-tail:   #E8EBF0;
+
+  /* THE CORRIDOR LADDER'S TWO WASHES.
+   *
+   * Mixed from the alert hues rather than written as fixed rgba, so they follow
+   * every theme mode: in a mode where clear is cyan the wash is cyan, and a
+   * hard-coded green would have been the one thing on the panel that did not
+   * change. The panel needs them -- bars alone give a count, the washes give
+   * the SHAPE of the road ahead, which is what gets read at a glance. */
+  --fwm-corridor-clear-wash: color-mix(in srgb, var(--fwm-alert-clear) 20%, transparent);
+  --fwm-corridor-clear-fade: color-mix(in srgb, var(--fwm-alert-clear) 5%, transparent);
+  --fwm-corridor-hot-glow:   color-mix(in srgb, var(--fwm-alert-in-range) 32%, transparent);
+
+  /* THE ALERT THRESHOLD, WHERE IT IS DRAWN ON A DISTANCE.
+   *
+   * Mixed the same way and for the same reason as the washes above, but from
+   * --fwm-text-2 rather than from an alert hue. That is the whole point of the
+   * pair: every other colour on the ladder is a READING -- how close something
+   * is, how much road is clear -- and this one is a SETTING. Painting it green
+   * would make the driver's own preference look like the product reporting
+   * that the road is clear up to that line, which is the opposite of what it
+   * says. Neutral, so it reads as a rule somebody drew.
+   *
+   * The fill is very low: it sits under the camera marks and must never make a
+   * bar inside it harder to see than a bar outside it. The rule is the part
+   * meant to be found, and it is still under a fifth of full strength -- see
+   * the dash geometry in radar.css. */
+  --fwm-corridor-threshold-wash: color-mix(in srgb, var(--fwm-text-2) 7%, transparent);
+  --fwm-corridor-threshold-rule: color-mix(in srgb, var(--fwm-text-2) 55%, transparent);
+
+  /* A CAUTION PANEL BEHIND TEXT. Used by the docs screen's pre-release notice.
+   * Derived from --fwm-alert-approaching rather than fixed, so it follows all
+   * fifteen themes that redefine that hue -- the same trick the corridor washes
+   * above use. 8% keeps it a tint: the words on top stay --fwm-text-2, because
+   * a caution that costs you contrast is a worse caution. */
+  --fwm-notice-wash: color-mix(in srgb, var(--fwm-alert-approaching) 8%, transparent);
+
+  /* THE SIGN FACE. Pure white, and deliberately not --fwm-text (#F7F9FC): the
+   * v3 plate is a white-on-white object -- an off-white surround with a truly
+   * white face printed on it -- and collapsing the two into one value loses the
+   * shallow step that makes it read as a sign rather than a filled rectangle.
+   * Also the compass hub, for the same reason: it sits on the needle. */
+  --fwm-sign-face:     #FFFFFF;
+
+  --fwm-text:          #F7F9FC;
+  --fwm-text-2:        #A7AFBD;
+  --fwm-text-muted:    #6B7381;
+  --fwm-text-disabled: #3A3F4B;
+
+  /* =========================================================================
+   * THE PLASMA RAMP - distance, as a colormap rather than four unrelated hues.
+   * =========================================================================
+   * The band colours used to be green, then the theme's CYAN accent, then
+   * amber, then red. As a sequence that is incoherent: cyan reads COOLER than
+   * the green before it, so the middle of the ramp runs backwards and the one
+   * thing the border is supposed to encode - closer is worse - stops being
+   * legible at exactly the distances a driver is deciding at.
+   *
+   * THE RAMP IT USES IS `--fwm-plasma-0..10`, DEFINED FURTHER DOWN, NOT A
+   * SECOND ONE DEFINED HERE. It was briefly four private tokens
+   * (`--fwm-plasma-far/mid/warm/hot`) and that was a duplicate: the map, the
+   * radar and the sweep heat layer already read an eleven-stop plasma scale,
+   * and that scale is the one the light and e-ink themes override. A private
+   * copy inherited none of those overrides, so on `paper` the DRIVE border kept
+   * a yellow tuned to burn on black - which on paper is the nearest camera
+   * drawn in the least visible colour in the app - and on `e-ink` it stayed
+   * full-colour magenta on a display that has no colour. The map got this
+   * right on the same screen at the same moment, which is what made it a bug
+   * rather than a difference.
+   *
+   * The bands map onto that scale, remembering 0 is ON YOU and 10 is the edge:
+   *
+   *   far          --fwm-plasma-9
+   *   near         --fwm-plasma-6
+   *   approaching  --fwm-plasma-3
+   *   closing      --fwm-plasma-1
+   *   in-range     --fwm-alert-in-range   (off the ramp, deliberately)
+   *
+   * RED IS NOT PART OF THE RAMP, and that is the point. Plasma tops out at
+   * yellow, so yellow is "as close as this scale goes". Crossing the driver's
+   * OWN threshold is a different kind of statement - not hotter, but a warning
+   * - so it leaves the colormap for `--fwm-alert-in-range`. See
+   * `proximityBand`, which decides where that line is. */
+  --fwm-alert-clear:       #3DE08A;
+  --fwm-alert-approaching: #FFC02E;
+  --fwm-alert-in-range:    #FF2D5E;
+  /* OVER THE POSTED LIMIT. Deliberately NOT --fwm-alert-in-range: a camera in
+   * range is the product's warning and must stay the loudest red on the screen.
+   * Driving four over is a fact, not an alarm, and giving the two the same
+   * colour would teach a driver to ignore the one that matters. */
+  --fwm-speed-over:        #FF6B8B;
+  --fwm-alert-multiple:    #FF3DBE;
+  /* HOW OLD THE SERVED ARCHIVE IS - the four states of the dot beside the
+   * camera count on DRIVE's search bar. See `useCatalogueUpstream.ts`.
+   *
+   * ALIASES, NOT NEW HUES. Four more colours in a product that already has a
+   * proximity ramp and an alert triad is four more things to keep in step
+   * across seven skins, and every skin below overrides the hues these point
+   * at - so the archive dot follows `paper` and `e-ink` for free.
+   *
+   * STALE WAS `--fwm-speed-over` FOR A BUILD, AND THE SKINS KILLED IT. The
+   * argument was the one written above that token: the loudest red on this
+   * screen means A CAMERA IS IN RANGE, and a two-day-old archive is a fact
+   * about the data rather than a reader in front of the car. Sound reasoning,
+   * wrong token. `--fwm-speed-over` is declared ONCE, here, and no skin
+   * overrides it - so measured in a browser on `e-ink`, a display with no
+   * colour, live and behind resolved to greys and stale stayed full-colour
+   * #FF6B8B pink. A dot whose entire job is to be believed cannot be the one
+   * thing on a monochrome screen shouting in colour, and the same mismatch
+   * showed on `refinement` and `paper`.
+   *
+   * So stale takes the alert triad's own red, which every skin does override.
+   * The collision that argument was avoiding is smaller than it looks at this
+   * size: this is a 5.5px dot inside the search bar's identity column, not a
+   * persistent readout sitting on the map beside the alert layer, and a stale
+   * archive genuinely is the most serious thing this reading can say.
+   *
+   * UNKNOWN IS NOT ON THE SCALE AT ALL. A phone that has never reached the
+   * network does not know how old its archive is, and a severity colour would
+   * be asserting a reading we have not taken. It gets the muted text hue, so
+   * it looks like an absence rather than like a verdict. */
+  --fwm-archive-live:      var(--fwm-alert-clear);
+  --fwm-archive-behind:    var(--fwm-alert-approaching);
+  --fwm-archive-stale:     var(--fwm-alert-in-range);
+  --fwm-archive-unknown:   var(--fwm-text-muted);
+  --fwm-accent-scan:       #22C8E0;
+  /* THE SWEEP'S HUE, as a bare HSL number.
+   *
+   * `pixelSweep.ts` draws to a 2D canvas, where a fillStyle must be a colour
+   * STRING - there is no `var()` in that context - so it reads this number and
+   * assembles the colour itself, jittering the hue per particle so the trail is
+   * not one flat wash. Keeping the number here means the sweep follows the
+   * theme rather than carrying a colour typed into a module.
+   *
+   * 187 is the hue of `--fwm-accent-scan` above. A theme that moves the scan
+   * accent should move this with it. */
+  --fwm-sweep-hue: 187;
+  --fwm-accent-mesh:       #8A6BFF;
+  --fwm-destructive:       #FF5A1F;
+
+  /* THE UI FACE.
+   *
+   * Chakra Petch is the default. `[data-fwm-typeface="system"]` on the root
+   * selects the neutral platform face -- SETTINGS writes that attribute, so
+   * readability remains a choice rather than a thing that was taken away.
+   *
+   * SELF-HOSTED, and that is not a detail. Linking the bundled face from a font
+   * CDN would hand over the IP of every driver on every cold start and leave it
+   * missing offline -- on a PWA whose whole point is working without a
+   * network. */
+  --fwm-font-ui:   'Google Sans', system-ui, sans-serif;
+  /*
+   * THE ORIGINAL DATA FACE.
+   *
+   * JetBrains Mono keeps instrument numbers on a monospace advance. The system
+   * setting below deliberately overrides both UI and data faces together so
+   * its effect remains visible across RADAR labels carrying `.fwm-data`.
+   */
+  --fwm-font-data: 'Google Sans', ui-monospace, monospace;
+  --fwm-text-hero:     5rem;    /* 80px */
+  --fwm-text-readout:  2.5rem;  /* 40px */
+  --fwm-text-title:    1.5rem;  /* 24px */
+  --fwm-text-subtitle: 1.0625rem;
+  --fwm-text-body:     .9375rem;
+  --fwm-text-micro:    .6875rem;
+
+  /* THE RUNGS THE TOP BLOCK NEEDS -- and the two that were MISSING.
+   *
+   * `--fwm-text-label` and `--fwm-text-heading` were referenced eleven times
+   * across sweep.css and radar.css and defined NOWHERE. An undefined custom
+   * property makes the whole declaration invalid at computed-value time, so
+   * every one of those `font-size` rules silently did nothing and the type
+   * inherited whatever the parent happened to be. That is most of why the
+   * RADAR top block did not look like its design: the sizes were written down
+   * and never applied.
+   *
+   * The values are the v3 block's, which is where each is used. */
+  --fwm-text-heading:  1.6875rem; /* 27px -- the R2-1 figure, the block's largest */
+  --fwm-text-figure:   1rem;      /* 16px -- YOU, and the header PASSED count */
+  --fwm-text-cardinal: .9375rem;  /* 15px -- the compass letter */
+  --fwm-text-label:    .875rem;   /* 14px -- the REROUTE key */
+  --fwm-text-forecast: .8125rem;  /* 13px -- the forecast line under the ladder */
+  --fwm-text-plate:    .75rem;    /* 12px -- SPEED / LIMIT on the sign face */
+
+  --fwm-space-1: 4px;   --fwm-space-2: 8px;
+  --fwm-space-3: 12px;  --fwm-space-4: 16px;
+  --fwm-space-6: 24px;  --fwm-space-8: 32px;
+  --fwm-space-12: 48px;
+
+  /**
+   * THE HEIGHT OF DRIVE'S TOP BAR, and therefore where the row under it starts.
+   *
+   * The search bar holds a two-line identity block beside a text field, so it
+   * is taller than a key. Four rules depend on that number - the bar's own
+   * minimum, the speed plate, the map control panel and the right-hand rail -
+   * and three of them are on the other side of the screen from the first. They
+   * were each written as `space-4 + space-12 + space-2` back when the top bar
+   * was a pill exactly one key tall; the moment it stopped being that, three
+   * unrelated files were silently wrong. This is that number, named once.
+   */
+  --fwm-search-h: calc(var(--fwm-touch-min) + var(--fwm-space-3));
+  --fwm-search-pills-h: var(--fwm-space-8);
+  /**
+   * THE WORDMARK ON THE BAR - ITS HEIGHT, AND THE WIDTH THAT FALLS OUT OF IT.
+   *
+   * `.fwm-reloadtitle-mark` is a mask box carrying `aspect-ratio: 1200 / 336`,
+   * which is the pixel size of `darkroute-wordmark.png`. Fix its height and
+   * its drawn width stops being a measurement and becomes arithmetic - and a
+   * width that is DERIVED is the only version of "the count is never wider
+   * than the name above it" that survives somebody changing the height.
+   *
+   * The height was written inline in `searchBar.css` as `--fwm-text-title`.
+   * It is named here instead because three rules now depend on it being one
+   * number: the mark's own height, the width above, and the negative margin
+   * that lifts the count into the reload key's dead band, which is half of
+   * what the key adds to the mark and cannot be spelled without both.
+   */
+  --fwm-search-word-h: var(--fwm-text-title);
+  --fwm-search-word-w: calc(var(--fwm-search-word-h) * 1200 / 336);
+  /**
+   * THE CAMERA COUNT UNDER THE WORDMARK, SIZED BY THE ROOM IT HAS.
+   *
+   * The bar's content box is `--fwm-search-h` less its two `--fwm-space-1`
+   * gutters. The wordmark sits centred in that box, so the air left under the
+   * LETTERS is exactly half of what they do not use - 12px at the default
+   * scale, against a 24px name in a 49px box, and the count draws into that.
+   *
+   * `min()` because the derivation ALONE overshoots. On the skins where
+   * `--fwm-touch-min` is 68px it leaves 24px of room and would set the count at
+   * the same size as the name it is a caption to. The count is the smallest
+   * type in the app or it is the room, whichever is less - which is the owner's
+   * "no matter how small", written as arithmetic rather than as a number
+   * somebody read off one phone.
+   *
+   * MEASURED on all seven skins at five widths: the tightest is the watch,
+   * where a 13px `--fwm-text-micro` lands in 13px of room with the capsule's
+   * hairline to spare. Nothing overflows.
+   */
+  --fwm-search-count-h: min(
+    var(--fwm-text-micro),
+    calc((var(--fwm-search-h) - var(--fwm-space-2) - var(--fwm-search-word-h)) / 2)
+  );
+  /* The freshness dot reads as a bullet on the count's own line, so it is
+     sized from that line rather than from the space scale - it follows the
+     type it sits beside instead of drifting away from it. */
+  --fwm-search-dot: calc(var(--fwm-search-count-h) / 2);
+  /**
+   * HOW FAR DOWN THE TOP BAR SITS.
+   *
+   * It was hard against the top inset, which is not where a phone map puts it:
+   * every one of them leaves a band of map above the bar so the road you are
+   * on is visible over the thing you type into. This is that band, and it is
+   * one number because the bar, the plate, the panel and the rail all measure
+   * from it.
+   */
+  --fwm-drive-top-inset: calc(var(--fwm-space-8) + env(safe-area-inset-top, 0px));
+  /**
+   * THE AIR BETWEEN THE BAR AND THE ROW UNDER IT, and it is not `--fwm-space-2`
+   * any more.
+   *
+   * The bar and its pill row were 8px apart while the bar itself is a ~46px
+   * capsule, which is about a sixth of its own height - so the two read as one
+   * crowded block rather than as two rows. Every phone map this sits beside
+   * gives that gap roughly half the bar's height: measured off Google Maps'
+   * own search bar and chip row, the gap is about 0.6 of the bar. 24px is that
+   * proportion here.
+   *
+   * IT IS TAKEN OUT OF THE INSET ABOVE RATHER THAN ADDED TO THE COLUMN. The
+   * band over the bar came down by exactly the 16px this gap went up, so
+   * `--fwm-drive-row-2` below - and therefore the right-hand rail, the speed
+   * plate and the map panel that all measure from it - lands on the same pixel
+   * it did before. The bar moves up, the rows spread, and nothing under them
+   * shifts.
+   */
+  --fwm-drive-bar-gap: var(--fwm-space-6);
+  /**
+   * WHERE THE ROW UNDER THE TOP BAR STARTS, and what everything else on this
+   * screen measures itself from - the right-hand rail, the speed plate and the
+   * map control panel all position against this rather than counting the bar's
+   * parts again themselves.
+   */
+  --fwm-drive-row-2: calc(
+    var(--fwm-drive-top-inset) + var(--fwm-search-h) + var(--fwm-drive-bar-gap) +
+      var(--fwm-search-pills-h) + var(--fwm-space-3)
+  );
+}
+
+/*
+ * FULL SCREEN USED TO OVERRIDE THE INSET. IT DOES NOT ANY MORE, AND THE HISTORY
+ * IS WORTH KEEPING BECAUSE THE NUMBER MOVED TWICE.
+ *
+ * There were two overrides here - `:root:fullscreen, :root:has(:fullscreen)`
+ * and a `(display-mode: fullscreen), (display-mode: standalone)` media query -
+ * and both pinned the inset to `--fwm-space-12`. The reasoning was that full
+ * screen has no status bar to clear, so the ordinary band is dead space, but a
+ * punch-hole camera is still physically there and a bar at the very edge runs
+ * under the lens. `--fwm-space-8` was tried first and the lens still sat on the
+ * bar, so it went to `--fwm-space-12`.
+ *
+ * That was written when the ordinary inset was 48px. It is 32px now - the top
+ * bar came up and the gap under it opened out to match a phone map's spacing -
+ * which left full screen sitting LOWER than the browser, the opposite of what
+ * the override existed to do. The owner's ruling is that full screen matches
+ * whatever the browser is set to, so the strip is one number in one place and
+ * the two can no longer drift apart.
+ *
+ * That number is `--fwm-space-8` plus `env(safe-area-inset-top)`, which is the
+ * same 32px the earlier punch-hole report rejected. It is 32px measured from a
+ * different starting point - the whole bar sits higher now - so if the lens
+ * lands on the bar again in full screen, this is the line to raise, and raising
+ * `--fwm-drive-top-inset` raises it everywhere rather than only there.
+ */
+
+:root {
+  /**
+   * A GUTTER THAT GIVES WAY BEFORE THE TYPE DOES.
+   *
+   * RADAR's top block is drawn at 375px with fixed columns, so on a narrower
+   * phone the one flexible column absorbs the entire shortfall and its label
+   * paints over its neighbour. Shrinking the type would fix that and is not
+   * allowed -- the 11px floor is the rule that block does not bend -- so the
+   * padding gives way instead, continuously rather than at a breakpoint so
+   * there is no width where the layout snaps.
+   *
+   * Lives here because this is the only file permitted a raw length, and a
+   * viewport-relative gutter is exactly the kind of measurement the token
+   * system exists to keep in one place.
+   */
+  --fwm-space-fluid-3: clamp(var(--fwm-space-1), 3.2vw, var(--fwm-space-3));
+
+  --fwm-radius-0: 0;    --fwm-radius-1: 2px;
+  --fwm-radius-2: 6px;  --fwm-radius-full: 999px;
+  --fwm-touch-min: 44px;
+
+  /* ===========================================================================
+   * THE CARD RAIL, from the owner's `Dynamic Cards.dc.html`.
+   * ===========================================================================
+   * MONITOR and NAVIGATION are three columns that are ALWAYS HORIZONTAL. That
+   * sentence is the design's, and every earlier attempt at these two cards got
+   * it wrong in the same way: at phone width the columns were stacked, or the
+   * card was made to scroll vertically, or the type was shrunk until three
+   * columns fitted side by side. The design's own answer is none of those - the
+   * columns keep a READABLE width and the card SCROLLS SIDEWAYS, one column at
+   * a time, with scroll-snap. A driver swipes across the instrument panel; the
+   * panel does not fold up.
+   *
+   * These live here rather than in the two card files because both cards are
+   * built from them and they are the geometry the design specifies, not a
+   * component's private measurement. Raw lengths, because this is the one file
+   * permitted them and a `cqw` clamp cannot be assembled out of other tokens.
+   *
+   * `cqw` IS A PERCENT OF THE CARD, not of the screen, so it needs an ancestor
+   * with `container-type: inline-size` - `.fwm-drive-cards` carries it. Each
+   * COLUMN then opens a container of its own, which is what lets the type
+   * inside a column scale off that column's width rather than the card's.
+   */
+
+  /* A column's width: 84% of the card, capped. Under the cap three columns do
+   * not fit and the rail scrolls; over it they all show and the card is the
+   * render. The three caps differ because the design weights the columns. */
+  --fwm-card-col-wide: min(84cqw, 360px);
+  --fwm-card-col-mid: min(84cqw, 330px);
+  --fwm-card-col-narrow: min(84cqw, 320px);
+  /* The list column is the widest of the three when they all fit. */
+  --fwm-card-col-grow-wide: 1.35;
+  --fwm-card-col-grow: 1;
+
+  /* The rail's own padding and the gutter between columns. */
+  --fwm-card-rail-pad: clamp(12px, 1.6cqw, 18px);
+  /* What a column holds back from the rule down its right-hand side. */
+  --fwm-card-col-pad: clamp(0px, 1.4cqw, 16px);
+
+  /* THE MAP PANEL'S FLOOR. The design draws it at 250px, which is right for a
+   * card on a page; over a live map on a phone it is most of the screen. It is
+   * whatever the locked rail leaves after the key row under it. */
+  --fwm-card-map-min: 0;
+
+  /* THE RAIL'S LOCKED HEIGHT: THE CARD IT REPLACED, TO THE PIXEL.
+   *
+   * EIGHT TOUCH UNITS, 352px, and the number has moved twice for reasons worth
+   * keeping.
+   *
+   * FOUR (176px) was the old closest-camera card's height, and right while the
+   * card was three columns with the closest reader in one of its own.
+   * SIX (264px) covered the two-column layout's pinned parts - the reading, the
+   * heading, the keys - but left the LIST about 40px, which is one row. The
+   * owner asked where the scrollable list of upcoming cameras had gone; that
+   * was the answer.
+   * EIGHT gives the list roughly 128px, which is three rows and a cut fourth -
+   * enough that scrolling it is a real gesture rather than a technicality. It
+   * is still under half of an 844px screen, and the map behind it is the thing
+   * that has to keep breathing.
+   *
+   * `Mobile app card layouts (2)` folded that reader into the TOP of the list
+   * column, so column one now stacks four things where it used to stack two:
+   * the reading and its thumbnail (~92px), the "Upcoming Cameras Nearby"
+   * heading (~24), the list, and the Route-around/MUTE keys (~54). At 176 the
+   * keys were simply cut off the bottom - which is what "this card is broken"
+   * was looking at. Six units is those parts plus one scrolling row, measured
+   * rather than guessed.
+   *
+   * The original argument, kept because the number will be questioned again: That card had no `height` at all; it
+   * was content-sized, and its content came to `--fwm-space-4` of padding top
+   * and bottom (32), a two-line header (31), a gap (12), the figure row at the
+   * 56px readout on a 0.8 line-height (45), another gap (12) and a 44px key
+   * row. 176 exactly, which is `--fwm-touch-min * 4`.
+   *
+   * `height`, not `max-height`: the card is the same size with two cameras
+   * nearby and with twenty. Unlocked, the rail grows to its tallest column and
+   * eight rows of cameras take the whole screen - which shipped, twice.
+   *
+   * The design's own rail is taller because it sits on a page. This one floats
+   * over a live map that a driver is reading, and the map is the product. */
+  --fwm-card-rail-h: calc(var(--fwm-touch-min) * 8);
+
+  /* THE TYPE RAMP, in `cqw` off the COLUMN. Every step is the design's own
+   * clamp, so a column keeps its proportions from a 292px phone to a 430px
+   * card without a breakpoint anywhere. */
+  --fwm-card-text-title: clamp(18px, 6cqw, 26px);
+  --fwm-card-text-figure: clamp(32px, 13cqw, 52px);
+  --fwm-card-text-hero: clamp(40px, 15cqw, 62px);
+  --fwm-card-text-dist: clamp(15px, 4.8cqw, 20px);
+  --fwm-card-text-row: clamp(12px, 3.7cqw, 15px);
+  --fwm-card-text-sub: clamp(11px, 3.4cqw, 14px);
+  --fwm-card-text-tiny: clamp(9px, 2.8cqw, 12px);
+  --fwm-card-text-key: clamp(11px, 3.2cqw, 14px);
+  /* Navigation's own three, which run larger: that card has fewer things in a
+   * column and the design gives each of them more room. */
+  --fwm-card-text-dest: clamp(22px, 7.8cqw, 34px);
+  --fwm-card-text-eta: clamp(32px, 12cqw, 50px);
+  --fwm-card-text-turn: clamp(13px, 4.2cqw, 18px);
+
+  /* THE TWO NEGATIVE TRACKING STEPS the design sets on its display figures.
+   * Big numerals in a monospace face open up at size; the card closes them
+   * back down so "87" and "1.5" read as one object rather than two glyphs. */
+  --fwm-card-track-tight: -0.01em;
+  --fwm-card-track-tighter: -0.03em;
+
+  /* ===========================================================================
+   * THE CARD RAIL AND THE READER COLUMN, from `Dynamic Cards (3)`.
+   * ===========================================================================
+   * GEOMETRY IS THE DESIGN'S, VERBATIM. Colours are NOT - those follow the
+   * owner's amendment, "ignore the tokens, use theme tokens", so every hex in
+   * the source maps to a --fwm-* and the cards move with the theme. These are
+   * the lengths and clamps, which have to live here because
+   * `check-design-values.mjs` refuses a raw length in a component file and a
+   * `cqw` clamp cannot be assembled out of other tokens.
+   *
+   * The steps are the design's own and most are NOT on this app's ladders: the
+   * space scale has no 9/7/6/3px, the type ladder has no flat 9 or 11px, and
+   * the effective radius ladder is 3/9/11/16/26 rather than the 8/10/14 this
+   * column is drawn on. Naming them here rather than rounding them onto the
+   * nearest existing step is what keeps the port a port.
+   */
+  --fwm-card-rail-h: 180px;
+  --fwm-card-rail-pad: clamp(12px, 1.6cqw, 18px);
+  --fwm-card-rail-radius: 24px;
+
+  /* The reader column, and the list column beside it. */
+  --fwm-card-col-reader: min(93cqw, 400px);
+  --fwm-card-col-stats: min(84cqw, 330px);
+  --fwm-card-col-route: min(84cqw, 340px);
+  --fwm-card-col-gap: 9px;
+
+  /* The closest-reader box at the head of the reader column. */
+  --fwm-card-reader-pad: clamp(8px, 2.4cqw, 11px);
+  --fwm-card-reader-radius: 14px;
+  --fwm-card-chip-w: clamp(52px, 15cqw, 62px);
+  --fwm-card-chip-radius: 10px;
+  --fwm-card-key-radius: 8px;
+  --fwm-card-key-h: 26px;
+  --fwm-card-key-w: 34px;
+  --fwm-card-key-pad: 9px;
+  --fwm-card-row-gap: 7px;
+  --fwm-card-pin: 9px;
+  --fwm-card-dot: 7px;
+  /* The map chip's 115-degree hatch, and the pin's halo. Both are whole
+   * declarations rather than lengths, because the gate reads a shadow and a
+   * repeating-gradient as single values and neither can be assembled from
+   * spacing steps. */
+  --fwm-card-hatch: repeating-linear-gradient(
+    115deg,
+    var(--fwm-line-soft) 0 2px,
+    transparent 2px 9px
+  );
+  --fwm-card-pin-halo: 0 0 0 5px var(--fwm-tint-in-range);
+  /* The rail's drop shadow. The design's own, and it is what lifts an opaque
+   * card off a live map - without it the card and the road behind it read as
+   * one flat surface. */
+  --fwm-card-shadow: 0 18px 40px rgb(0 0 0 / 0.35);
+
+  /* THE CARD'S EDGE, WHICH IS NOW THE SAME EDGE EVERYTHING ELSE GETS.
+   *
+   * This was its own value - 0.22 white - added when flat became the default
+   * and the two DRIVE cards were the first surfaces caught losing their outline
+   * with the specular rim gone. The owner's ruling a few hours later was that
+   * EVERY element needs that edge in flat mode, not just the cards, so the
+   * number moved to `--fwm-glass-border` inside the `[data-fwm-flat="on"]`
+   * block, where one definition reaches every panel bound to the material.
+   *
+   * It stays as an alias rather than being deleted because `drive.css` names it
+   * on the two cards, and a token that says "the card's edge" is worth keeping
+   * pointed at the right source: if the cards ever DO need to differ from the
+   * rest of the chrome again, this is the line that changes and nothing else
+   * has to move. */
+  --fwm-card-edge: var(--fwm-glass-border);
+
+  /* Navigation's route-summary panel and its turn rows. */
+  --fwm-card-panel-pad: clamp(10px, 3cqw, 14px);
+  --fwm-card-panel-radius: 18px;
+  --fwm-card-panel-gap: 6px;
+  --fwm-card-turn-gutter: 28px;
+  --fwm-card-turn-gap: clamp(8px, 3cqw, 14px);
+  --fwm-card-reroute-h: 46px;
+  --fwm-card-reroute-pad: 11px;
+  --fwm-card-text-eta: clamp(24px, 9cqw, 38px);
+  --fwm-card-text-eta-sub: clamp(12px, 3.6cqw, 16px);
+  --fwm-card-text-dest: clamp(11px, 3.4cqw, 15px);
+  --fwm-card-text-turn: clamp(13px, 4.2cqw, 18px);
+  --fwm-card-text-turnglyph: clamp(17px, 5.6cqw, 22px);
+
+  /* The type ramp, in cqw against the COLUMN so it scales with the column and
+   * not the viewport - the design's rule, and what stops the squeezed-text
+   * failure when the rail is narrower than one column. */
+  --fwm-card-text-dist: clamp(17px, 5.2cqw, 22px);
+  --fwm-card-text-street: clamp(10px, 3cqw, 13px);
+  --fwm-card-text-detail: clamp(9px, 2.8cqw, 12px);
+  --fwm-card-text-pill: clamp(8px, 2.3cqw, 10px);
+  --fwm-card-text-rowdist: clamp(13px, 3.9cqw, 16px);
+  --fwm-card-text-keyface: 11px;
+  --fwm-card-track-pill: 0.06em;
+
+  /* THE SEARCH PANEL'S TWO CAPS TRACKINGS, and they are a third and a fourth
+   * value rather than a reuse of the pill above.
+   *
+   * READ OFF THE FILE RATHER THAN REMEMBERED, AND THE PREVIOUS NOTE HERE WAS
+   * WRONG ABOUT IT. It said `DarkRoute Search Entry.html` drew the group
+   * headers at 0.08em and the verb opposite them at 0.06em, so this token was
+   * cut to 0.08 and the verb pointed at the pill. Section D draws
+   * `letter-spacing: 0.14em` on the header label -- DESTINATIONS,
+   * CAMERAS · INDEXED -- and `0.1em` on the verb caption beside it, in the
+   * same 30px row. The DIFFERENCE the old note described is real and is the
+   * reason there are two tokens; both of its numbers were not.
+   *
+   * The gap between the two is what makes the label read as the heading and the
+   * verb as the aside, so collapsing them onto one token would flatten a
+   * distinction the drawing is making on purpose.
+   *
+   * ONE READER EACH, AND IT IS THE PANEL. `searchPanel.css` is the only file
+   * that reads either, which is why re-cutting the caps token to the drawn 0.14
+   * moves nothing else; the 0.06em pill above has two other readers in
+   * `closestPanel.css` and is left alone. */
+  --fwm-card-track-caps: 0.14em;
+  --fwm-card-track-verb: 0.1em;
+
+  /* The swipe indicator's dot: a 22x5 pill, from the design. */
+  --fwm-card-dot-w: 22px;
+  --fwm-card-dot-h: 5px;
+
+  /* The closest reader's thumbnail, and the ceiling on its figure - the
+   * design's `clamp(96px, 30cqw, 124px)` and `clamp(30px, 11cqw, 46px)`. */
+  --fwm-card-map-w: 124px;
+  --fwm-card-figure-max: 46px;
+
+  /* STROKE WIDTHS, derived from the space scale so a mode that rescales space
+   * rescales the strokes with it.
+   *
+   * `settings.css` and `triage.css` each hold a component-scoped copy of these
+   * under `--fwm-settings-*` / `--fwm-triage-*` names, and those stay where
+   * they are: they are v0's, they are referenced by v0 tests, and moving them
+   * would be churn. These are the SHARED pair, promoted because the v1 screens
+   * all wanted the hairline and none of them is SETTINGS. Referencing another
+   * component's local from a third component is how you ship a border that
+   * silently resolves to nothing, which is exactly what happened before this
+   * existed. */
+  --fwm-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-mark-w: calc(var(--fwm-space-1) * 3 / 4);
+
+  /* A TRUE HAIRLINE, thinner than one CSS pixel.
+   *
+   * `--fwm-rule-w` is a derived 1px, which on a 3x phone is three device pixels
+   * and reads as a drawn frame rather than an edge. This is half of one CSS
+   * pixel - a device pixel and a half - which is the thinnest line a phone can
+   * actually paint, and is what a 1px border looks like in a design file viewed
+   * on a desktop. Raw because a fraction of a pixel cannot be derived from a
+   * spacing scale, and this is the file where raw lengths live. */
+  --fwm-hairline: 0.5px;
+  --fwm-nav-h: 64px;
+  --fwm-header-h: 52px;
+
+  --fwm-dur-instant: 90ms;  --fwm-dur-fast: 160ms;
+  --fwm-dur-base: 240ms;    --fwm-dur-alert: 400ms;
+  --fwm-ease-out:  cubic-bezier(.2,.8,.2,1);
+  --fwm-ease-mech: cubic-bezier(.6,0,.4,1);
+  /* CONSTANT RATE. For the one shape that turns forever - the ego scope's
+   * sweep wedge on DRIVE. An eased rotation visibly speeds up and slows down
+   * once per turn, which reads as the instrument hesitating. */
+  --fwm-ease-linear: linear;
+
+  /* ------------------------------------------------------------------------
+   * THE ALERT BLEND RAMP
+   *
+   * Eleven steps from `approaching` to `in-range`, mixed in oklab. SWEEP's
+   * camera glyph fades along this as a camera crosses the alert threshold, so
+   * one sitting on the line reads as the colour between the two states.
+   *
+   * Here rather than in the feature because this file is the ONLY place a
+   * colour function is permitted -- everywhere else must be a `var(--fwm-*)`.
+   * Both endpoints stay tokens, so a theme mode that remaps a hue remaps the
+   * whole ramp with it and no step ever becomes a colour the mode did not
+   * choose. Nothing here is a fifth hue: every step is a mixture of two the
+   * design already defines.
+   *
+   * oklab, not sRGB: amber to crimson through sRGB runs muddy brown, and the
+   * midpoint has to read as orange.
+   * --------------------------------------------------------------------- */
+  --fwm-blend-0: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 0%);
+  --fwm-blend-1: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 10%);
+  --fwm-blend-2: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 20%);
+  --fwm-blend-3: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 30%);
+  --fwm-blend-4: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 40%);
+  --fwm-blend-5: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 50%);
+  --fwm-blend-6: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 60%);
+  --fwm-blend-7: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 70%);
+  --fwm-blend-8: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 80%);
+  --fwm-blend-9: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 90%);
+  --fwm-blend-10: color-mix(in oklab, var(--fwm-alert-approaching), var(--fwm-alert-in-range) 100%);
+
+  /*
+   * Aurora's radial glow layers. Declared here at `none` because a mode may
+   * only OVERRIDE a token, never introduce one - a rule that exists so a
+   * component can reference it unconditionally and get something sane in every
+   * other mode rather than an empty custom property.
+   */
+  --fwm-bloom: none;
+
+  --fwm-glow-alert: 0 0 28px rgb(255 45 94 / .28);
+
+  /* -------------------------------------------------------------------------
+   * v2 additions -- `Flockys App Screens v2.dc.html`
+   *
+   * "v2 - flat borderless controls, 8px radius, fill-based depth". v2 halves
+   * the border count (148 -> 72 declarations) and replaces the missing strokes
+   * with a ladder of near-black fills. Everything below is a literal read from
+   * that file; the comment on each line is where v2 draws it and how often.
+   *
+   * Nothing above this comment was changed. Section 08's ramp still stands for
+   * every screen v2 did not redraw. See docs/gaps-inbox/tokens-v2.md for the
+   * one place section 08 and v2 flatly contradict each other (the radius
+   * scale) and for the tokens that still need per-mode values.
+   * ---------------------------------------------------------------------- */
+
+  /* RADII -- section 08 declares 0 / 2px / 6px / full and nothing else.
+   * v2 draws 8px x30, 999px x28, 6px x12, 14px x5, 10px x5, 3px x1, and
+   * never draws 2px. radius-0/1/2/full are untouched; these extend the ladder
+   * upward so no existing name changes meaning.
+   * GAP: tokens-v2.md#radius-scale-contradicts-section-08 */
+  --fwm-radius-3: 8px;      /* the v2 control radius: every key, chip, field, banner, segment track */
+  --fwm-radius-4: 10px;     /* the dock active-key chip, x5 -- one per dock screen */
+  --fwm-radius-5: 14px;     /* the dock bar itself, x5 */
+  --fwm-radius-glyph: 3px;  /* x1: the 16x12 camera body drawn inside REPORT's PHOTO key */
+
+  /* SURFACE FILLS -- the ladder that replaced the borders. Role-named, not
+   * numbered: #12141A .. #1B1E25 all sit between --fwm-surface-1 (#0E0F13)
+   * and --fwm-surface-2 (#16181E), so an ordinal insert would have renumbered
+   * the existing scale. --fwm-surface-1 and -2 are NOT redefined; -2 is still
+   * drawn in v2 (SWEEP intel card, RADAR county strip, LOOKUP sparkline base,
+   * and the dock spec's "Active key: filled #16181E").
+   * GAP: tokens-v2.md#surface-1-is-drawn-nowhere-in-v2 */
+  --fwm-surface-card:    #12141A;  /* x11: data card / stat tile, always radius-2 (6px), always on --fwm-bg */
+  /* The same card, translucent: used where a card sits ON the scope rather than
+   * beside it, so the dot lattice reads through it and the card belongs to the
+   * instrument instead of covering it. Opaque enough that its own numbers stay
+   * legible over a moving sweep -- that is what sets the alpha, not taste. */
+  --fwm-surface-card-over: rgba(18, 20, 26, .78);
+  --fwm-surface-dock:    #14161B;  /* x5: the 58px dock bar, radius-5 */
+  --fwm-surface-track:   #15171D;  /* x2: segmented-control track, radius-3, 3px inset padding */
+  --fwm-surface-control: #1B1E25;  /* x15: every flat borderless control -- keys, chips, plate field -- always radius-3 */
+
+  /* LINES -- v2 keeps --fwm-line (#23262F) for screen chrome and adds two.
+   * GAP: tokens-v2.md#dock-divider-is-one-unit-off-line */
+  --fwm-line-soft: #191C22;  /* x6: the rule under a list row (LOOKUP 60px reads, LOG 56px timeline) */
+  --fwm-line-dock: #22262F;  /* x5: the 1px x 22px divider splitting REPORT from the destination keys */
+
+  /* The 5px dot grid v2 draws under every scope, as
+   * radial-gradient(circle at center, <token> .7px, transparent 1.2px) 0 0/5px 5px.
+   * Three authored brightnesses, one per instrument. Indexed dark -> light,
+   * the same direction as --fwm-surface-1 -> --fwm-surface-2. */
+  --fwm-line-grid-1: #1C2029;  /* ASK voice-meter field */
+  --fwm-line-grid-2: #232731;  /* SWEEP 343px scope */
+  --fwm-line-grid-3: #2A2E38;  /* RADAR 250px scope */
+
+  /* TEXT -- three rungs v2 adds between the existing steps, plus the ink that
+   * goes on a saturated fill. Ladder now reads:
+   * text #F7F9FC > text-2 #A7AFBD > text-icon > text-muted #6B7381 >
+   * text-scale > text-instrument > text-disabled #3A3F4B. */
+  --fwm-text-icon:       #8B93A1;  /* x36: stroke and fill of an inactive 24px dock icon */
+  --fwm-text-scale:      #5C6472;  /* x4 in-app: SWEEP range-ring labels 1000/500/300/100 at 9px */
+  --fwm-text-instrument: #4E5563;  /* x4: the 8px scope telemetry -- 1000FT, SCAN 4HZ, SCAN 2.4s, HDG/LAT/LON */
+  --fwm-text-on-alert:   #0A0A0C;  /* x3: label on a saturated alert fill (TAKE DETOUR, TRIP, NEW CAMERA) */
+
+  /* A lighter crimson, drawn only as the label of a chip whose fill is the
+   * in-range tint. Hue-locked, so it needs a per-mode value in all five
+   * non-default modes: GAP tokens-v2.md#in-range-text-needs-five-mode-values */
+  --fwm-alert-in-range-text: #FF8DA5;  /* x2: LOOKUP active plate chip, REPORT selected tag */
+
+  /* TINTS -- v2's fill-based depth applied to the hues. Derived with
+   * color-mix so a mode swap carries the tint automatically and the four-state
+   * hue logic stays intact; the percentages are v2's own alpha values.
+   * color-mix() is only legal inside this file -- check-design-values.mjs
+   * rejects every colour function elsewhere, which is why these are tokens and
+   * not component CSS. Supersedes DESIGN-GAPS.md#report-bar-tint-and-alert-tints
+   * option 1: v2 draws the tinted fill, so "border-only" is no longer open. */
+  --fwm-tint-clear:       color-mix(in srgb, var(--fwm-alert-clear) 18%, transparent);        /* LOG dock active key */
+  --fwm-tint-approaching: color-mix(in srgb, var(--fwm-alert-approaching) 18%, transparent);  /* LOOKUP dock active key */
+  --fwm-tint-in-range:    color-mix(in srgb, var(--fwm-alert-in-range) 18%, transparent);     /* RADAR dock active key */
+  --fwm-tint-scan:        color-mix(in srgb, var(--fwm-accent-scan) 18%, transparent);        /* SWEEP dock active key */
+  --fwm-tint-mesh:        color-mix(in srgb, var(--fwm-accent-mesh) 18%, transparent);        /* ASK dock active key */
+
+  --fwm-tint-in-range-weak:   color-mix(in srgb, var(--fwm-alert-in-range) 13%, transparent);  /* selected chip fill; RADAR crosshair stops */
+  --fwm-tint-in-range-soft:   color-mix(in srgb, var(--fwm-alert-in-range) 14%, transparent);  /* the "3 in range" banner fill */
+  --fwm-tint-in-range-arc:    color-mix(in srgb, var(--fwm-alert-in-range) 35%, transparent);  /* REPORT compass facing arc */
+  --fwm-tint-in-range-line:   color-mix(in srgb, var(--fwm-alert-in-range) 50%, transparent);  /* selected chip border; RADAR conic ring ticks */
+  --fwm-tint-in-range-strong: color-mix(in srgb, var(--fwm-alert-in-range) 55%, transparent);  /* the "3 in range" banner border */
+
+  /* THE REPORT KEY, and why it is no longer crimson.
+   *
+   * It was tinted from --fwm-alert-in-range with a crimson glyph. Two problems,
+   * one visual and one semantic. Visually it was the most saturated object on
+   * screen, permanently, above a dark map at night. Semantically it spent the
+   * one hue that MEANS "a camera is inside your threshold" on furniture that is
+   * always there - so when the colour finally meant something, it had been
+   * making the same claim all evening.
+   *
+   * Driven from --fwm-accent-scan instead, which every theme redefines, so the
+   * key picks up whatever palette the driver chose rather than being red in all
+   * of them. The percentages are deliberately far lower than the in-range set
+   * above: this is meant to read as a piece of glass with the map through it,
+   * not as a coloured disc. The glyph is --fwm-text, white, because a white
+   * mark on dark glass is the highest contrast available and does not compete
+   * with a real alert. */
+  --fwm-report-key-wash:   color-mix(in srgb, var(--fwm-accent-scan) 7%, transparent);
+  --fwm-report-key-lift:   color-mix(in srgb, var(--fwm-accent-scan) 3%, transparent);
+  --fwm-report-key-line:   color-mix(in srgb, var(--fwm-text) 22%, transparent);
+  --fwm-report-key-sheen:  color-mix(in srgb, var(--fwm-text) 30%, transparent);
+  --fwm-report-key-glyph:  var(--fwm-text);
+
+  --fwm-tint-scan-weak:   color-mix(in srgb, var(--fwm-accent-scan) 12%, transparent);  /* SWEEP crosshair stops */
+  --fwm-tint-scan-soft:   color-mix(in srgb, var(--fwm-accent-scan) 20%, transparent);  /* SWEEP rotating wedge */
+  --fwm-tint-scan-ring:   color-mix(in srgb, var(--fwm-accent-scan) 42%, transparent);  /* SWEEP minor ring ticks */
+  --fwm-tint-scan-strong: color-mix(in srgb, var(--fwm-accent-scan) 70%, transparent);  /* SWEEP major ring ticks */
+
+  --fwm-tint-approaching-ring: color-mix(in srgb, var(--fwm-alert-approaching) 35%, transparent);  /* SWEEP known-camera marker ring */
+  --fwm-tint-text:             color-mix(in srgb, var(--fwm-text) 18%, transparent);              /* SWEEP 44px ego ring */
+
+  /* ------------------------------------------------------------------ *
+   * THE DOCK.
+   *
+   * One surface at the bottom of the screen, three locked heights, 19
+   * states. `Dock.dc.html` is its specification; that file is a standalone
+   * page with no access to this one, so it hardcodes literals. Every one of
+   * them resolves here instead, because a hex in a component is a colour
+   * that is right in one skin and wrong in sixteen.
+   * ------------------------------------------------------------------ */
+
+  /* ONE MAGENTA, AND IT MEANS SEVERITY.
+   *
+   * The spec page draws its pink as OPERATOR IDENTITY -- "Flock owns this
+   * camera". This app already spends magenta on ALERT MULTIPLICITY -- "two or
+   * more readers are inside your threshold" -- through `--fwm-alert-multiple`,
+   * which has 23 consumers including the full-screen alert takeover.
+   *
+   * The app's meaning wins, on the designer's own call: while browsing, who
+   * owns the camera matters; while driving it is irrelevant and proximity is
+   * everything, and the dock is mostly a driving surface. Minting a second
+   * near-identical pink for identity would have left two magentas on screen
+   * with the less useful one newer and louder.
+   *
+   * So identity is demoted rather than recoloured. It survives as the 7px row
+   * dots in the BROWSE states only, where a named operator sits beside the dot
+   * and the colour is marking a row rather than making a claim. Nothing in the
+   * drive family carries operator identity at all.
+   *
+   * There was no tint family for this hue -- `--fwm-tint-*` covers clear,
+   * approaching, in-range, scan and mesh, and skips multiple. These four are
+   * that gap, at the percentages the spec uses. */
+  --fwm-tint-multiple:        color-mix(in srgb, var(--fwm-alert-multiple) 14%, transparent);  /* dock leading tile fill */
+  --fwm-tint-multiple-line:   color-mix(in srgb, var(--fwm-alert-multiple) 38%, transparent);  /* that tile's border */
+  --fwm-tint-multiple-halo:   color-mix(in srgb, var(--fwm-alert-multiple) 18%, transparent);  /* the 4px ring on the armed status dot */
+  --fwm-tint-multiple-strong: color-mix(in srgb, var(--fwm-alert-multiple) 25%, transparent);  /* the passing-state shadow */
+
+  /* THE HUES AS TYPE, NOT AS FILL.
+   *
+   * The dock draws ten pale derivatives of its own hues -- a soft amber on the
+   * APPROACHING figure, a soft teal on CLEARED's sub-line, a soft pink on a
+   * camera row. They are the difference between a number that informs and a
+   * number that alarms, and the dock's biggest type is 38px, so getting this
+   * wrong makes the whole surface shout.
+   *
+   * `--fwm-alert-in-range-text` already exists as the one member of this family
+   * and is a HUE-LOCKED LITERAL, which is why it carries a GAP note saying it
+   * needs a hand-written value in every non-default mode. Minting five more of
+   * those would multiply that debt by six across seventeen skins.
+   *
+   * So these are derived instead: the hue, pulled towards the ink. One rule,
+   * every skin, no per-mode table. That does not reproduce the spec's exact
+   * hexes -- but those only ever appear under night-watch anyway, because every
+   * parent hue here is re-cut by the skins. A value that follows the palette is
+   * the point; an exact match on one theme and a wrong one on sixteen is not. */
+  --fwm-alert-approaching-text: color-mix(in srgb, var(--fwm-alert-approaching) 65%, var(--fwm-text));
+  --fwm-alert-clear-text:       color-mix(in srgb, var(--fwm-alert-clear) 60%, var(--fwm-text));
+  --fwm-alert-multiple-text:    color-mix(in srgb, var(--fwm-alert-multiple) 62%, var(--fwm-text));
+  --fwm-accent-scan-text:       color-mix(in srgb, var(--fwm-accent-scan) 62%, var(--fwm-text));
+
+  /* The browse status line, which sits between the primary and secondary inks
+   * with nothing on the ramp between them. The two nearest values in this file
+   * are map cartography tokens, declared on :root precisely so they do NOT
+   * follow the skin -- borrowing one for chrome would break that contract. */
+  --fwm-text-soft: color-mix(in srgb, var(--fwm-text) 60%, var(--fwm-text-2));
+
+  /* ===================================================================== *
+   * THE CHROME SURFACE LANGUAGE -- `--dr-*`, AND THESE ARE LITERAL.
+   *
+   * Everything else in this file is a role that each of seventeen skins may
+   * re-cut. These are not. The chrome brief withdraws the earlier instruction
+   * to resolve colours onto existing tokens and publishes the values it wants
+   * in production, exactly -- so they are transcribed, not mapped.
+   *
+   * THE ONE RULE: every surface is translucent near-black glass with a 1px
+   * hairline. No solid fills. No drop shadow doing work a hairline does
+   * better. If you can see an edge, it is a hairline.
+   *
+   * They are `--dr-` rather than `--fwm-` on purpose: a reader has to be able
+   * to tell at a glance which values follow the driver's chosen skin and which
+   * are fixed by the design. Operator and marker hues are the exception and
+   * still resolve to `--fwm-*`, because those carry meaning the palette owns.
+   * ===================================================================== */
+  --dr-surface: rgba(14, 17, 21, 0.84);
+  --dr-surface-menu: rgba(14, 17, 21, 0.9);
+
+  /* THE TOAST'S OWN ALPHA -- section E, and the ONE surface that is not 0.84.
+   * The easter egg's toast floats over the MAP with no chrome behind it, so
+   * the bar's alpha leaves streets legible through the sentence. The brief
+   * raises it to 0.92 for that surface and that surface only; the spec page's
+   * light twin goes to 0.95 for the same reason on a lighter ground. */
+  --dr-surface-toast: rgba(14, 17, 21, 0.92);
+  --dr-hairline: rgba(255, 255, 255, 0.1);
+  --dr-hairline-row: rgba(255, 255, 255, 0.07);
+  --dr-row-fill: rgba(255, 255, 255, 0.035);
+  --dr-row-hover: rgba(255, 255, 255, 0.06);
+  --dr-specular: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --dr-lift: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --dr-blur: blur(22px) saturate(150%);
+
+  /* =====================================================================
+   * BRIEF 4'S SCREEN SURFACES -- OPAQUE, AND THAT IS THE POINT.
+   * =====================================================================
+   * Glass earns its cost when there is a map behind it. A full screen has
+   * nothing behind it, so blurring it buys a compositor pass and no effect:
+   * blur everywhere is blur nowhere. The only glass brief 4 keeps is the abuse
+   * menu and the two map modals, and those take `--dr-surface-thin` above,
+   * unchanged.
+   *
+   * Most of what brief 4 publishes was already here from brief 2 and at the
+   * same values -- `--dr-row-fill`, `--dr-row-hover`, `--dr-hairline-row` and
+   * the four ink tiers all match its table without being touched. Only the
+   * five below were genuinely absent. */
+  --dr-screen: #0b0f14;
+  /* The row hairline when a row is under the finger. Brief 2 shipped the fill
+     for that state and not the line, so a pressed row brightened and kept its
+     resting edge. */
+  --dr-hairline-row-hover: rgba(255, 255, 255, 0.12);
+  /* A CARD IS QUIETER THAN A ROW, which is the whole distinction: a row is a
+     target and a card is a statement, so the card sits back. */
+  --dr-card-fill: rgba(255, 255, 255, 0.03);
+  --dr-card-line: rgba(255, 255, 255, 0.08);
+  /* Between GROUPS of rows, not between rows -- the rows carry their own. */
+  --dr-group-line: rgba(255, 255, 255, 0.07);
+
+  /* FROSTED HAS TO BE VISIBLE TO BE FROSTED.
+   *
+   * `--dr-surface` at 0.84 over a near-black basemap is, optically, a flat
+   * black plate: the backdrop blur is doing real work and none of it can be
+   * seen, because there is nothing bright enough behind it to smear. The
+   * reference this is measured against is a launcher widget over a photograph,
+   * where the wallpaper reads straight through.
+   *
+   * Two changes, together, because neither works alone. The glass gets thinner
+   * so the map actually comes through it, and it gets a GRAIN -- a static
+   * one-pixel dither, no animation -- so the surface has a texture of its own
+   * to catch the light. The grain is also the product's own vocabulary: the
+   * mark is a pixel spray and the bar sweeps in pixels.
+   *
+   * The thinning stops at 0.72. Below that `--dr-ink-muted` drops under 4.5:1
+   * against a bright basemap tile, and the text on this glass is a distance to
+   * a camera. */
+  --dr-surface-thin: rgba(14, 17, 21, 0.72);
+
+  /* THE SIDE SCRIM -- `DarkRoute Landscape Mode.html`, section D.
+   *
+   * "The gradient runs left-to-right across the left 470 px. A bottom scrim in
+   *  landscape would dim the horizon, which is where the next turn appears."
+   *
+   * A WHOLE GRADIENT IN ONE TOKEN, the way `--dr-grain` is, and for the same
+   * reason: it is one material with three stops, and a stylesheet that assembled
+   * it from three tokens could assemble it differently on the next surface that
+   * needed it. The two alphas and the 55% midpoint are the spec's own, read out
+   * of the rendered file.
+   *
+   * IT IS LITERAL, NOT `color-mix` OVER `--fwm-bg`, which is the obvious reuse.
+   * This block exists so a reader can tell at a glance which values follow the
+   * driver's skin and which are fixed by the design, and a scrim that went pale
+   * on `sodium` or `e-ink` would take the chrome's legibility over a bright
+   * basemap with it. It is the same ruling `--dr-surface-thin` two lines above
+   * already makes, in the same words. The light twin is in the light block. */
+  --dr-scrim-side: linear-gradient(
+    to right,
+    rgba(7, 9, 11, 0.55),
+    rgba(7, 9, 11, 0.2) 55%,
+    transparent
+  );
+  --dr-grain-ink: rgba(255, 255, 255, 0.022);
+  --dr-grain: repeating-linear-gradient(
+      0deg,
+      var(--dr-grain-ink) 0 1px,
+      transparent 1px 2px
+    ),
+    repeating-linear-gradient(90deg, var(--dr-grain-ink) 0 1px, transparent 1px 3px);
+  --dr-ink: #f0f3f6;
+  --dr-ink-2: #e8ecf0;
+  --dr-ink-3: #c3cbd3;
+  --dr-ink-4: #a7b0b9;
+  --dr-ink-muted: #8d97a1;
+  --dr-ink-faint: #737d87;
+  --dr-placeholder: #78828c;
+  --dr-accent: #2fd4d4;
+  --dr-accent-fill: rgba(47, 212, 212, 0.13);
+  --dr-accent-line: rgba(47, 212, 212, 0.42);
+  --dr-accent-on: #04211f;
+
+  /* =====================================================================
+   * THE DOCK PANE'S OWN FOUR -- `DarkRoute Dock V3 (2).html`.
+   * =====================================================================
+   * Four values that file draws for the pane which no existing `--dr-*`
+   * carries, each read out of its TWO IN-CONTEXT FRAMES: section A's
+   * `COLLAPSED, IN CONTEXT` and section C's `EXPANDED`. Those are the only
+   * two frames that draw the pane inside a phone over a basemap; every other
+   * frame in the file is the same pane cropped out of its context to show one
+   * state at a time. WHERE THE TWO KINDS DISAGREE THE IN-CONTEXT FRAME IS THE
+   * ONE BUILT, because it is the drawing of the thing this product ships.
+   *
+   * Each light value is section A's own LIGHT twin, which the file draws
+   * beside the dark one in the same row. They are READ, not derived.
+   *
+   *   --dr-dock-divider      The hairline between the body and the tab row,
+   *                          and the one above the list.
+   *                          `height: 1px; background: rgba(255,255,255,0.08)`
+   *                          appears five times in the file and nowhere at any
+   *                          other alpha. `--dr-hairline-row` is 0.07 and is
+   *                          what the NAVIGATING pane's footer rule draws, so
+   *                          the two are two values rather than one.
+   *
+   *   --dr-dock-lift         `0 12px 34px rgba(0,0,0,0.5)` in both in-context
+   *                          frames. The cropped state cards draw the same
+   *                          geometry at 0.45; that is the disagreement the
+   *                          header above settles. `--dr-lift` is
+   *                          `0 10px 30px rgba(0,0,0,0.5)` -- a third value,
+   *                          and the top bar's and the menus' rather than
+   *                          this file's.
+   *
+   *   --dr-dock-accent-line  The active tab's hairline, and the chosen route
+   *                          card's in F2: `rgba(47,212,212,0.38)` on both.
+   *                          `--dr-accent-line` is 0.42 and retuning it would
+   *                          move every other surface that reads it.
+   *
+   *   --dr-dock-scrim        The 180px behind the pane, in the file's own
+   *                          THREE stops. A WHOLE GRADIENT IN ONE TOKEN, the
+   *                          way `--dr-scrim-side` is and for the same reason:
+   *                          it is one material, and a stylesheet that
+   *                          assembled it from three tokens could assemble it
+   *                          differently on the next surface that needed it. */
+  --dr-dock-divider: rgba(255, 255, 255, 0.08);
+  --dr-dock-lift: 0 12px 34px rgba(0, 0, 0, 0.5);
+  --dr-dock-accent-line: rgba(47, 212, 212, 0.38);
+  --dr-dock-scrim: linear-gradient(
+    to top,
+    rgba(7, 9, 11, 0.85),
+    rgba(7, 9, 11, 0.4) 45%,
+    transparent
+  );
+
+  /* THE ABUSE HUE -- RED, AND IT IS NOT AN OWNER DOT.
+   *
+   * Brief 4's hue table publishes red as "police / agency, AND REPORTED
+   * ABUSE": `#ff5a6e` with `#ff9aa6` as its ink in dark, `#a3162c` with
+   * `#8f1226` in light. Those four are transcribed here for the same reason
+   * every other `--dr-*` is -- the brief withdraws the instruction to resolve
+   * colour onto the skins and publishes what it wants in production.
+   *
+   * WHY THIS IS NOT `--dr-owner-police`, WHICH IS THE OBVIOUS REUSE. That
+   * token resolves to `var(--fwm-alert-in-range)`, which seventeen skins
+   * re-cut -- to `#FF2BC2` on `neon-grid`, `#FF7A18` on `sodium`, `#1C1C1C` on
+   * `e-ink`. Pointing the abuse menu at it would make the hue that means
+   * DOCUMENTED MISUSE follow the driver's chosen palette, which is exactly
+   * what the `--dr-*` block exists to stop: a reader has to be able to tell at
+   * a glance which values follow the skin and which are fixed by the design.
+   * An operator dot is a taxonomy the palette owns. A published allegation of
+   * misconduct is not.
+   *
+   * The fill and the line are the alphas the spec page draws for the menu's
+   * accent-filled row, in its own numbers. `--dr-abuse-line` is written over
+   * `255,122,138` rather than over `--dr-abuse` because that is the rgb the
+   * spec draws it in; nothing here is re-derived from the base hue.
+   */
+  --dr-abuse: #ff5a6e;
+  --dr-abuse-text: #ff9aa6;
+  --dr-abuse-fill: rgba(255, 90, 110, 0.1);
+  --dr-abuse-line: rgba(255, 122, 138, 0.3);
+
+  /* The mark's bloom, behind the logo where it breaks the bar's edge. */
+  --dr-bloom: radial-gradient(
+    closest-side,
+    rgba(255, 61, 190, 0.2),
+    rgba(47, 160, 255, 0.11) 52%,
+    transparent 78%
+  );
+
+  /* THE PIXEL SWEEP'S PALETTE -- section D. The mark's own six colours.
+   *
+   * LITERAL, like everything else in this block: the sweep is the logo's pixel
+   * vocabulary run across the bar, so these are the ARTWORK's hues rather than
+   * roles a skin gets to re-cut. Two of them are near-twins of owner dots and
+   * they are still written out here -- a sweep pixel is not an operator, and
+   * pointing it at `--dr-owner-flock` would make the mark's spray change
+   * meaning the day somebody re-tunes what Flock pink is.
+   *
+   * ONE PALETTE, BOTH THEMES. Light does not restate these: it changes the
+   * BLEND -- `multiply` instead of `screen` -- and the colours stay. See
+   * `features/chrome/pixelSweep.css`. */
+  --dr-px-1: #ff3dbe;
+  --dr-px-2: #2fd4ff;
+  --dr-px-3: #7c4dff;
+  --dr-px-4: #ffffff;
+  --dr-px-5: #ff7ad2;
+  --dr-px-6: #00e5ff;
+
+  /* THE OWNER DOTS. These keep resolving to the palette, because whose
+   * hardware is on the pole is a fact the skin does not get to restate. Each
+   * carries a darkened light twin below, in the light skins. */
+  --dr-owner-flock: var(--fwm-alert-multiple);
+  --dr-owner-police: var(--fwm-alert-in-range);
+  --dr-owner-hoa: var(--fwm-alert-approaching);
+  --dr-owner-private: var(--fwm-alert-in-range-text);
+  /* PURPLE, NOT CYAN -- owner decision, 2026-09-08, and it closes a real
+   * collision rather than a stylistic one.
+   *
+   * Cyan is `system positive / active selection`: the live tab, the chosen
+   * route, an armed toggle. It was ALSO unverified, so on the Layers menu an
+   * enabled filter and an unverified camera were the same colour on one screen,
+   * and the one-hue-one-meaning rule every brief states was broken in the one
+   * place a reader would check it.
+   *
+   * Brief 4 frees purple by deleting the lavender promo slab from Mesh, which
+   * was spending the hue on decoration. Four surfaces move together - the
+   * Lookup filter chips, the camera modal, the map markers and brief 2's
+   * Layers menu - because a hue that changes on three of four is worse than
+   * one that never changed at all. */
+  --dr-owner-unverified: #a78bfa;
+  /* The same hue as TEXT. #a78bfa is a marker colour and drops under 4.5:1 as
+     a label on this ground; the lighter step is the readable one. */
+  --dr-owner-unverified-text: #c4b5fd;
+
+  /* ==============================================================   * THE TWO VERDICTS, and they are the one pair brief 4 publishes that had no
+   * token at all.
+   * =====================================================================
+   * `Still there` and `It's gone` are the camera modal's whole reason for
+   * existing: they are how a driver says whether a surveillance record is still
+   * true. Brief 4's hue table gives green as "cleared, route, positive" and red
+   * as the destructive one, with a light twin for each, and the modal draws
+   * both as a tinted fill inside a 30% edge.
+   *
+   * NOT `--fwm-alert-clear` / `--fwm-alert-in-range`. Those are the ALERT
+   * scale: seventeen skins re-cut them - `night-watch` makes clear #29E4FF and
+   * in-range #FF2BC2 - because they answer "how close is the camera", and a
+   * verdict key is not an alert state. Borrowing them would repaint the two
+   * keys a driver presses under load in whatever hue the skin happened to
+   * choose for proximity, and on two skins those two hues are a cyan and a
+   * magenta that read as neither yes nor no.
+   *
+   * The alphas are the spec's own. The light hues are brief 4's light column;
+   * the light alphas are the same 30/8 applied to them, because a tint is a
+   * ratio rather than a colour and the ratio is what the spec states. */
+  --dr-verdict-keep: #7fe3a0;
+  --dr-verdict-keep-line: rgba(126, 235, 150, 0.3);
+  --dr-verdict-keep-fill: rgba(126, 235, 150, 0.08);
+  --dr-verdict-drop: #ff9aa6;
+  --dr-verdict-drop-line: rgba(255, 122, 138, 0.3);
+  --dr-verdict-drop-fill: rgba(255, 90, 110, 0.08);
+
+  /* =========================================================================
+   * THE SEARCH ENTRY PANEL -- `DarkRoute Search Entry.html`.
+   * ======================================================================
+   * Every value below was read out of Chromium against that file at real size
+   * (`getComputedStyle`, viewport 1400 wide), not copied from its prose. The
+   * pixel or the rgb the spec draws is written beside each one.
+   *
+   * WHY THESE ARE NOT SPELT OUT OF EXISTING TOKENS. Three of them nearly are
+   * and are still declared here:
+   *
+   *   `--dr-accent-line` is rgba(47,212,212,0.42). The panel's field wants
+   *   0.45 and its badges want 0.40, and both are drawn in the same picture as
+   *   each other -- so they are two values, not one, and retuning the shared
+   *   token to either would move every other surface that already reads it.
+   *
+   *   `--dr-verdict-keep-line` is 0.30. The picked row is 0.34 and its badge
+   *   0.42. Same argument.
+   *
+   *   `--dr-row-fill` is 0.035 and the field's fill is 0.04. The spec draws a
+   *   field a step brighter than a row and the difference is the point.
+   *
+   * WHY MOST OF THEM ARE `color-mix` OVER ANOTHER `--dr-*`. The spec is drawn
+   * DARK ONLY -- there is not one light frame in either file -- so every light
+   * value here would otherwise be invented. Mixing an alpha over `--dr-ink`,
+   * `--dr-accent` or `--dr-verdict-keep` makes each of these follow the ink
+   * and the accent the pale skins already publish, so a white 8% hairline on
+   * near-black becomes a near-black 8% hairline on white without anybody
+   * choosing a second colour. `--fwm-corridor-threshold-wash` above is the
+   * same construction for the same reason. What CANNOT be derived that way --
+   * the three tier hues, the placeholder, the body ink, the picked title and
+   * the two shadows -- carries a light twin in each pale skin below. */
+
+  /* THE CAMERA-COUNT TIERS, WHICH ARE THE WHOLE POINT OF THE PANEL.
+   *
+   * "Green at zero, amber 1-3, red 4+" -- E. RULES. Green and red land on the
+   * same rgb as the two verdicts and are still written out: a verdict is a
+   * driver's answer about whether a camera is still there, and a tier is how
+   * many cameras are on the way somewhere. One is an opinion and the other is
+   * a count, and pointing the count at the opinion would repaint every row of
+   * this list the day somebody re-tunes what "still there" is drawn in.
+   *
+   * THE AMBER HAS NO TOKEN ANYWHERE IN THIS FILE. `--fwm-alert-approaching`
+   * is #FFC02E, a different and skin-re-cut colour, and `--dr-owner-hoa`
+   * resolves to it. #f5a524 is the spec's own and it is new here.
+   *
+   * The light column is brief 4's: the pale skins' own green and red, and a
+   * dark ochre for the amber that clears 4.5:1 on white -- #f5a524 does not. */
+  --dr-tier-clear: #7fe3a0; /* 0 cams */
+  --dr-tier-some: #f5a524; /* 1-3 cams */
+  --dr-tier-many: #ff9aa6; /* 4+ cams */
+  /* The saved-place star's badge edge, which is the amber at the same 40% the
+     cyan badges use. */
+  --dr-tier-some-line: color-mix(in srgb, var(--dr-tier-some) 40%, transparent);
+
+  /* THE FIELD, THE RULE UNDER THE LIST AND THE BADGE EDGE.
+   * rgba(255,255,255,0.04) / 0.08 / 0.14, as drawn, over the ink so they
+   * invert with the skin rather than staying white on white. */
+  --dr-field-fill: color-mix(in srgb, var(--dr-ink) 4%, transparent);
+  --dr-divider: color-mix(in srgb, var(--dr-ink) 8%, transparent);
+  --dr-badge-line: color-mix(in srgb, var(--dr-ink) 14%, transparent);
+  /* rgb(110,120,129). One step darker than `--dr-placeholder` (#78828c), and
+     the spec draws it in both the field's prompt and its search glyph. */
+  --dr-field-placeholder: #6e7881;
+  /* rgb(152,162,172) -- the first-run paragraph. `--dr-ink-4` is #a7b0b9,
+     which is a step brighter; the sentence is drawn at the darker one. */
+  --dr-ink-body: #98a2ac;
+
+  /* TYPING. The field lights to an accent edge over an accent wash, and a
+     history match under it repeats the pair at a lower strength so the row
+     that is "somewhere you have already been" reads as chosen without being
+     filled. 0.45 / 0.08 / 0.40 / 0.28 / 0.06, as drawn. */
+  --dr-accent-edge: color-mix(in srgb, var(--dr-accent) 45%, transparent);
+  --dr-accent-wash: color-mix(in srgb, var(--dr-accent) 8%, transparent);
+  --dr-accent-badge-line: color-mix(in srgb, var(--dr-accent) 40%, transparent);
+  --dr-accent-row-line: color-mix(in srgb, var(--dr-accent) 28%, transparent);
+  --dr-accent-row-fill: color-mix(in srgb, var(--dr-accent) 6%, transparent);
+
+  /* PICKED, AND THE DEFAULT ROW IS GREEN RATHER THAN ACCENT.
+   *
+   * The fewest-cameras option is the one this application exists to offer, and
+   * the spec fills it with the ZERO-CAMERAS green rather than with the cyan
+   * that means "selected" everywhere else -- rgba(126,235,150,0.34) over
+   * rgba(126,235,150,0.07), badge edge 0.42, title rgb(168,239,192). Read as
+   * deliberate: the row's own count is drawn in that same green two inches to
+   * the right of the title, and a cyan row with a green number on it would be
+   * saying "chosen" and "clear" in two colours for one fact. */
+  --dr-keep-row-line: color-mix(in srgb, var(--dr-verdict-keep) 34%, transparent);
+  --dr-keep-row-fill: color-mix(in srgb, var(--dr-verdict-keep) 7%, transparent);
+  --dr-keep-badge-line: color-mix(in srgb, var(--dr-verdict-keep) 42%, transparent);
+  --dr-keep-title: #a8efc0; /* rgb(168,239,192) */
+
+  /* FIRST RUN'S SET HOME KEY, and it is a THIRD accent pair rather than the
+   * field's or the badge's.
+   *
+   * Section C draws `rgba(47,212,212,0.35)` over `rgba(47,212,212,0.1)` on the
+   * one filled key in the first-run panel. `--dr-accent-line` is 0.42 and
+   * `--dr-accent-fill` is 0.13, and the panel had been borrowing that pair --
+   * a key that is the only accent thing on an otherwise empty surface is drawn
+   * QUIETER than the field's own focus edge, not louder, which is what the
+   * spec's two steps down are saying. Retuning the shared pair to 0.35/0.10
+   * would move every other surface that already reads it, so these are two
+   * values rather than one. */
+  --dr-first-key-line: color-mix(in srgb, var(--dr-accent) 35%, transparent);
+  --dr-first-key-fill: color-mix(in srgb, var(--dr-accent) 10%, transparent);
+
+  /* THE PANEL'S OWN TWO SHADOWS, and they are not `--dr-lift`.
+   *
+   * Portrait draws `0 16px 44px rgba(0,0,0,0.55)` and landscape draws
+   * `0 12px 34px rgba(0,0,0,0.5)`; `--dr-lift` is `0 10px 30px rgba(0,0,0,0.5)`
+   * and is neither. A 470px sheet standing off a live map is a bigger object
+   * than the bar and the menu that share `--dr-lift`, and the spec lifts it
+   * further; the landscape panel is shorter and is lifted less. Two values
+   * because the drawing has two. */
+  --dr-panel-lift: 0 16px 44px rgba(0, 0, 0, 0.55);
+  --dr-panel-lift-tight: 0 12px 34px rgba(0, 0, 0, 0.5);
+
+  /* THE DOCK'S OWN TWO-STEP SURFACE.
+   *
+   * The spec needs a raised tile LIGHTER than the surface it sits on. The
+   * generic surface scale cannot promise that: on `slate` -- the default --
+   * `--fwm-surface-control` is DARKER than `--fwm-surface-dock`, so the 56px
+   * leading tile and the 60px mute key would read as holes punched in the
+   * dock rather than keys sitting on it. On eleven of seventeen skins the
+   * six surface tokens collapse to two values and the depth disappears
+   * entirely.
+   *
+   * So the lift is expressed as a lift. `--fwm-lift` is a white wash on dark
+   * grounds and is flipped to a dark wash by the light skins below, which is
+   * the only way a raise stays a raise when the ground inverts. */
+  --fwm-lift: #FFFFFF;
+  --fwm-dock-surface: var(--fwm-surface-dock);
+  --fwm-dock-raise:   color-mix(in srgb, var(--fwm-lift) 5%, var(--fwm-dock-surface));
+  --fwm-dock-raise-2: color-mix(in srgb, var(--fwm-lift) 9%, var(--fwm-dock-surface));
+  --fwm-dock-sunk:    color-mix(in srgb, var(--fwm-lift) 2%, var(--fwm-bg));
+  --fwm-dock-grabber: var(--fwm-line-strong);
+  --fwm-dock-home:    var(--fwm-line-instrument);
+
+  /* A THIRD GREY THAT IS ACTUALLY READABLE.
+   *
+   * The spec draws 72 text runs in one tertiary grey at 6.12:1. The nearest
+   * existing token, `--fwm-text-icon`, is documented as an ICON stroke -- 3:1
+   * is its bar and it passes that on fifteen skins -- and as TEXT it lands at
+   * 3.71:1 on night-watch and 4.32:1 on slate, failing 4.5:1 on eleven of
+   * seventeen. `--fwm-text-muted` fails on sixteen.
+   *
+   * So the tertiary tier gets its own token, pulled off `--fwm-text-2`
+   * towards the dock surface far enough to read as a third tier and not so
+   * far that it stops clearing AA. Measured per skin in a real browser;
+   * every skin that misses carries an override beside its other colours. */
+  --fwm-text-3: color-mix(in srgb, var(--fwm-text-2) 84%, var(--fwm-dock-surface));
+
+  /* THE STATE EDGES AND GROUNDS.
+   *
+   * A dock state is carried by a 1px border and, in the drive family, by the
+   * ground behind it. Percentages fitted against the spec's own values;
+   * where the token's hue differs from the spec's the mix lands within
+   * ~4 CIE76 of it, which at 1px on a dark ground is the closest a value
+   * that follows the skin can get. A literal would match exactly and would
+   * be wrong the moment the driver changed theme. */
+  --fwm-dock-edge-neutral:     var(--fwm-line-dock);
+  --fwm-dock-edge-multiple:    color-mix(in srgb, var(--fwm-alert-multiple) 12%, var(--fwm-dock-raise));
+  --fwm-dock-edge-scan:        color-mix(in srgb, var(--fwm-accent-scan) 19%, var(--fwm-dock-surface));
+  --fwm-dock-edge-approaching: color-mix(in srgb, var(--fwm-alert-approaching) 17%, var(--fwm-surface-track));
+  --fwm-dock-edge-abuse:       color-mix(in srgb, var(--fwm-alert-in-range) 18%, var(--fwm-line-soft));
+  --fwm-dock-edge-clear:       color-mix(in srgb, var(--fwm-alert-clear) 32%, var(--fwm-dock-raise));
+
+  --fwm-dock-ground-approaching: color-mix(in srgb, var(--fwm-alert-approaching) 10%, var(--fwm-bg));
+  --fwm-dock-ground-passing:     color-mix(in srgb, var(--fwm-alert-multiple) 16%, var(--fwm-bg));
+  --fwm-dock-ground-cleared:     color-mix(in srgb, var(--fwm-alert-clear) 9%, var(--fwm-bg-sunken));
+  --fwm-dock-ground-abuse:       color-mix(in srgb, var(--fwm-alert-in-range) 13%, var(--fwm-bg));
+
+  /* The cleared state's own key, which is a filled button rather than a wash. */
+  --fwm-dock-key-clear:      color-mix(in srgb, var(--fwm-alert-clear) 13%, var(--fwm-surface-1));
+  --fwm-dock-key-clear-line: color-mix(in srgb, var(--fwm-alert-clear) 32%, var(--fwm-dock-raise));
+
+  /* GLOWS -- v2 draws two more, at 26px, on the RADAR state matrix rings.
+   * Derived from the hue tokens for the same mode reason as the tints. */
+  --fwm-glow-clear:       0 0 26px color-mix(in srgb, var(--fwm-alert-clear) 20%, transparent);
+  --fwm-glow-approaching: 0 0 26px color-mix(in srgb, var(--fwm-alert-approaching) 22%, transparent);
+
+  /* MASKS -- v2 draws 56 mask declarations; v1 drew none. A mask stop is an
+   * alpha ramp, not paint, but it is still a hex literal and still belongs
+   * here. The three composite ramps are used verbatim and repeatedly; the ring
+   * masks vary their stop percentages per ring and only need the opaque stop.
+   * GAP: tokens-v2.md#mask-stops-are-alpha-not-paint */
+  --fwm-mask-solid: #000;  /* the fully-opaque stop of any mask gradient */
+  --fwm-mask-scope-vignette: radial-gradient(circle at center, #000 20%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.12) 82%, transparent 96%);
+  /* THE FULL-BLEED FADE. The design's vignette above is drawn for a 343px puck
+   * with a hard `border-radius` edge under it, so it can stay fairly opaque to
+   * 82% and cut at 96% -- the clip hides the ending.
+   *
+   * A dial that runs to the screen edges has no clip to hide behind, so the
+   * same curve ends in a visible circular rim across the middle of the screen.
+   * This one starts stepping down almost immediately and carries a long, low
+   * tail: the lattice reads as a field that thins into the dark rather than a
+   * disc sitting on it. More stops, all under half opacity past the centre. */
+  /* A soft annulus. Used for the bearing ticks at full bleed: without a
+   * circular clip the tick pattern is a full starburst, and this keeps only the
+   * band around the scope's edge, fading in and out at both sides so no ring
+   * has a drawn rim. */
+  /* ---------------------------------------------------------------------
+   * PLASMA - the node ramp, by distance.
+   *
+   * Sampled from matplotlib's `plasma`, which is perceptually uniform: equal
+   * steps along it look like equal steps to the eye, which an ad-hoc
+   * yellow-to-blue gradient does not. That property is the whole point here --
+   * a driver reads these as a distance scale, so two nodes that differ by one
+   * step must look one step apart wherever on the ramp they sit.
+   *
+   * 0 is ON YOU and 10 is the edge of the scope. Bright warm yellow reads as
+   * near and hot; deep indigo recedes. The direction is not arbitrary: the
+   * thing closest to you has to be the thing your eye lands on first.
+   * ------------------------------------------------------------------------ */
+  --fwm-plasma-0:  #F0F921;
+  --fwm-plasma-1:  #FDCA26;
+  --fwm-plasma-2:  #FCA636;
+  --fwm-plasma-3:  #F58A47;
+  --fwm-plasma-4:  #E16462;
+  --fwm-plasma-5:  #DB4F86;
+  /* THE DARK END IS LIFTED, AND IT HAD TO BE.
+   *
+   * Plasma is a colormap designed to be read on white. Its far end -- the real
+   * one runs ... #7201A8, #46039F, #0D0887 -- is near-black navy, and this app
+   * draws on #000000. Measured against the background, the last four steps came
+   * out at 2.91, 2.19, 1.70 and 1.35 to 1. Step 10 was a camera rendered in a
+   * colour 1.35x brighter than the void behind it: reported, correctly, as
+   * "impossible to see".
+   *
+   * That is not a cosmetic complaint. A far node that cannot be seen is a
+   * camera the driver has not been told about, and the far end of the ramp is
+   * where MOST of the map lives at any zoom.
+   *
+   * So the second half keeps plasma's hue journey -- magenta through violet to
+   * blue, still marching one way, still ordered by distance -- and floors the
+   * luminance. Every step now clears 5.4:1 on black. The ramp is no longer
+   * monotone in brightness, which is fine: brightness was never the channel
+   * carrying distance. Hue is, and size is. */
+  --fwm-plasma-6:  #D45BAE;
+  --fwm-plasma-7:  #C86BD8;
+  --fwm-plasma-8:  #B681F2;
+  --fwm-plasma-9:  #9E9BFF;
+  --fwm-plasma-10: #7FC4FF;
+
+  --fwm-mask-scope-rim: radial-gradient(circle at center, transparent 38%, rgba(0,0,0,.25) 43%, rgba(0,0,0,.55) 47%, rgba(0,0,0,.25) 51%, transparent 56%);
+  --fwm-mask-scope-bleed: radial-gradient(circle at center, #000 0%, rgba(0,0,0,.62) 26%, rgba(0,0,0,.4) 44%, rgba(0,0,0,.22) 60%, rgba(0,0,0,.1) 74%, rgba(0,0,0,.04) 86%, transparent 100%);
+  --fwm-mask-voice-field: linear-gradient(#0000, #0008 55%, #000d);
+  --fwm-mask-voice-bar: linear-gradient(#0000 0%, #000c 34%, #000 100%);
+
+  /* DOCK GEOMETRY -- v2 redraws the dock as one bar, so the v1 numbers behind
+   * DESIGN-GAPS.md#dock-key-height-58 no longer describe it. --fwm-nav-h stays
+   * 64px for anything v2 did not redraw.
+   * GAP: tokens-v2.md#dock-total-84-vs-drawn-73 and #dock-key-42-is-under-the-touch-floor */
+  /* MAP-PRIMARY. The panel measure and the rail gutter on a `dash` surface.
+   * 420px is a readable column for the settings and exposure lists that live
+   * in it - wider and the eye loses its row between label and control, which
+   * is the failure a full-width desktop list actually has. The rail is the
+   * dock pill's own width plus its padding. */
+  --fwm-panel-w:    420px;
+  /* The panel's edge against the map. A shadow rather than only a rule,
+   * because the thing behind it is a moving satellite-lit map and a hairline
+   * alone disappears over the bright parts of it. */
+  --fwm-panel-shadow: 0 0 var(--fwm-space-6) rgb(0 0 0 / 45%);
+  --fwm-rail-w:     88px;
+  --fwm-dock-h:     84px;  /* v2's stated dock total, before safe area */
+  --fwm-dock-bar-h: 58px;  /* the drawn bar, radius-5, on --fwm-surface-dock */
+  --fwm-dock-key-h: 42px;  /* the drawn key -- 2px under --fwm-touch-min, hit area extends */
+  --fwm-icon-size:  24px;  /* "collapse to a 24px stroke icon on the platform 1.6px grid" */
+}
+
+/* ---------------------------------------------------------------------------
+ * Mode overrides -- section 08, "MODES -- modes.css", verbatim.
+ *
+ * A mode remaps existing variable names only. It may change color, radius,
+ * glow and type size. It may never change layout, hit targets, hierarchy, or
+ * the four-state hue logic.
+ *
+ * `night-watch` is the default and has no override block by design: it IS the
+ * :root values above. See DESIGN-GAPS.md#night-watch-has-no-block.
+ * ------------------------------------------------------------------------ */
+
+[data-fwm-mode="neon-grid"] {
+  --fwm-bg: #0A0618;   --fwm-bg-sunken: #14082A;
+  --fwm-surface-1: #150A26; --fwm-surface-2: #1E0F38;
+  --fwm-line: #3A1D63;      --fwm-text-2: #8E7BC8;
+  --fwm-alert-clear: #29E4FF;
+  --fwm-alert-approaching: #FFD447;
+  --fwm-alert-in-range: #FF2BC2;
+  --fwm-alert-multiple: #B14BFF;
+  --fwm-glow-alert: 0 0 22px #FF2BC2;
+}
+[data-fwm-mode="cartridge-96"] {
+  --fwm-bg: #1A1E25;   --fwm-bg-sunken: #08170D;
+  --fwm-surface-1: #2A2F38; --fwm-surface-2: #3A414C;
+  --fwm-line: #545C69;      --fwm-text: #D5DAE2;
+  --fwm-alert-clear: #7BE38A;
+  --fwm-alert-approaching: #FFB03A;
+  --fwm-alert-in-range: #FF6B4A;
+  --fwm-alert-multiple: #FF3DBE;
+  --fwm-radius-1: 2px;  --fwm-radius-2: 2px;
+}
+[data-fwm-mode="pursuit"] {
+  --fwm-bg: #000000;   --fwm-bg-sunken: #150104;
+  --fwm-surface-1: #0B0203; --fwm-surface-2: #1B0407;
+  --fwm-line: #3B060C;      --fwm-text-2: #FF9F1C;
+  --fwm-alert-clear: #FF9F1C;
+  --fwm-alert-approaching: #FF6A00;
+  --fwm-alert-in-range: #FF1E2D;
+  --fwm-alert-multiple: #FFFFFF;
+  --fwm-scan-dur: 1600ms;
+}
+[data-fwm-mode="cluster"] {
+  --fwm-bg: #04070A;   --fwm-surface-1: #08161A;
+  --fwm-line: #10333A;      --fwm-text: #46F0E0;
+  --fwm-alert-clear: #46F0E0;
+  --fwm-alert-approaching: #FFD24A;
+  --fwm-alert-in-range: #FF7A18;
+  --fwm-alert-multiple: #FF3B3B;
+}
+[data-fwm-mode="dash-cast"] {
+  --fwm-touch-min: 68px;  --fwm-text-body: 1rem;
+  --fwm-text-hero: 4.5rem; --fwm-radius-2: 8px;
+  --fwm-nav-w: 88px;      /* rail replaces bottom nav */
+}
+
+/*
+ * AURORA - added in "DarkRoute Design System 80sv3".
+ *
+ * The first mode with TRANSLUCENT surfaces: `--fwm-surface-*` are white at low
+ * alpha rather than opaque near-blacks, so depth comes from what is behind
+ * them. The radii jump to 14/18px, the widest in the system, and it is the only
+ * mode that uses `--fwm-bloom`.
+ */
+[data-fwm-mode="aurora"] {
+  --fwm-bg: #0B0810;   --fwm-bg-sunken: #07050B;
+  --fwm-surface-1: rgb(255 255 255 / .055);
+  --fwm-surface-2: rgb(255 255 255 / .09);
+  --fwm-line: rgb(255 255 255 / .08);
+  --fwm-text: #F7F5FF;  --fwm-text-2: #8B84A3;
+  --fwm-alert-clear: #5EEAD4;
+  --fwm-alert-approaching: #FDE68A;
+  --fwm-alert-in-range: #F0ABD9;
+  --fwm-alert-multiple: #A78BFA;
+  --fwm-radius-1: 14px; --fwm-radius-2: 18px;
+  --fwm-bloom: blur(26px);   /* radial glow layers */
+}
+
+/*
+ * REFINEMENT - added in "DarkRoute Design System 80sv3", and the first LIGHT mode.
+ *
+ * It contradicts the build brief, which says "Base is #000000. Dark mode only.
+ * There is no light theme." The design file is the later decision and the
+ * brief's own rule is that the screen file wins, so it ships - but the
+ * contradiction is recorded rather than silently resolved.
+ * See docs/gaps-inbox/tokens-v3.md.
+ *
+ * It is also the first mode to change a FONT FAMILY (UI becomes JetBrains
+ * Mono) and to switch the alert glow off entirely. Both stay inside the rule
+ * that a mode may change colour, radius, glow and type - never layout, hit
+ * targets, hierarchy, or the four-state hue logic, all of which it leaves
+ * alone.
+ */
+/* ---------------------------------------------------------------------------
+ * REFINEMENT - the one light mode, and the one that has to declare everything.
+ *
+ * =============================================================================
+ * THE RULE THE OTHER SEVEN MODES GET AWAY WITH BREAKING
+ * =============================================================================
+ * Every other mode is dark, so a token it does not override inherits a value
+ * from `:root` that still works. This one inverts the ground, and an
+ * unoverridden token is then not merely off-palette but WRONG: `--fwm-surface-
+ * sunk` is #0B0D11, a near-black field, and `--fwm-text-disabled` is #3A3F4B,
+ * which on paper is DARKER than the body text it is meant to recede from.
+ * Disabled text read as emphasis. So this block is long on purpose -- a light
+ * theme has to name every colour it uses, not just the ones that look wrong
+ * first.
+ *
+ * =============================================================================
+ * WHAT IT IS SHAPED LIKE
+ * =============================================================================
+ * Lumon's software, from Severance. The vocabulary that carries it:
+ *
+ *   PAPER, NOT WHITE. A pale institutional green-grey -- the walls of that
+ *   office -- rather than #FFF. White would read as a document; this reads as
+ *   equipment.
+ *
+ *   PANELS SIT ABOVE THE GROUND. `--fwm-surface-1` is LIGHTER than `--fwm-bg`
+ *   here, which is the reverse of every dark mode, where a surface is a lift
+ *   out of black. On paper a panel is an inset card, and it was previously the
+ *   same value as the ground, so every card in the app was invisible.
+ *
+ *   HAIRLINES, WITH ONE STRONG FRAME. `--fwm-line` was full-strength ink,
+ *   which drew every box at the same weight as the text inside it. Lumon's
+ *   panels are fine rules with an occasional deliberate heavy border, and
+ *   splitting `--fwm-line` from `--fwm-line-strong` is what allows both.
+ *
+ *   THE CYAN. `--fwm-accent-scan` was inherited as #22C8E0 -- a dark-theme
+ *   glow colour, which on paper is a highlighter. The MDR terminal's cyan is
+ *   a duller, deeper thing that holds against a light ground.
+ *
+ *   NO GLOW, NO RADIUS. Both already set below, and both are load-bearing:
+ *   Lumon's software is boxy and matte. A rounded, glowing corner is the one
+ *   detail that would break the reference on sight.
+ * ------------------------------------------------------------------------ */
+
+[data-fwm-mode="refinement"] {
+  /* THE CHROME, ON A LIGHT GROUND. NOT AN INVERSION.
+   * The accent changes hue value rather than lightness: #2fd4d4 is 1.9:1 on
+   * white and unreadable. Every owner dot has a darkened twin for the same
+   * reason -- a dot that carries meaning has to be visible to carry it. */
+  --dr-surface: rgba(255, 255, 255, 0.86);
+  --dr-surface-menu: rgba(255, 255, 255, 0.94);
+  --dr-surface-toast: rgba(255, 255, 255, 0.95);
+  --dr-hairline: rgba(15, 20, 25, 0.12);
+  --dr-hairline-row: rgba(15, 20, 25, 0.08);
+  --dr-row-fill: rgba(15, 20, 25, 0.035);
+  --dr-row-hover: rgba(15, 20, 25, 0.06);
+  --dr-specular: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --dr-lift: 0 8px 24px rgba(15, 20, 25, 0.12);
+  --dr-screen: #f2f5f7;
+  --dr-hairline-row-hover: rgba(15, 20, 25, 0.16);
+  --dr-card-fill: rgba(15, 20, 25, 0.03);
+  --dr-card-line: rgba(15, 20, 25, 0.1);
+  --dr-group-line: rgba(15, 20, 25, 0.09);
+  --dr-surface-thin: rgba(255, 255, 255, 0.74);
+  /* NEVER DRAWN. All five landscape frames in the spec are dark, so this is a
+     derivation with nothing to check it against: a white veil, at the dark
+     twin's two alphas, so the chrome stays legible over a bright basemap the
+     way the dark one does over a dark one. Reported to the owner. */
+  --dr-scrim-side: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.24) 55%,
+    transparent
+  );
+  --dr-grain-ink: rgba(15, 20, 25, 0.028);
+  --dr-ink: #0f1419;
+  --dr-ink-2: #0f1419;
+  --dr-ink-3: #3d4751;
+  --dr-ink-4: #4d5761;
+  --dr-ink-muted: #59636d;
+  --dr-ink-faint: #5c666f;
+  --dr-placeholder: #5c666f;
+  --dr-accent: #096064;
+  --dr-accent-fill: rgba(9, 96, 100, 0.1);
+  --dr-accent-line: rgba(9, 96, 100, 0.4);
+  /* The dock pane's four, read out of section A's LIGHT frame -- the light
+     twin the file draws beside the dark one. See the dark block. */
+  --dr-dock-divider: rgba(15, 20, 25, 0.09);
+  --dr-dock-lift: 0 12px 30px rgba(15, 20, 25, 0.16);
+  --dr-dock-accent-line: rgba(9, 96, 100, 0.38);
+  --dr-dock-scrim: linear-gradient(
+    to top,
+    rgba(233, 237, 240, 0.9),
+    rgba(233, 237, 240, 0.45) 45%,
+    transparent
+  );
+  /* The abuse hue's light twin, from brief 4's own table. See the dark block. */
+  --dr-abuse: #a3162c;
+  --dr-abuse-text: #8f1226;
+  --dr-abuse-fill: rgba(163, 22, 44, 0.09);
+  --dr-abuse-line: rgba(163, 22, 44, 0.32);
+  --dr-owner-flock: #a8007a;
+  --dr-owner-police: #c8102e;
+  --dr-owner-hoa: #8a5f10;
+  --dr-owner-private: #b3336b;
+  --dr-owner-unverified: #6d4aca;
+  --dr-owner-unverified-text: #6d4aca;
+  /* Brief 4's light column for the same two hues, at the same 30/8 ratios. */
+  --dr-verdict-keep: #1f7a43;
+  --dr-verdict-keep-line: rgba(31, 122, 67, 0.3);
+  --dr-verdict-keep-fill: rgba(31, 122, 67, 0.08);
+  --dr-verdict-drop: #8f1226;
+  --dr-verdict-drop-line: rgba(163, 22, 44, 0.3);
+  --dr-verdict-drop-fill: rgba(163, 22, 44, 0.08);
+  /* THE SEARCH PANEL'S SIX UNDERIVABLE VALUES, on a pale ground.
+   * The rest of the panel's block mixes an alpha over `--dr-ink`,
+   * `--dr-accent` and `--dr-verdict-keep` and so has already followed this
+   * skin. These six are hues and shadows and cannot: the tier green and red
+   * are brief 4's light column, the amber is a dark ochre because #f5a524
+   * does not clear 4.5:1 on white, and the two panel shadows invert the way
+   * `--dr-lift` does two lines above. */
+  --dr-tier-clear: #1f7a43;
+  --dr-tier-some: #8a5f10;
+  --dr-tier-many: #8f1226;
+  --dr-field-placeholder: #5c666f;
+  --dr-ink-body: #4d5761;
+  --dr-keep-title: #1a6338;
+  --dr-panel-lift: 0 16px 44px rgba(15, 20, 25, 0.16);
+  --dr-panel-lift-tight: 0 12px 34px rgba(15, 20, 25, 0.14);
+  /* THE LIFT INVERTS ON A LIGHT GROUND.
+   * `--fwm-dock-raise` is a wash of `--fwm-lift` over the dock surface. On a
+   * dark skin that wash is white and the tile rises. Leave it white here and
+   * the raise would wash a pale surface paler until it vanished, so on this
+   * skin the lift is black and the same expression darkens instead. The tile
+   * is still a step away from the surface, which is the only thing the
+   * expression is required to guarantee. */
+  --fwm-lift: #000000;
+  /* THE FIX FOR THE BLACK BAND UNDER THE APP.
+   *
+   * `color-scheme` decides what the ENGINE paints where the document does not:
+   * behind the home indicator under `viewport-fit=cover`, the overscroll
+   * gutter, scrollbars, default control chrome. `global.css` sets `dark` on
+   * `html` for the seven dark modes; a background on html/body cannot reach
+   * that region, so an installed PWA framed this paper-coloured app in black
+   * along the bottom. `theme-color` already followed the mode (`app/mode.ts`),
+   * which is why the top bar was right and only the bottom was wrong.
+   *
+   * An attribute selector on the same element, so it beats `html` on
+   * specificity whatever order the stylesheets load in. */
+  color-scheme: light; /* keyword */
+
+  /* GROUND AND PANELS. Surfaces ascend rather than descend -- see above. */
+  --fwm-bg: #E6EDE8;   --fwm-bg-sunken: #D9E3DD;
+  --fwm-surface-1: #F1F6F2; --fwm-surface-2: #F8FBF8;
+  /* The recessed field the corridor ladder and the meters are cut into. Below
+     the ground, still paper. Inherited, this was #0B0D11 -- a black slot. */
+  --fwm-surface-sunk: #DCE6E0;
+
+  /* INK. Deeper and bluer than the old #0F3B44: Lumon's navy reads as printed
+     rather than as a dark teal wash. */
+  --fwm-text: #0A2E3C;  --fwm-text-2: #3F6B74;
+  --fwm-text-muted: #6E8E93;
+  /* LIGHTER than the body text, which is the whole job of this token and which
+     the inherited #3A3F4B got exactly backwards on a light ground. */
+  --fwm-text-disabled: #A9BEBF;
+
+  /* RULES. A hairline by default; the strong one is a deliberate frame. */
+  --fwm-line: #B3C7C3;      --fwm-line-strong: #0A2E3C;
+  --fwm-line-soft: #C8D6D1;
+  --fwm-line-dock: #B3C7C3;
+  --fwm-line-instrument: #93AAA8;
+  --fwm-line-compass: #4E7C83;
+  /* The dot lattices the scope and the ladder are drawn on. Dark values here
+     would stipple the paper with soot. */
+  --fwm-line-grid-1: #CBD9D4;
+  --fwm-line-grid-2: #C2D2CC;
+  --fwm-line-grid-3: #B8CAC4;
+
+  /* THE MDR CYAN, held down so it works as ink rather than as a glow. */
+  --fwm-accent-scan: #1C8FA8;
+
+  --fwm-alert-clear: #0A2E3C;
+  --fwm-alert-approaching: #4E7C83;
+  --fwm-alert-in-range: #A8433A;
+  --fwm-alert-multiple: #6B3A7D;
+
+  /* THE MAP MATCHES THE CHROME. The only mode that overrides these.
+     Paper -- and the water is no longer "a shade of the ink rather than of the
+     night". The owner's light reference draws it BLUE, and it is the one
+     saturated thing on that whole screenshot, so the restraint that produced
+     #C0D4D6 here was the wrong call for the one mode that has daylight to
+     spend. Both values are the custom flavour's now; see `:root` above. */
+  /* THE LIGHT SKINS TAKE THE DARK GROUND TOO - owner call, 2026-09-08.
+     The refinement cartography still draws the roads, the labels and the
+     water; only the ground beneath them is the shared default. See
+     `--fwm-map-earth-default` in `:root` for why the map does not follow
+     the theme the way the chrome does. A colour chosen in SETTINGS wins
+     over this, in this theme and in every other one. */
+  --fwm-map-earth: var(--fwm-map-earth-default);
+  --fwm-map-water: var(--fwm-carto-refinement-water);
+
+  /* =========================================================================
+   * THE FOUR SURFACES THAT WERE STILL BLACK
+   * =========================================================================
+   * `--fwm-surface-1` and `--fwm-surface-2` were overridden here from the
+   * start, so it LOOKED handled. These four were not, and they are the ones
+   * that actually paint a card, the dock, a slider track and a chip -- so on
+   * paper the EXPOSURE tiles, the REPORT position block, every mount chip and
+   * every ASK suggestion rendered as near-black slabs. A light theme has to
+   * name every surface, not the two with the most obvious names.
+   * ====================================================================== */
+  --fwm-surface-card: #F1F6F2;
+  /* The translucent card, for chrome laid OVER the map -- MapLibre's
+     attribution pill is the only user. Written as its own rgba rather than
+     derived, because it is a literal at :root too; left dark it was a black
+     lozenge sitting on a paper-coloured map. */
+  --fwm-surface-card-over: rgba(241, 246, 242, 0.82);
+  --fwm-surface-dock: #EDF3EE;
+  /* A track is the groove a control runs in, so it goes DOWN from the ground
+     while a card goes up. */
+  --fwm-surface-track: #D5E1DA;
+  --fwm-surface-control: #E9F1EB;
+
+  /* Greys cut for a dark ground: each one is a step DOWN from white there and
+     therefore has to be a step UP from ink here, or it inverts its own
+     meaning. `--fwm-text-instrument` and `--fwm-text-scale` label the ladder
+     and the dial; `--fwm-text-icon` is every unselected dock glyph. */
+  --fwm-text-instrument: #7C989B;
+  --fwm-text-scale: #6E8E93;
+  --fwm-text-icon: #5B8087;
+
+  /* Printed ON a filled alert. The fills stay saturated in this mode, so this
+     stays a light value -- it is paper on ink, not ink on paper. */
+  --fwm-text-on-alert: #F4F8F4;
+  /* The in-range hue as TYPE rather than as a fill. #FF8DA5 is a pink that
+     glows on black and vanishes on paper. */
+  --fwm-alert-in-range-text: #8E332B;
+
+  --fwm-destructive: #B23A16;
+  --fwm-accent-mesh: #5344B8;
+
+  /* The MUTCD sign face and the needle's tail are both defined against a dark
+     ground at :root -- pure white on black. On paper white IS the ground, so
+     the face needs a rule around it to exist at all and the tail becomes ink
+     or it disappears. */
+  --fwm-sign-face: #FBFDFB;
+  --fwm-needle-tail: #3F6B74;
+
+  /* The plasma ramp's light end. 0 is ON YOU and 10 is the edge, so the hot
+     end has to be the one that survives -- and #F0F921 / #FDCA26 are a yellow
+     tuned to burn on black, which on paper is the nearest camera drawn in the
+     least visible colour in the app. Darkened until they hold, in ramp order:
+     the ordering is the reading. */
+  --fwm-plasma-0: #B8860B;
+  --fwm-plasma-1: #C2751A;
+  --fwm-plasma-2: #C96A22;
+
+  /* NO TYPEFACE OVERRIDE. `refinement` set `--fwm-font-ui` to JetBrains Mono,
+     which made the one light skin the only theme wearing a different face - a
+     monospace UI on paper against Google Sans everywhere else - so switching to
+     light changed the letterforms as well as the ground and read as a different
+     product rather than the same one in daylight.
+     Owner's call, 2026-09-07: refinement uses what slate uses. Slate has no
+     override at all, so the way to match it is to have none either and let the
+     `:root` pair through. The rest of this block - the squared radii, the killed
+     glow, the ink-on-paper ramp - is what makes it paper; the face never was. */
+  --fwm-radius-0: 0; --fwm-radius-1: 0; --fwm-radius-2: 0;
+  --fwm-glow-alert: none;
+}
+[data-fwm-surface="watch-round"] {
+  --fwm-text-hero: 3.875rem;
+  --fwm-text-micro: .8125rem;
+  --fwm-touch-min: 48px;
+  --fwm-space-4: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * GAP: see DESIGN-GAPS.md#watch-square-has-no-block
+ * The surface detector in section 06 emits `watch-square`, but section 08
+ * ships no override block for it. Watch rules say "square watch: same layout,
+ * corners stay empty", so it inherits the watch-round type/touch floors until
+ * a real block is authored.
+ * ------------------------------------------------------------------------ */
+[data-fwm-surface="watch-square"] {
+  --fwm-text-hero: 3.875rem;
+  --fwm-text-micro: .8125rem;
+  --fwm-touch-min: 48px;
+  --fwm-space-4: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * GAP: see DESIGN-GAPS.md#dash-surface-never-gets-dash-tokens
+ * Section 06 detection emits `data-fwm-surface="dash"`, but the 68px-touch /
+ * 88px-rail block is keyed on `data-fwm-mode="dash-cast"`. Nothing in the
+ * design sources wires them together. Stand-in: the dash surface adopts the
+ * dash-cast token values, which is the only interpretation that keeps the
+ * stated 68px touch floor reachable on a head unit.
+ * ------------------------------------------------------------------------ */
+[data-fwm-surface="dash"] {
+  --fwm-touch-min: 68px;  --fwm-text-body: 1rem;
+  --fwm-text-hero: 4.5rem; --fwm-radius-2: 8px;
+  --fwm-nav-w: 88px;
+
+  /* =====================================================================
+   * THE LANDSCAPE COLUMN, PUBLISHED FOR THE SHELL.
+   * =====================================================================
+   * `DarkRoute Landscape Mode.html` places the content column at `left: 68`
+   * and 336 wide, inset 8 from the top and bottom, at radius 22. The layout
+   * itself is `features/landscape/landscape.css` and declares its own copies as
+   * locals; these four exist because `global.css` has to put a SCREEN and an
+   * OVERLAY in that same column, and a shell that guessed the column's origin
+   * would be a second definition of where the road starts.
+   *
+   * 68 = 8 + 52 + 8 -- the inset, the tab rail and one more inset. Written as
+   * the sum so a change to the rail cannot leave a screen overlapping it.
+   */
+  --fwm-ls-shell-inset: var(--fwm-space-2); /* 8 */
+  --fwm-ls-shell-col: calc(var(--fwm-space-2) * 2 + var(--fwm-space-1) * 13); /* 68 */
+  --fwm-ls-shell-col-w: calc(var(--fwm-space-1) * 84); /* 336 */
+  --fwm-ls-shell-radius: calc(var(--fwm-space-1) * 5.5); /* 22 */
+
+  /* =====================================================================
+   * TWO TOKENS ABOVE CONTRADICT THE LANDSCAPE SPEC, AND ARE LEFT ALONE.
+   * =====================================================================
+   * `--fwm-touch-min: 68px` and `--fwm-nav-w: 88px` came from section 08 of
+   * "Flockys Design System.dc.html" via the `dash-cast` MODE, adopted onto this
+   * SURFACE as the stand-in the GAP note above describes. The landscape spec
+   * draws a 52px rail, 42 x 52 tab targets and 44 x 44 right-rail circles.
+   * Nothing in it reaches 68, and nothing is 88.
+   *
+   * They are NOT silently re-cut here. `--fwm-nav-w` is unused (the gap note
+   * says so) and the landscape layout declares its own 52; `--fwm-touch-min` is
+   * a FLOOR that something may yet be asserting, and lowering it to match one
+   * drawing is a decision about how big a control has to be on a device used at
+   * speed, which is the owner's and not this file's.
+   *
+   * So: the spec and the token disagree, the drawing was built, and the
+   * disagreement is reported rather than resolved by whoever edited last.
+   */
+}
+
+/* THE PLATFORM FACE, kept as a neutral alternative.
+ *
+ * Written on the root by SETTINGS. Changes BOTH faces so the picker visibly
+ * affects labels and readouts together. */
+[data-fwm-typeface="system"] {
+  --fwm-font-ui: system-ui, sans-serif;
+  --fwm-font-data: system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+ * E-INK - for a panel that cannot do colour, glow or motion.
+ *
+ * NOT FROM A DESIGN FILE. The only mode here with a hardware reason rather
+ * than a stylistic one, and every value below follows from what the display
+ * physically does:
+ *
+ *   NO HUE. An e-paper panel is greyscale, and a colour it cannot show is
+ *   dithered into a grey it did not choose. So the four alert states are four
+ *   GREYS, ordered by weight -- clear is the lightest ink and multiple is the
+ *   blackest. The ordering IS the reading, which is why they are spaced far
+ *   apart rather than nudged: a panel with sixteen levels has to keep them
+ *   apart after quantisation.
+ *
+ *   NO GLOW, NO TINT, NO TRANSLUCENCY. There is no backlight to bloom, and a
+ *   partial refresh leaves the ghost of whatever was translucent underneath.
+ *
+ *   MAXIMUM CONTRAST. Paper is #FFFFFF here rather than the off-white the
+ *   other light mode uses: on a reflective panel in daylight every point of
+ *   contrast is legibility, and there is no glare to soften.
+ *
+ *   THE MAP GOES WHITE with grey water. A tinted ground would dither into a
+ *   texture and fight the camera dots drawn on top of it.
+ *
+ * The plasma ramp becomes a straight light-to-dark greyscale, keeping its own
+ * rule: 0 is ON YOU and 10 is the edge, so 0 is the blackest.
+ * ------------------------------------------------------------------------ */
+
+[data-fwm-mode="e-ink"] {
+  /* THE CHROME, ON A LIGHT GROUND. NOT AN INVERSION.
+   * The accent changes hue value rather than lightness: #2fd4d4 is 1.9:1 on
+   * white and unreadable. Every owner dot has a darkened twin for the same
+   * reason -- a dot that carries meaning has to be visible to carry it. */
+  --dr-surface: rgba(255, 255, 255, 0.86);
+  --dr-surface-menu: rgba(255, 255, 255, 0.94);
+  --dr-surface-toast: rgba(255, 255, 255, 0.95);
+  --dr-hairline: rgba(15, 20, 25, 0.12);
+  --dr-hairline-row: rgba(15, 20, 25, 0.08);
+  --dr-row-fill: rgba(15, 20, 25, 0.035);
+  --dr-row-hover: rgba(15, 20, 25, 0.06);
+  --dr-specular: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --dr-lift: 0 8px 24px rgba(15, 20, 25, 0.12);
+  --dr-surface-thin: rgba(255, 255, 255, 0.74);
+  /* NEVER DRAWN. All five landscape frames in the spec are dark, so this is a
+     derivation with nothing to check it against: a white veil, at the dark
+     twin's two alphas, so the chrome stays legible over a bright basemap the
+     way the dark one does over a dark one. Reported to the owner. */
+  --dr-scrim-side: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.24) 55%,
+    transparent
+  );
+  --dr-grain-ink: rgba(15, 20, 25, 0.028);
+  --dr-ink: #0f1419;
+  --dr-ink-2: #0f1419;
+  --dr-ink-3: #3d4751;
+  --dr-ink-4: #4d5761;
+  --dr-ink-muted: #59636d;
+  --dr-ink-faint: #5c666f;
+  --dr-placeholder: #5c666f;
+  --dr-accent: #096064;
+  --dr-accent-fill: rgba(9, 96, 100, 0.1);
+  --dr-accent-line: rgba(9, 96, 100, 0.4);
+  /* The dock pane's four, read out of section A's LIGHT frame -- the light
+     twin the file draws beside the dark one. See the dark block. */
+  --dr-dock-divider: rgba(15, 20, 25, 0.09);
+  --dr-dock-lift: 0 12px 30px rgba(15, 20, 25, 0.16);
+  --dr-dock-accent-line: rgba(9, 96, 100, 0.38);
+  --dr-dock-scrim: linear-gradient(
+    to top,
+    rgba(233, 237, 240, 0.9),
+    rgba(233, 237, 240, 0.45) 45%,
+    transparent
+  );
+  /* The abuse hue's light twin, from brief 4's own table. See the dark block. */
+  --dr-abuse: #a3162c;
+  --dr-abuse-text: #8f1226;
+  --dr-abuse-fill: rgba(163, 22, 44, 0.09);
+  --dr-abuse-line: rgba(163, 22, 44, 0.32);
+  --dr-owner-flock: #a8007a;
+  --dr-owner-police: #c8102e;
+  --dr-owner-hoa: #8a5f10;
+  --dr-owner-private: #b3336b;
+  --dr-owner-unverified: #6d4aca;
+  --dr-owner-unverified-text: #6d4aca;
+  /* Brief 4's light column for the same two hues, at the same 30/8 ratios. */
+  --dr-verdict-keep: #1f7a43;
+  --dr-verdict-keep-line: rgba(31, 122, 67, 0.3);
+  --dr-verdict-keep-fill: rgba(31, 122, 67, 0.08);
+  --dr-verdict-drop: #8f1226;
+  --dr-verdict-drop-line: rgba(163, 22, 44, 0.3);
+  --dr-verdict-drop-fill: rgba(163, 22, 44, 0.08);
+  /* THE SEARCH PANEL'S SIX UNDERIVABLE VALUES, on a pale ground.
+   * The rest of the panel's block mixes an alpha over `--dr-ink`,
+   * `--dr-accent` and `--dr-verdict-keep` and so has already followed this
+   * skin. These six are hues and shadows and cannot: the tier green and red
+   * are brief 4's light column, the amber is a dark ochre because #f5a524
+   * does not clear 4.5:1 on white, and the two panel shadows invert the way
+   * `--dr-lift` does two lines above. */
+  --dr-tier-clear: #1f7a43;
+  --dr-tier-some: #8a5f10;
+  --dr-tier-many: #8f1226;
+  --dr-field-placeholder: #5c666f;
+  --dr-ink-body: #4d5761;
+  --dr-keep-title: #1a6338;
+  --dr-panel-lift: 0 16px 44px rgba(15, 20, 25, 0.16);
+  --dr-panel-lift-tight: 0 12px 34px rgba(15, 20, 25, 0.14);
+  /* THE LIFT INVERTS ON A LIGHT GROUND.
+   * `--fwm-dock-raise` is a wash of `--fwm-lift` over the dock surface. On a
+   * dark skin that wash is white and the tile rises. Leave it white here and
+   * the raise would wash a pale surface paler until it vanished, so on this
+   * skin the lift is black and the same expression darkens instead. The tile
+   * is still a step away from the surface, which is the only thing the
+   * expression is required to guarantee. */
+  --fwm-lift: #000000;
+  color-scheme: light; /* keyword */
+
+  --fwm-bg: #FFFFFF;   --fwm-bg-sunken: #F0F0F0;
+  --fwm-surface-1: #FFFFFF; --fwm-surface-2: #F7F7F7;
+  --fwm-surface-sunk: #EDEDED;
+  --fwm-surface-card: #FFFFFF;
+  --fwm-surface-card-over: rgba(255, 255, 255, 0.9);
+  --fwm-surface-dock: #FFFFFF;
+  --fwm-surface-track: #DCDCDC;
+  --fwm-surface-control: #F4F4F4;
+
+  --fwm-text: #000000;  --fwm-text-2: #2E2E2E;
+  --fwm-text-muted: #5C5C5C;
+  --fwm-text-disabled: #9B9B9B;
+  --fwm-text-instrument: #6E6E6E;
+  --fwm-text-scale: #6E6E6E;
+  --fwm-text-icon: #3A3A3A;
+  --fwm-text-on-alert: #FFFFFF;
+
+  /* Rules are real black at hairline weight: a grey hairline is the first
+     thing a panel loses when it quantises. */
+  --fwm-line: #000000;      --fwm-line-strong: #000000;
+  --fwm-line-soft: #B4B4B4;
+  --fwm-line-dock: #000000;
+  --fwm-line-instrument: #6E6E6E;
+  --fwm-line-compass: #000000;
+  --fwm-line-grid-1: #D6D6D6;
+  --fwm-line-grid-2: #C4C4C4;
+  --fwm-line-grid-3: #B2B2B2;
+
+  --fwm-accent-scan: #000000;
+  --fwm-accent-mesh: #3A3A3A;
+  --fwm-destructive: #000000;
+
+  /* FOUR GREYS, FAR APART. Lightest is clear, blackest is multiple. */
+  --fwm-alert-clear: #7A7A7A;
+  --fwm-alert-approaching: #4A4A4A;
+  --fwm-alert-in-range: #1C1C1C;
+  --fwm-alert-multiple: #000000;
+  --fwm-alert-in-range-text: #000000;
+
+  --fwm-map-earth: #FFFFFF;
+  --fwm-map-water: #DEDEDE;
+
+  --fwm-sign-face: #FFFFFF;
+  --fwm-needle-tail: #6E6E6E;
+
+  /* The heat ramp as pure value. 0 is ON YOU, so 0 is black. */
+  --fwm-plasma-0: #000000;
+  --fwm-plasma-1: #1A1A1A;
+  --fwm-plasma-2: #303030;
+  --fwm-plasma-3: #454545;
+  --fwm-plasma-4: #5A5A5A;
+  --fwm-plasma-5: #6F6F6F;
+  --fwm-plasma-6: #848484;
+  --fwm-plasma-7: #999999;
+  --fwm-plasma-8: #AEAEAE;
+  --fwm-plasma-9: #C3C3C3;
+  --fwm-plasma-10: #D8D8D8;
+
+  --fwm-font-ui: 'JetBrains Mono', ui-monospace, monospace;
+  --fwm-radius-0: 0; --fwm-radius-1: 0; --fwm-radius-2: 0;
+  --fwm-radius-3: 0;
+  --fwm-glow-alert: none;
+  --fwm-glow-scan: none;
+}
+
+/* ===========================================================================
+ * V1 - THE REDESIGN.
+ * ===========================================================================
+ *
+ * This WAS selected by `data-fwm-design="v1"` on <html>. v0 is gone, so the
+ * attribute is gone with it and these rules simply apply. The block stays in
+ * one piece, and after the v0 mode blocks, because that source order is what
+ * decides the overlap - see the note in the block below.
+ *
+ * WHAT THIS LAYER IS, AND WHAT IT IS NOT
+ *
+ * It is a token remap. Every screen follows it with no component edited and no
+ * test touched, which is most of what "the redesign" means in practice. Where
+ * v1 genuinely RESTRUCTURES a screen, that is a different component registered
+ * under the same id in `app/registry.v1.tsx`, and it is not this file's job.
+ *
+ * WHY GEOMETRY AND NOT COLOUR
+ *
+ * v1's dark palette is very nearly the one already here. `--card` #16181E is
+ * `--fwm-surface-2` exactly; `--text` and `--text2` are byte-identical to
+ * `--fwm-text` and `-2`; `--line` differs by one value. Night watch's muted
+ * text is the accessibility exception documented in its palette below.
+ *
+ * What v1 actually changes is SHAPE. Its radii are 44, 34, 28, 20, 16, 11, 9
+ * and 3 against a ladder of 0, 2, 6, 8, 10 and 14, and it floats surfaces on
+ * blur that this design has none of. Those two things are the redesign as a
+ * driver experiences it, and the radius ladder alone reaches 121 declarations
+ * across the app.
+ *
+ * `--fwm-bg` DELIBERATELY DOES NOT MOVE. v1 draws #0B0C0F. Changing it would
+ * pull in the `^#0{6}$` allowlist entry for index.html, the matching manifest
+ * value, an asset regeneration through `scripts/generate-assets.mjs` which
+ * reads the background out of tokens.json, and a `<meta name="theme-color">`
+ * that is single valued and can never follow a runtime toggle - so one design
+ * would always have the wrong status bar. Elevation belongs on the surfaces,
+ * and that is where v1 puts it.
+ * =========================================================================== */
+:root {
+  /* SHAPE. The ladder keeps its names and its order; only the steps move, so
+     every existing `var(--fwm-radius-N)` is correct without being edited. */
+  --fwm-radius-1: 3px;
+  --fwm-radius-2: 9px;
+  --fwm-radius-3: 11px;
+  --fwm-radius-4: 16px;
+  --fwm-radius-5: 26px;  /* the design's card. 24 for a tile, 20 for a row - one step covers all three. */
+
+  /* NO SURFACE OVERRIDE HERE, AND THAT IS A FIX.
+   *
+   * This block used to set `--fwm-surface-1: #0E1014` and
+   * `--fwm-surface-sunk: #0B0C0F`, on the argument that v1 lifts its panels.
+   * This block and `[data-fwm-mode]` carried the SAME specificity even when
+   * the design attribute was still on the selector, and this block is later in
+   * the file, so those two declarations beat every
+   * mode's own surfaces - including `e-ink`, which sets `--fwm-surface-1` to
+   * #FFFFFF and `--fwm-text` to #000000. The result shipped: black cards on a
+   * white page with black text on them, unreadable, on two of the nine modes.
+   *
+   * They were also worth nothing. Night watch's own values are #0E0F13 and
+   * #0B0D11 - a difference of up to four in one channel, invisible on a phone.
+   * The elevation v1 actually adds is the GLASS below, which is new rather
+   * than a re-tint of something that already existed.
+   *
+   * ANY future declaration in this block must survive the same question: what
+   * does it do to refinement and e-ink? */
+
+  /* GLASS. New in v1: floating surfaces sit on blur rather than on a fill.
+     Expressed as tokens so a component never names a blur radius, and so the
+     e-ink and paper modes can switch it off without touching a component. */
+  /* THE WHOLE COLOUR, not its parts. Composing `rgb(var(--rgb)/var(--a))` in a
+     feature stylesheet puts a colour outside this file, which is exactly what
+     `check-design-values.mjs` exists to prevent: the palette is reviewable
+     because it is all in one place. */
+  /* THE CHANNEL comes from the THEME, the ALPHA from the LEVEL, and they are
+   * composed here because this is the only file allowed to hold a colour.
+   *
+   * The level blocks below used to declare a finished `--fwm-surface-glass`
+   * with night watch's channel baked into it, so every one of the seven themes
+   * got night watch's dark glass - e-ink rendered near-black cards on white
+   * paper with black text on them. The alpha is the only thing a level knows
+   * about; the channel is the theme's. */
+  --fwm-glass-rgb: 20 22 27;
+  /* THE CLEAR CHANNEL. Near-colourless: on a dark ground the veil is light, so
+   * the panel reads as something catching light rather than as a coloured film
+   * laid over the map. Overridden by the light themes below, where a white
+   * veil on white paper is nothing at all. */
+  --fwm-glass-clear-rgb: 255 255 255;
+  --fwm-glass-a: 0.3;
+  /* THE ALPHA IS THE SAME ON BOTH TONES, but a light veil at the alpha a dark
+   * one wants is a white-out, so clear carries its own multiplier. */
+  --fwm-glass-clear-scale: 0.42;
+  --fwm-surface-glass: rgb(var(--fwm-glass-rgb) / var(--fwm-glass-a));
+  /* 32px WAS THE DEFAULT AND IT COOKED THE PHONE. `backdrop-filter` blurs at a
+   * cost proportional to the radius, once per element per frame, over a live
+   * map. 16px is the smallest radius that still reads as frost and it is a
+   * quarter of the work. Heavy is still available for a phone that can spend
+   * it. */
+  --fwm-glass-blur: 16px;
+  /* THE WHOLE FILTER, NOT THE RADIUS.
+   *
+   * Every panel says `backdrop-filter: var(--fwm-glass-filter)` rather than
+   * `blur(var(--fwm-glass-blur))`, because `blur(0px)` is NOT `none`. A
+   * zero-radius backdrop filter still promotes a render surface, still makes
+   * the element a backdrop root, and still costs a per-frame read-back blit of
+   * whatever is behind it - which here is a MapLibre canvas repainting at 60
+   * fps. Every block that refuses the blur therefore sets this to `none` as
+   * well; the radius alone would leave the cost and remove only the effect. */
+  /* THE OPTICS, AND THIS IS WHAT SEPARATES LIQUID GLASS FROM FROSTED GLASS.
+   *
+   * A blur alone DESATURATES: it averages neighbouring pixels, so a vivid map
+   * behind a panel comes out grey and the panel reads as a dirty window. Real
+   * glass does the opposite at its edges - it concentrates light, and colours
+   * behind it get MORE saturated, not less.
+   *
+   * `saturate()` and `brightness()` ride along in the same backdrop-filter
+   * pass. That matters for cost: the expensive part of `backdrop-filter` is the
+   * read-back blit, which happens once regardless, and these are two extra
+   * shader ops on pixels already in the GPU's hands. Effectively free next to
+   * the blur that was already being paid for.
+   *
+   * A REAL refraction - `feDisplacementMap` through `backdrop-filter: url()` -
+   * would bend the content at the rim and is the last 10% of the effect. It is
+   * deliberately NOT here: it is a second full-surface filter pass per element
+   * per frame over a live GL canvas, on an app with a measured thermal history.
+   * The rim highlight below fakes the part of it the eye actually reads. */
+  --fwm-glass-saturate: 180%;
+  --fwm-glass-brightness: 1.08;
+  --fwm-glass-filter: blur(var(--fwm-glass-blur)) saturate(var(--fwm-glass-saturate))
+    brightness(var(--fwm-glass-brightness));
+
+  /* LIQUID GLASS, AS PAINT RATHER THAN AS A FILTER.
+   *
+   * THE FIRST VERSION REFRACTED FOR REAL and had to be removed. It put an SVG
+   * displacement filter into `backdrop-filter`, which means the compositor
+   * snapshots the backdrop and runs a filter graph over it, per element, per
+   * frame. Nine primitives - three displacement passes for the colour fringe,
+   * three colour matrices, two blends - across roughly ten glass elements,
+   * over a MapLibre canvas that repaints continuously. `feDisplacementMap` is a
+   * per-pixel gather with no hardware fast path, unlike `blur()`. It tanked the
+   * frame rate on a real phone.
+   *
+   * There is no cheap way to do true refraction here. The cost is inherent to
+   * reading the backdrop and resampling it every frame, and this is a driving
+   * app whose most expensive surface already sits over a live map.
+   *
+   * So these are PAINT: an edge highlight and a lens gradient drawn on top of
+   * the panel, not a transformation of what is behind it. Straight lines behind
+   * the glass do not actually bend. What it buys is the read that liquid glass
+   * gives - a surface that looks curved and lit rather than flat and frosted -
+   * for the cost of two gradients, which the compositor draws for free
+   * alongside the fill that was already there.
+   *
+   * Named honestly in the UI as a look, not as physics. */
+  --fwm-liquid-sheen: none;
+  --fwm-liquid-edge: none;
+
+  /* THE INK BEHIND A MARK ON A MAP.
+   *
+   * A drop shadow needs a colour and the palette had none for this: every other
+   * shadow in the product is a glass rim, which is an inset highlight rather
+   * than a cast shadow. This is the ground colour at high alpha, so it reads as
+   * the map darkening under the mark rather than as a grey halo, and it follows
+   * the theme instead of being a hardcoded black. */
+  --fwm-shadow-ink: color-mix(in srgb, var(--fwm-bg) 82%, transparent);
+
+  /* THE MARK'S OWN SHADOW, as one token because the gate is right to insist.
+   *
+   * Two passes: a tight dark one that gives contrast against a pale road, and a
+   * wider softer one that lifts the mark off the map. `drop-shadow` rather than
+   * `box-shadow` because the mark is a MASK over a flat fill - drop-shadow
+   * follows the alpha and outlines every dot of the halftone, where box-shadow
+   * would draw a rectangle around the whole thing. */
+  --fwm-mark-shadow:
+    drop-shadow(0 0 var(--fwm-mark-w) var(--fwm-shadow-ink))
+    drop-shadow(0 var(--fwm-mark-w) calc(var(--fwm-mark-w) * 3) var(--fwm-shadow-ink));
+
+  /* THE RIM. Glass is visible at its EDGE before anywhere else - a bright
+   * specular line where light catches the bevel, and a dimmer one opposite.
+   * Two inset shadows, no read-back, no per-frame cost: this is the cheapest
+   * part of the material and the one that does the most work. */
+  --fwm-glass-rim:
+    inset 0 var(--fwm-hairline) 0 rgba(255, 255, 255, 0.45),
+    inset 0 calc(var(--fwm-hairline) * -1) 0 rgba(255, 255, 255, 0.08);
+  /* A SHADOW THAT DRAWS NOTHING, and it is not the same thing as `none`.
+   *
+   * The flat axis at the bottom of this file has to switch three shadow tokens
+   * off, and three surfaces compose those tokens into ONE declaration -
+   * `box-shadow: var(--fwm-glass-rim), var(--fwm-card-shadow)` in `drive.css`,
+   * and the liquid rule at the end of this file with the edge between them.
+   * `box-shadow: none, none` is not valid CSS: the whole declaration is thrown
+   * away, and the element then falls back to whatever an earlier rule left it,
+   * which is a different answer per element and per stylesheet order. This is a
+   * real shadow at zero offset and zero blur in a colour that paints nothing,
+   * so the declaration stays valid however many of them are composed. */
+  --fwm-shadow-flat: 0 0 transparent;
+  /* Brighter than the design's .07: a hairline needs the contrast back that a
+     thinner line gives away. */
+  --fwm-glass-border: rgba(255, 255, 255, 0.14);
+  /* THE SHEEN, and it is what makes glass read as glass.
+   *
+   * A translucent dark panel over a near-black map is arithmetically working
+   * and visually indistinguishable from an opaque one - 46% of #14161B over
+   * #07090C lands on #0D0F14, which nobody can tell from the panel it
+   * replaced. Real frosted glass is visible because it CATCHES LIGHT at its
+   * top edge, and this is that: a short highlight that fades out, painted over
+   * the tint rather than mixed into it, so the transparency setting still
+   * changes how much map shows through. */
+  --fwm-glass-sheen: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.10),
+    rgba(255, 255, 255, 0.02) 40%,
+    transparent 70%
+  );
+}
+
+/* ===========================================================================
+ * THE v1 THEME SET - seven palettes, and they are v1's own.
+ *
+ * v1 was shipped wearing v0's nine modes, which is why picking `e-ink` in a v1
+ * build produced v0's stark square greyscale rather than v1's warm rounded
+ * paper, and why four of v1's themes - slate, carbon, violet, paper - could not
+ * be chosen at all. Two designs on one screen.
+ *
+ * Every value below is transcribed from the design file's own `[data-theme]`
+ * blocks. They used to be scoped to `[data-fwm-design="v1"]` so the two designs
+ * could not reach into each other; with v0 removed the scope is the file order
+ * alone, which was already what decided every overlap.
+ *
+ * `--fwm-glass-rgb` is the theme's contribution to the glass; the LEVEL block
+ * supplies the alpha. Composing the two into one colour is legal here and
+ * nowhere else - this is the token source.
+ * ======================================================================== */
+
+[data-fwm-mode="night-watch"] {
+  --fwm-bg: #0B0C0F;
+  --fwm-bg-sunken: #0E1014;
+  --fwm-surface-1: #16181E;
+  --fwm-surface-2: #16181E;
+  --fwm-surface-sunk: #0E1014;
+  --fwm-surface-card: #16181E;
+  --fwm-surface-dock: #16181E;
+  --fwm-surface-track: #0E1014;
+  --fwm-surface-control: #0E1014;
+
+  --fwm-text: #F7F9FC;
+  --fwm-text-2: #A7AFBD;
+  /* AA FOR THE 11px DRIVE LABELS AT THE DEFAULT GLASS SETTINGS.
+   * Clear + medium is a white veil at 0.6 * 0.42 = 0.252. Over the stated
+   * worst ground #0E1116 that lands near #4B4D51; #BCC4D1 measures 4.83:1. */
+  --fwm-text-muted: #BCC4D1;
+  --fwm-text-icon: #6B7381;
+  --fwm-text-on-alert: #07090C;
+
+  --fwm-line: #22262F;
+  --fwm-line-strong: #22262F;
+  --fwm-line-soft: #22262F;
+  --fwm-line-dock: #22262F;
+
+  --fwm-accent-scan: #22C8E0;
+  --fwm-accent-mesh: #8A6BFF;
+  --fwm-alert-clear: #3DE08A;
+  --fwm-alert-approaching: #FFC02E;
+  --fwm-alert-in-range: #FF2D5E;
+  --fwm-alert-in-range-text: #FF5F80;
+
+  --fwm-map-earth: #07090C;
+  --fwm-map-water: #0A1C26;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 20 22 27;
+}
+
+/* EMBER - warm dark. The set's only warm ground before this was `paper`, which
+   is light, so a driver who wanted warmth at night had to take a bright screen
+   to get it. Browns and a deep orange accent, with the alert hue pushed toward
+   red so it still separates from the accent rather than blending into it. */
+[data-fwm-mode="ember"] {
+  --fwm-bg: #140F0C;
+  --fwm-bg-sunken: #0E0A08;
+  --fwm-surface-1: #241A15;
+  --fwm-surface-2: #241A15;
+  --fwm-surface-sunk: #0E0A08;
+  --fwm-surface-card: #241A15;
+  --fwm-surface-dock: #241A15;
+  --fwm-surface-track: #0E0A08;
+  --fwm-surface-control: #0E0A08;
+
+  --fwm-text: #F6EBE2;
+  --fwm-text-2: #C4A895;
+  --fwm-text-muted: #8C7565;
+  --fwm-text-icon: #8C7565;
+  --fwm-text-on-alert: #150C08;
+
+  --fwm-line: #3A2A21;
+  --fwm-line-strong: #3A2A21;
+  --fwm-line-soft: #3A2A21;
+  --fwm-line-dock: #3A2A21;
+
+  --fwm-accent-scan: #FF9A4D;
+  --fwm-accent-mesh: #E0A46A;
+  --fwm-alert-clear: #8FBF6A;
+  --fwm-alert-approaching: #F5C15A;
+  --fwm-alert-in-range: #FF5B4A;
+  --fwm-alert-in-range-text: #FF8877;
+
+  --fwm-map-earth: #17110D;
+  --fwm-map-water: #21231C;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 36 26 21;
+}
+
+/* TIDE - deep blue with a saturated cyan. `slate` is the other cool theme and
+   is deliberately low-contrast; this is the opposite trade, for daylight and
+   for anybody who finds slate too soft to read at a glance. */
+[data-fwm-mode="tide"] {
+  --fwm-bg: #071620;
+  --fwm-bg-sunken: #041018;
+  --fwm-surface-1: #0E2634;
+  --fwm-surface-2: #0E2634;
+  --fwm-surface-sunk: #041018;
+  --fwm-surface-card: #0E2634;
+  --fwm-surface-dock: #0E2634;
+  --fwm-surface-track: #041018;
+  --fwm-surface-control: #041018;
+
+  --fwm-text: #EAF6FB;
+  --fwm-text-2: #9EC3D6;
+  --fwm-text-muted: #648BA1;
+  --fwm-text-icon: #648BA1;
+  --fwm-text-on-alert: #04121A;
+
+  --fwm-line: #17394B;
+  --fwm-line-strong: #17394B;
+  --fwm-line-soft: #17394B;
+  --fwm-line-dock: #17394B;
+
+  --fwm-accent-scan: #35D6F5;
+  --fwm-accent-mesh: #7FA9FF;
+  --fwm-alert-clear: #3FDCA0;
+  --fwm-alert-approaching: #FFC94D;
+  --fwm-alert-in-range: #FF4D6D;
+  --fwm-alert-in-range-text: #FF7D95;
+
+  --fwm-map-earth: #0A1D28;
+  --fwm-map-water: #0C3346;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 14 38 52;
+}
+
+/* MOSS - earth greens, deliberately quiet. The lowest-saturation theme in the
+   set apart from `e-ink`, for a long drive where a bright dash is fatiguing.
+   The alert hue stays fully saturated: quiet is a property of the furniture,
+   never of the warning. */
+[data-fwm-mode="moss"] {
+  --fwm-bg: #0D120D;
+  --fwm-bg-sunken: #090D09;
+  --fwm-surface-1: #182016;
+  --fwm-surface-2: #182016;
+  --fwm-surface-sunk: #090D09;
+  --fwm-surface-card: #182016;
+  --fwm-surface-dock: #182016;
+  --fwm-surface-track: #090D09;
+  --fwm-surface-control: #090D09;
+
+  --fwm-text: #EDF2E6;
+  --fwm-text-2: #AABFA0;
+  --fwm-text-muted: #74886C;
+  --fwm-text-icon: #74886C;
+  --fwm-text-on-alert: #0B1109;
+
+  --fwm-line: #263021;
+  --fwm-line-strong: #263021;
+  --fwm-line-soft: #263021;
+  --fwm-line-dock: #263021;
+
+  --fwm-accent-scan: #8FCB7A;
+  --fwm-accent-mesh: #C4B67E;
+  --fwm-alert-clear: #6FD98A;
+  --fwm-alert-approaching: #E8BE55;
+  --fwm-alert-in-range: #FF5A52;
+  --fwm-alert-in-range-text: #FF877F;
+
+  --fwm-map-earth: #111710;
+  --fwm-map-water: #142622;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 24 32 22;
+}
+
+/* SODIUM - amber monochrome, and the only theme here with a hardware argument
+   rather than a stylistic one.
+   
+   Dark adaptation is destroyed by short wavelengths; long-wavelength amber
+   costs a driver far less of it, which is why aircraft and observatory panels
+   have used it for decades and why sodium street lamps look the way they do.
+   So this theme spends almost no blue anywhere: the ground is near-black, every
+   surface and rule is a warmer step of the same hue, and the accents are
+   separated by BRIGHTNESS instead of by colour.
+   
+   The one exception is deliberate and is the whole reason the exception exists:
+   `--fwm-alert-in-range` stays red. A monochrome scheme cannot signal "a camera
+   is inside your threshold" by hue, and a warning a driver has to read rather
+   than notice is not a warning. Everything else gives up colour so that this
+   one thing keeps it. */
+[data-fwm-mode="sodium"] {
+  --fwm-bg: #0C0700;
+  --fwm-bg-sunken: #070400;
+  --fwm-surface-1: #1B1206;
+  --fwm-surface-2: #1B1206;
+  --fwm-surface-sunk: #070400;
+  --fwm-surface-card: #1B1206;
+  --fwm-surface-dock: #1B1206;
+  --fwm-surface-track: #070400;
+  --fwm-surface-control: #070400;
+
+  --fwm-text: #FFCE7A;
+  --fwm-text-2: #D9A354;
+  --fwm-text-muted: #9A7038;
+  --fwm-text-icon: #9A7038;
+  --fwm-text-on-alert: #0C0700;
+
+  --fwm-line: #33230D;
+  --fwm-line-strong: #33230D;
+  --fwm-line-soft: #33230D;
+  --fwm-line-dock: #33230D;
+
+  --fwm-accent-scan: #FFB020;
+  --fwm-accent-mesh: #E09A2E;
+  --fwm-alert-clear: #C9962F;
+  --fwm-alert-approaching: #FFD166;
+  /* The one hue in the theme. See the block comment. */
+  --fwm-alert-in-range: #FF4A2B;
+  --fwm-alert-in-range-text: #FF8460;
+
+  --fwm-map-earth: #100A02;
+  --fwm-map-water: #16110A;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 27 18 6;
+}
+
+[data-fwm-mode="slate"] {
+  --fwm-bg: #0E1418;
+  --fwm-bg-sunken: #0B1116;
+  --fwm-surface-1: #18222A;
+  --fwm-surface-2: #18222A;
+  --fwm-surface-sunk: #0B1116;
+  --fwm-surface-card: #18222A;
+  --fwm-surface-dock: #18222A;
+  --fwm-surface-track: #0B1116;
+  --fwm-surface-control: #0B1116;
+
+  --fwm-text: #EAF2F4;
+  --fwm-text-2: #A3B7BF;
+  --fwm-text-muted: #71888F;
+  --fwm-text-icon: #71888F;
+  --fwm-text-on-alert: #07110F;
+
+  --fwm-line: #243239;
+  --fwm-line-strong: #243239;
+  --fwm-line-soft: #243239;
+  --fwm-line-dock: #243239;
+
+  --fwm-accent-scan: #4ECDC4;
+  --fwm-accent-mesh: #9D8CFF;
+  --fwm-alert-clear: #55D6A0;
+  --fwm-alert-approaching: #F2B544;
+  --fwm-alert-in-range: #FF6B81;
+  --fwm-alert-in-range-text: #FF93A3;
+
+  /* BOUND TO THE FLAVOUR, not transcribed from it. `flavorForMode` sends this
+     mode to the custom `slate` cartography, and `styleFor` paints the ground
+     under the archive from these two tokens -- so if they said anything other
+     than what the flavour's own `earth` and `water` say, the map would carry a
+     seam wherever a tile had not landed yet. One source, no drift. */
+  --fwm-map-earth: var(--fwm-carto-slate-earth);
+  --fwm-map-water: var(--fwm-carto-slate-water);
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 24 34 42;
+}
+
+[data-fwm-mode="carbon"] {
+  --fwm-bg: #0F0F10;
+  --fwm-bg-sunken: #121213;
+  --fwm-surface-1: #1A1A1C;
+  --fwm-surface-2: #1A1A1C;
+  --fwm-surface-sunk: #121213;
+  --fwm-surface-card: #1A1A1C;
+  --fwm-surface-dock: #1A1A1C;
+  --fwm-surface-track: #121213;
+  --fwm-surface-control: #121213;
+
+  --fwm-text: #F5F5F6;
+  --fwm-text-2: #A8A8AD;
+  --fwm-text-muted: #6F6F76;
+  --fwm-text-icon: #6F6F76;
+  --fwm-text-on-alert: #0A0A0B;
+
+  --fwm-line: #262629;
+  --fwm-line-strong: #262629;
+  --fwm-line-soft: #262629;
+  --fwm-line-dock: #262629;
+
+  --fwm-accent-scan: #FF7A1A;
+  --fwm-accent-mesh: #A78BFA;
+  --fwm-alert-clear: #34C759;
+  --fwm-alert-approaching: #FFB300;
+  --fwm-alert-in-range: #FF3B30;
+  --fwm-alert-in-range-text: #FF7A72;
+
+  --fwm-map-earth: #0A0A0B;
+  --fwm-map-water: #0D1418;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 26 26 28;
+}
+
+[data-fwm-mode="violet"] {
+  --fwm-bg: #0C0A12;
+  --fwm-bg-sunken: #100D18;
+  --fwm-surface-1: #171420;
+  --fwm-surface-2: #171420;
+  --fwm-surface-sunk: #100D18;
+  --fwm-surface-card: #171420;
+  --fwm-surface-dock: #171420;
+  --fwm-surface-track: #100D18;
+  --fwm-surface-control: #100D18;
+
+  --fwm-text: #F4F1FB;
+  --fwm-text-2: #B3AAC9;
+  --fwm-text-muted: #7D7396;
+  --fwm-text-icon: #7D7396;
+  --fwm-text-on-alert: #0A0812;
+
+  --fwm-line: #241F33;
+  --fwm-line-strong: #241F33;
+  --fwm-line-soft: #241F33;
+  --fwm-line-dock: #241F33;
+
+  --fwm-accent-scan: #C4B5FD;
+  --fwm-accent-mesh: #8A6BFF;
+  --fwm-alert-clear: #6EE7B7;
+  --fwm-alert-approaching: #FFB86C;
+  --fwm-alert-in-range: #FF3D9A;
+  --fwm-alert-in-range-text: #FF85C0;
+
+  --fwm-map-earth: #08060D;
+  --fwm-map-water: #0C1526;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 23 20 32;
+}
+
+[data-fwm-mode="e-ink"] {
+  --fwm-bg: #EEECE6;
+  --fwm-bg-sunken: #E3E0D8;
+  --fwm-surface-1: #F7F6F2;
+  --fwm-surface-2: #F7F6F2;
+  --fwm-surface-sunk: #E3E0D8;
+  --fwm-surface-card: #F7F6F2;
+  --fwm-surface-dock: #F7F6F2;
+  --fwm-surface-track: #E3E0D8;
+  --fwm-surface-control: #E3E0D8;
+
+  --fwm-text: #131210;
+  --fwm-text-2: #4A4740;
+  --fwm-text-muted: #7D7970;
+  --fwm-text-icon: #7D7970;
+  --fwm-text-on-alert: #F7F6F2;
+
+  --fwm-line: #CDC9BE;
+  --fwm-line-strong: #CDC9BE;
+  --fwm-line-soft: #CDC9BE;
+  --fwm-line-dock: #CDC9BE;
+
+  --fwm-accent-scan: #131210;
+  --fwm-accent-mesh: #3C3A34;
+  --fwm-alert-clear: #2F2C26;
+  --fwm-alert-approaching: #5C5850;
+  --fwm-alert-in-range: #131210;
+  --fwm-alert-in-range-text: #131210;
+
+  --fwm-map-earth: #E8E6DF;
+  --fwm-map-water: #D5D8D3;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 247 246 242;
+}
+
+[data-fwm-mode="refinement"] {
+  --fwm-bg: #E6EDE8;
+  --fwm-bg-sunken: #DAE4DD;
+  --fwm-surface-1: #F2F7F3;
+  --fwm-surface-2: #F2F7F3;
+  --fwm-surface-sunk: #DAE4DD;
+  --fwm-surface-card: #F2F7F3;
+  --fwm-surface-dock: #F2F7F3;
+  --fwm-surface-track: #DAE4DD;
+  --fwm-surface-control: #DAE4DD;
+
+  --fwm-text: #0A2E3C;
+  --fwm-text-2: #3F6B74;
+  --fwm-text-muted: #6E8E93;
+  --fwm-text-icon: #6E8E93;
+  --fwm-text-on-alert: #F4F8F4;
+
+  --fwm-line: #C2D2CC;
+  --fwm-line-strong: #C2D2CC;
+  --fwm-line-soft: #C2D2CC;
+  --fwm-line-dock: #C2D2CC;
+
+  --fwm-accent-scan: #1C8FA8;
+  --fwm-accent-mesh: #5344B8;
+  --fwm-alert-clear: #1F6F53;
+  --fwm-alert-approaching: #B8860B;
+  --fwm-alert-in-range: #A8433A;
+  --fwm-alert-in-range-text: #8E332B;
+
+  /* BOUND TO THE FLAVOUR. Same argument as slate's pair above: this mode now
+     draws the custom `refinement` cartography, and the ground the app paints
+     beneath the archive has to be the ground that cartography declares. */
+  /* THE LIGHT SKINS TAKE THE DARK GROUND TOO - owner call, 2026-09-08.
+     The refinement cartography still draws the roads, the labels and the
+     water; only the ground beneath them is the shared default. See
+     `--fwm-map-earth-default` in `:root` for why the map does not follow
+     the theme the way the chrome does. A colour chosen in SETTINGS wins
+     over this, in this theme and in every other one. */
+  --fwm-map-earth: var(--fwm-map-earth-default);
+  --fwm-map-water: var(--fwm-carto-refinement-water);
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 242 247 243;
+}
+
+[data-fwm-mode="paper"] {
+  /* THE CHROME, ON A LIGHT GROUND. NOT AN INVERSION.
+   * The accent changes hue value rather than lightness: #2fd4d4 is 1.9:1 on
+   * white and unreadable. Every owner dot has a darkened twin for the same
+   * reason -- a dot that carries meaning has to be visible to carry it. */
+  --dr-surface: rgba(255, 255, 255, 0.86);
+  --dr-surface-menu: rgba(255, 255, 255, 0.94);
+  --dr-surface-toast: rgba(255, 255, 255, 0.95);
+  --dr-hairline: rgba(15, 20, 25, 0.12);
+  --dr-hairline-row: rgba(15, 20, 25, 0.08);
+  --dr-row-fill: rgba(15, 20, 25, 0.035);
+  --dr-row-hover: rgba(15, 20, 25, 0.06);
+  --dr-specular: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --dr-lift: 0 8px 24px rgba(15, 20, 25, 0.12);
+  --dr-surface-thin: rgba(255, 255, 255, 0.74);
+  /* NEVER DRAWN. All five landscape frames in the spec are dark, so this is a
+     derivation with nothing to check it against: a white veil, at the dark
+     twin's two alphas, so the chrome stays legible over a bright basemap the
+     way the dark one does over a dark one. Reported to the owner. */
+  --dr-scrim-side: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.24) 55%,
+    transparent
+  );
+  --dr-grain-ink: rgba(15, 20, 25, 0.028);
+  --dr-ink: #0f1419;
+  --dr-ink-2: #0f1419;
+  --dr-ink-3: #3d4751;
+  --dr-ink-4: #4d5761;
+  --dr-ink-muted: #59636d;
+  --dr-ink-faint: #5c666f;
+  --dr-placeholder: #5c666f;
+  --dr-accent: #096064;
+  --dr-accent-fill: rgba(9, 96, 100, 0.1);
+  --dr-accent-line: rgba(9, 96, 100, 0.4);
+  /* The dock pane's four, read out of section A's LIGHT frame -- the light
+     twin the file draws beside the dark one. See the dark block. */
+  --dr-dock-divider: rgba(15, 20, 25, 0.09);
+  --dr-dock-lift: 0 12px 30px rgba(15, 20, 25, 0.16);
+  --dr-dock-accent-line: rgba(9, 96, 100, 0.38);
+  --dr-dock-scrim: linear-gradient(
+    to top,
+    rgba(233, 237, 240, 0.9),
+    rgba(233, 237, 240, 0.45) 45%,
+    transparent
+  );
+  /* The abuse hue's light twin, from brief 4's own table. See the dark block. */
+  --dr-abuse: #a3162c;
+  --dr-abuse-text: #8f1226;
+  --dr-abuse-fill: rgba(163, 22, 44, 0.09);
+  --dr-abuse-line: rgba(163, 22, 44, 0.32);
+  --dr-owner-flock: #a8007a;
+  --dr-owner-police: #c8102e;
+  --dr-owner-hoa: #8a5f10;
+  --dr-owner-private: #b3336b;
+  --dr-owner-unverified: #6d4aca;
+  --dr-owner-unverified-text: #6d4aca;
+  /* Brief 4's light column for the same two hues, at the same 30/8 ratios. */
+  --dr-verdict-keep: #1f7a43;
+  --dr-verdict-keep-line: rgba(31, 122, 67, 0.3);
+  --dr-verdict-keep-fill: rgba(31, 122, 67, 0.08);
+  --dr-verdict-drop: #8f1226;
+  --dr-verdict-drop-line: rgba(163, 22, 44, 0.3);
+  --dr-verdict-drop-fill: rgba(163, 22, 44, 0.08);
+  /* THE SEARCH PANEL'S SIX UNDERIVABLE VALUES, on a pale ground.
+   * The rest of the panel's block mixes an alpha over `--dr-ink`,
+   * `--dr-accent` and `--dr-verdict-keep` and so has already followed this
+   * skin. These six are hues and shadows and cannot: the tier green and red
+   * are brief 4's light column, the amber is a dark ochre because #f5a524
+   * does not clear 4.5:1 on white, and the two panel shadows invert the way
+   * `--dr-lift` does two lines above. */
+  --dr-tier-clear: #1f7a43;
+  --dr-tier-some: #8a5f10;
+  --dr-tier-many: #8f1226;
+  --dr-field-placeholder: #5c666f;
+  --dr-ink-body: #4d5761;
+  --dr-keep-title: #1a6338;
+  --dr-panel-lift: 0 16px 44px rgba(15, 20, 25, 0.16);
+  --dr-panel-lift-tight: 0 12px 34px rgba(15, 20, 25, 0.14);
+  /* THE LIFT INVERTS ON A LIGHT GROUND.
+   * `--fwm-dock-raise` is a wash of `--fwm-lift` over the dock surface. On a
+   * dark skin that wash is white and the tile rises. Leave it white here and
+   * the raise would wash a pale surface paler until it vanished, so on this
+   * skin the lift is black and the same expression darkens instead. The tile
+   * is still a step away from the surface, which is the only thing the
+   * expression is required to guarantee. */
+  --fwm-lift: #000000;
+  --fwm-bg: #F3EFE7;
+  --fwm-bg-sunken: #E8E3D8;
+  --fwm-surface-1: #FBF9F4;
+  --fwm-surface-2: #FBF9F4;
+  --fwm-surface-sunk: #E8E3D8;
+  --fwm-surface-card: #FBF9F4;
+  --fwm-surface-dock: #FBF9F4;
+  --fwm-surface-track: #E8E3D8;
+  --fwm-surface-control: #E8E3D8;
+
+  --fwm-text: #23201A;
+  --fwm-text-2: #5B554A;
+  --fwm-text-muted: #8A8375;
+  --fwm-text-icon: #8A8375;
+  --fwm-text-on-alert: #FBF9F4;
+
+  --fwm-line: #D9D3C5;
+  --fwm-line-strong: #D9D3C5;
+  --fwm-line-soft: #D9D3C5;
+  --fwm-line-dock: #D9D3C5;
+
+  --fwm-accent-scan: #1F6F5C;
+  --fwm-accent-mesh: #5B4BB8;
+  --fwm-alert-clear: #1F6F5C;
+  --fwm-alert-approaching: #A9761C;
+  --fwm-alert-in-range: #B3402F;
+  --fwm-alert-in-range-text: #93362A;
+
+  --fwm-map-earth: #F0ECE3;
+  --fwm-map-water: #D3DCD9;
+
+  /* The glass CHANNEL. The LEVEL block supplies the alpha and the blur. */
+  --fwm-glass-rgb: 251 249 244;
+}
+
+/* TRANSPARENCY - the SECOND axis.
+ *
+ * Blur and opacity were one control and they answer different questions. Blur
+ * is what makes a panel read as glass rather than as a tinted rectangle, and it
+ * is the expensive half. Opacity is how much of the map you want to see THROUGH
+ * the chrome, which is a legibility preference and costs nothing to draw.
+ *
+ * Somebody who wants the frosted look but cannot read a card with a road
+ * showing through it had no way to say so, and neither did somebody who wants
+ * to see the map through cheap solid panels. */
+[data-fwm-clear="solid"] {
+  --fwm-glass-a: 1;
+}
+
+[data-fwm-clear="low"] {
+  --fwm-glass-a: 0.82;
+}
+
+[data-fwm-clear="medium"] {
+  --fwm-glass-a: 0.6;
+}
+
+/* HIGH GOES FURTHER THAN THE DESIGN'S LOWEST STEP.
+ *
+ * The design's floor is .46, chosen against its own light canvas. Over a near-
+ * black map .46 still hides the road: cranking the control all the way and
+ * seeing no map through the card is the whole complaint, and it was right.
+ * At .3 the roads read through every panel. */
+[data-fwm-clear="high"] {
+  --fwm-glass-a: 0.3;
+}
+
+/* THE GLASS LEVEL, as a real setting.
+ *
+ * `app/glass.ts` owns the value and `SETTINGS` writes it. These are the
+ * design's own four steps (`[data-glass="0..3"]` in the source file), and the
+ * bare block above stays as the fallback for a document that has not had the
+ * attribute written yet - one frame at boot, and every unit test.
+ *
+ * OFF REMOVES THE FILTER, it does not set it to zero. `blur(0px)` keeps the
+ * whole compositing cost - a render surface, a backdrop root and a per-frame
+ * read-back over a live map - and delivers no blur for it, which is the worst
+ * of both. `none` is the one value that actually stops the work.
+ *
+ * It does NOT force the panels opaque. Blur and transparency are two controls
+ * on purpose (`data-fwm-clear` is the other one), and collapsing them here
+ * would make the transparency control inert whenever glass is off. A driver
+ * who wants a cheap, sharp, still-see-through panel is asking for a real
+ * thing. */
+/* =============================================================================
+ * THE TONE - clear or tinted. See `app/glass.ts`.
+ *
+ * Only the CHANNEL and the optics change here. The alpha stays whatever the
+ * transparency control set, so the two axes cannot fight: `clear` is not a
+ * synonym for "more see-through", it is a different material.
+ * ========================================================================== */
+
+/* CLEAR. A near-colourless veil, and the backdrop pushed further toward vivid
+   than tinted needs - this is the tone the effect is named after. */
+[data-fwm-tone="clear"] {
+  --fwm-glass-rgb: var(--fwm-glass-clear-rgb);
+  --fwm-surface-glass: rgb(
+    var(--fwm-glass-clear-rgb) / calc(var(--fwm-glass-a) * var(--fwm-glass-clear-scale))
+  );
+  --fwm-glass-saturate: 200%;
+  --fwm-glass-brightness: 1.12;
+  /* A brighter rim, because there is less tint carrying the edge. */
+  --fwm-glass-border: rgba(255, 255, 255, 0.22);
+}
+
+/* TINTED. The theme's own channel at the alpha the transparency control set,
+   which is what this app painted before the tone existed. The optics stay -
+   they are what makes it glass rather than a coloured film - but a tinted panel
+   is already carrying colour, so it does not need clear's extra push. */
+[data-fwm-tone="tinted"] {
+  --fwm-glass-saturate: 160%;
+  --fwm-glass-brightness: 1.04;
+}
+
+[data-fwm-glass="off"] {
+  --fwm-glass-blur: 0px;
+  --fwm-glass-filter: none; /* keyword */
+}
+
+[data-fwm-glass="light"] {
+  --fwm-glass-blur: 10px;
+}
+
+[data-fwm-glass="medium"] {
+  --fwm-glass-blur: 16px;
+}
+
+[data-fwm-glass="heavy"] {
+  --fwm-glass-blur: 28px;
+}
+
+/* v1 IS ROUNDED IN EVERY THEME, and that is not an oversight.
+ *
+ * There used to be a block here zeroing the radius ladder for `cartridge-96`,
+ * `refinement` and `e-ink`, carrying over v0's rule that those three mean their
+ * sharp corners. In v1 they do not: the design file draws `eink`, `refine` and
+ * `paper` with the same 26px cards and 999px pills as every dark theme - they
+ * differ in PALETTE, not in geometry. Squaring them shipped a screen that was
+ * half one design and half the other.
+ *
+ * v0's own mode blocks are untouched and still square. */
+
+/* PAPER DOES NOT GLOW. The geometry stays; only the blur goes, and the
+   hairline becomes ink rather than light - a white rule on white paper is
+   nothing at all. */
+[data-fwm-mode="e-ink"],
+[data-fwm-mode="refinement"],
+[data-fwm-mode="paper"] {
+  --fwm-glass-blur: 0px;
+  --fwm-glass-filter: none; /* keyword */
+  /* INK, NOT LIGHT. The clear tone's veil is white, and white on paper is
+     nothing at all - the panel would vanish. On a light ground the honest
+     equivalent of "adds light rather than colour" is a neutral grey. */
+  --fwm-glass-clear-rgb: 30 30 30;
+  --fwm-glass-border: rgba(0, 0, 0, 0.10);
+  /* Paper catches no light. On a light ground the sheen would be a white
+     smear on white. */
+  --fwm-glass-sheen: none;
+  /* THE RIM, WHICH THIS BLOCK USED TO FORGET.
+   *
+   * `--fwm-glass-rim` is a white specular inset, and it was declared once at
+   * `:root` and never overridden. This block already refuses the blur and
+   * turns the border and the sheen to ink, for the reason written twice above:
+   * white on white is nothing at all. The rim is the same argument and it was
+   * missed - so on these three skins a floating control had no blur, no sheen,
+   * an invisible highlight, and a 10%-black hairline carrying the whole thing
+   * on its own. Reported as the top of the screen looking washed out beside
+   * the rail keys.
+   *
+   * Ink, and quieter than the border: a rim is a shading cue, and on paper the
+   * honest version of a highlight is a soft shadow under the top edge. */
+  --fwm-glass-rim:
+    inset 0 var(--fwm-hairline) 0 rgba(0, 0, 0, 0.06),
+    inset 0 calc(var(--fwm-hairline) * -1) 0 rgba(255, 255, 255, 0.5);
+}
+
+/* THREE ATTRIBUTES, so the glass LEVEL cannot outrank the MODE's blur rule.
+   `[design][glass]` and `[design][mode]` carry the same specificity, which
+   would otherwise leave source order deciding whether paper blurs. The COLOUR
+   is the theme's own `--fwm-glass-rgb`; only the blur is refused here. */
+[data-fwm-mode="e-ink"][data-fwm-glass],
+[data-fwm-mode="refinement"][data-fwm-glass],
+[data-fwm-mode="paper"][data-fwm-glass] {
+  --fwm-glass-blur: 0px;
+  --fwm-glass-filter: none; /* keyword */
+}
+
+/* =============================================================================
+ * FLAT - the RELIEF, and the fifth axis. `app/glass.ts` argues why it is not a
+ * value on any of the other four; this is what it actually does.
+ * =============================================================================
+ * EVERY TOKEN SWITCHED OFF HERE IS PAINT: an inset specular rim, two gradients
+ * and a cast shadow. None of them is a backdrop filter, which is why
+ * `glass=off` never removed any of them - `off` exists to stop a per-frame
+ * read-back, and paint costs no read-back. It is also why this block is free:
+ * a flat panel is marginally cheaper to draw than a lit one, and that is not
+ * the reason to pick it.
+ *
+ * THE SHADOWS GO TO `--fwm-shadow-flat` RATHER THAN TO `none`. See that token
+ * for the trap: `box-shadow: none, none` is invalid and takes the whole
+ * declaration with it.
+ *
+ * THE REPORT KEY IS DONE FROM ITS OWN TOKENS, not with a selector. Its
+ * meniscus is a `::after` gradient and its body is a radial wash, so flattening
+ * it means one transparent sheen and collapsing the wash onto the lift it fades
+ * into - a gradient between one colour and itself, which is a flat fill.
+ *
+ * WHAT THIS BLOCK MUST NEVER SET: `--fwm-glass-blur`, `--fwm-glass-a` or
+ * `--fwm-glass-rgb`. Flat is not "off" for the whole material. A flat panel can
+ * be heavily frosted, and it is still clear or tinted at the transparency the
+ * driver chose - `app/glass.test.ts` fails if this block reaches for any of the
+ * other axes' tokens.
+ *
+ * THE RADIUS STAYS TOO. v1 is rounded in every theme (see the block above), and
+ * flat is about how the material catches light, not about its geometry.
+ *
+ * `:root` IS IN THE SELECTOR ON PURPOSE, and dropping it breaks this quietly.
+ * Two other blocks in this file declare the tokens above at plain
+ * `[attribute]` weight: the paper skins re-declare `--fwm-glass-rim` as ink,
+ * and `[data-fwm-liquid="on"]` at the very bottom declares the sheen and the
+ * edge. Those are the same specificity as a bare `[data-fwm-flat="on"]`, so
+ * source order would decide - and the liquid block is LAST, which means flat
+ * would have been silently undone for every driver who had liquid glass on,
+ * which is the default. The extra element in the selector settles it wherever
+ * anybody later moves this block to.
+ * ========================================================================== */
+:root[data-fwm-flat="on"] {
+  --fwm-glass-rim: var(--fwm-shadow-flat);
+  --fwm-liquid-edge: var(--fwm-shadow-flat);
+  --fwm-card-shadow: var(--fwm-shadow-flat);
+  /* THE EDGE HAS TO CARRY THE WHOLE SEPARATION NOW, SO IT HAS TO BE VISIBLE.
+   *
+   * Everywhere else `--fwm-glass-border` is 0.14 white, and that works because
+   * it is not doing the job alone: the specular rim above is what actually
+   * separates a panel from the map under it, and the border is a hint drawn
+   * beside it. Flat deletes the rim - that is what flat MEANS - and 0.14 over a
+   * dark moving map is very nearly nothing, so every panel in the app lost its
+   * edge at once and the biggest ones ran straight into the ground behind them.
+   *
+   * `color-mix` against `--fwm-text` rather than a literal, because the polarity
+   * has to follow the theme. A fixed white would be invisible on `paper`,
+   * `refinement` and `e-ink`, which is why those three carry their own
+   * `rgba(0, 0, 0, 0.10)` further up this file - and this block outranks them,
+   * so writing white here would have broken exactly the skins that already
+   * knew better. Text colour is light on a dark ground and dark on a light one,
+   * which is the same rule `--fwm-liquid-edge` already uses.
+   *
+   * 24%: matched by eye against the reference the owner supplied - a hairline
+   * that reads as a drawn edge at arm's length without becoming a frame. */
+  --fwm-glass-border: color-mix(in srgb, var(--fwm-text) 24%, transparent);
+  --fwm-liquid-sheen: none; /* keyword */
+  --fwm-glass-sheen: none; /* keyword */
+  --fwm-report-key-sheen: transparent; /* keyword */
+  --fwm-report-key-wash: var(--fwm-report-key-lift);
+}
+
+/* THE ONE PAINTED GRADIENT THAT IS NOT A MATERIAL TOKEN.
+ *
+ * The install card fades `--fwm-tint-scan-weak` into its glass, and that tint
+ * is shared with SWEEP's crosshair stops, so it cannot be flattened from the
+ * token side without taking a ring on another screen with it. The rule lives
+ * here rather than in `install.css` for the same reason the liquid selector
+ * list does: what a material setting does to a surface is decided in one file,
+ * and a component that had to know about `data-fwm-flat` would be the start of
+ * a second copy of this axis. */
+:root[data-fwm-flat="on"] .fwm-install {
+  background: var(--fwm-surface-glass);
+}
+
+/* ===========================================================================
+ * MODE SWATCHES - v1's seven palettes, as three colours each.
+ *
+ * v1's SETTINGS draws a theme as a card carrying three dots of the palette it
+ * names, and a swatch cannot read another mode's palette: `[data-fwm-mode]`
+ * sits on <html>, so inside a running document there is exactly one live
+ * palette and it is the one already applied.
+ *
+ * Each triple is GROUND, CLEAR, ALERT - `--fwm-bg`, `--fwm-alert-clear` and
+ * `--fwm-alert-in-range` - transcribed from that theme's own v1 block above.
+ * Those three because they are the three every theme retunes; the scan accent
+ * is inherited unchanged by several, so a swatch built on it would draw
+ * identical dots and tell a driver nothing.
+ *
+ * `features/settings/swatches.test.ts` reads this file and the v1 theme blocks and
+ * fails when a triple drifts from the palette it names.
+ * ======================================================================== */
+:root {
+  --fwm-swatch-night-watch-bg:    #0B0C0F;
+  --fwm-swatch-night-watch-clear: #3DE08A;
+  --fwm-swatch-night-watch-alert: #FF2D5E;
+
+  --fwm-swatch-ember-bg:    #140F0C;
+  --fwm-swatch-ember-clear: #8FBF6A;
+  --fwm-swatch-ember-alert: #FF5B4A;
+
+  --fwm-swatch-tide-bg:     #071620;
+  --fwm-swatch-tide-clear:  #3FDCA0;
+  --fwm-swatch-tide-alert:  #FF4D6D;
+
+  --fwm-swatch-moss-bg:     #0D120D;
+  --fwm-swatch-moss-clear:  #6FD98A;
+  --fwm-swatch-moss-alert:  #FF5A52;
+
+  --fwm-swatch-sodium-bg:   #0C0700;
+  --fwm-swatch-sodium-clear: #C9962F;
+  --fwm-swatch-sodium-alert: #FF4A2B;
+
+  --fwm-swatch-slate-bg:    #0E1418;
+  --fwm-swatch-slate-clear: #55D6A0;
+  --fwm-swatch-slate-alert: #FF6B81;
+
+  --fwm-swatch-carbon-bg:    #0F0F10;
+  --fwm-swatch-carbon-clear: #34C759;
+  --fwm-swatch-carbon-alert: #FF3B30;
+
+  --fwm-swatch-violet-bg:    #0C0A12;
+  --fwm-swatch-violet-clear: #6EE7B7;
+  --fwm-swatch-violet-alert: #FF3D9A;
+
+  --fwm-swatch-e-ink-bg:    #EEECE6;
+  --fwm-swatch-e-ink-clear: #2F2C26;
+  --fwm-swatch-e-ink-alert: #131210;
+
+  --fwm-swatch-refinement-bg:    #E6EDE8;
+  --fwm-swatch-refinement-clear: #1F6F53;
+  --fwm-swatch-refinement-alert: #A8433A;
+
+  --fwm-swatch-paper-bg:    #F3EFE7;
+  --fwm-swatch-paper-clear: #1F6F5C;
+  --fwm-swatch-paper-alert: #B3402F;
+}
+
+/* --------------------------------------------------------------------------
+ * LIQUID GLASS - paint, not a backdrop filter. See the tokens for why.
+ * ----------------------------------------------------------------------- */
+
+/* WHERE THE PAINT LANDS.
+ *
+ * One rule reaching every glass surface, rather than fourteen edits across
+ * thirteen files. `background-image` stacks over whatever fill the panel
+ * already has, and `box-shadow` composes with the specular rim that is already
+ * there, so nothing a component set is overwritten.
+ *
+ * The selector list is the same set that says `backdrop-filter:
+ * var(--fwm-glass-filter)`, which is what makes "glass" mean one thing. Keep
+ * the two lists identical: the speed plate came off the glass set and kept its
+ * entry here for one commit, which left it wearing a sheen and a specular rim
+ * with no glass under either - a lit edge around nothing.
+ */
+/* THE LIST HAD DRIFTED, AND THAT IS WHAT "THE SETTING SKIPS THINGS" LOOKS LIKE.
+ *
+ * Eight entries here against roughly thirty surfaces that say `backdrop-filter:
+ * var(--fwm-glass-filter)`, so the liquid switch moved the dock, the rail keys
+ * and four cards while the panel over the map, the back key on every screen and
+ * every card on MORE, LOOK UP, MESH, EXPOSURE, MISUSE and REPORT sat there
+ * unchanged. A driver toggling it sees SOME of the app respond, which reads as
+ * a broken switch rather than as a preference - the same complaint the monitor
+ * card's own note records, one axis over.
+ *
+ * WHAT IS STILL MISSING, on purpose and not by oversight: every surface owned
+ * by `features/drive/` - `.fwm-search-bar`, `.fwm-search-hits`, `.fwm-pill`,
+ * `.fwm-dest`, `.fwm-contact-sheet` and `.fwm-detour`. That directory is being
+ * changed elsewhere as this lands and adding its selectors here would repaint
+ * it from under that work. They belong on this list and are the next thing to
+ * add to it. */
+/* THE FIVE TAB SCREENS ARE NOT ON THIS LIST, and that is brief 4 rather than an
+ * omission. Seventeen selectors were removed here in the same change that
+ * refactored them: `.fwm-more-*`, `.fwm-lookupv1-*`, `.fwm-exposure-*`,
+ * `.fwm-mesh-*` and `.fwm-radios-card`.
+ *
+ * Two reasons, and either would be enough. Most of those class names no longer
+ * exist - the install card, the tiles, the theme demo and the street card were
+ * deleted rather than restyled - and a selector pointing at markup that is gone
+ * is how a skin quietly stops painting a screen. And the ones that survive are
+ * now opaque by specification: brief 4 publishes section C's material as
+ * `--dr-card-fill` on `--dr-card-line`, so a sheen gradient and an inset rim
+ * over it is a second opinion about a surface that has already been decided.
+ *
+ * The chrome, the map panels and the pushed screens keep the skin. Glass is for
+ * things floating over the map, which is exactly what they are. */
+[data-fwm-liquid="on"] .fwm-drive-round,
+[data-fwm-liquid="on"] .fwm-drive-closest,
+[data-fwm-liquid="on"] .fwm-drive-empty,
+[data-fwm-liquid="on"] .fwm-drive-panel,
+[data-fwm-liquid="on"] .fwm-camera-label-chip,
+[data-fwm-liquid="on"] .fwm-backkey,
+[data-fwm-liquid="on"] .fwm-overlay-close,
+[data-fwm-liquid="on"] .fwm-docs-build,
+[data-fwm-liquid="on"] .fwm-docs-row,
+[data-fwm-liquid="on"] .fwm-correct,
+[data-fwm-liquid="on"] .fwm-install,
+[data-fwm-liquid="on"] .fwm-misuse-chip,
+[data-fwm-liquid="on"] .fwm-misuse-card,
+[data-fwm-liquid="on"] .fwm-lookupv1-field,
+[data-fwm-liquid="on"] .fwm-lookupv1-count,
+[data-fwm-liquid="on"] .fwm-lookupv1-empty,
+[data-fwm-liquid="on"] .fwm-lookupv1-group,
+[data-fwm-liquid="on"] .fwm-lookupv1-plate,
+[data-fwm-liquid="on"] .fwm-lookupv1-plate-panel,
+[data-fwm-liquid="on"] .fwm-reportv1-card,
+[data-fwm-liquid="on"] .fwm-reportv1,
+[data-fwm-liquid="on"] .fwm-settingsv1-glass-sample,
+[data-fwm-liquid="on"] .fwm-adminv1-tool,
+[data-fwm-liquid="on"] .fwm-helpv1-card,
+[data-fwm-liquid="on"] .fwm-triagev1-row,
+[data-fwm-liquid="on"] .fwm-offlinev1-row,
+[data-fwm-liquid="on"] .fwm-askv1-mic-card,
+[data-fwm-liquid="on"] .fwm-askv1-wake,
+[data-fwm-liquid="on"] .fwm-askv1-command,
+[data-fwm-liquid="on"] .fwm-intelv1-card,
+[data-fwm-liquid="on"] .fwm-onboardingv1-permission,
+[data-fwm-liquid="on"] .fwm-dockv1-bar,
+[data-fwm-liquid="on"] .fwm-dockv1 .fwm-dock-report-key {
+  background-image: var(--fwm-liquid-sheen);
+  box-shadow: var(--fwm-glass-rim), var(--fwm-liquid-edge);
+}
+
+/* THE TWO DRIVE CARDS, same paint plus the cast shadow that lifts them off the
+   map. Separate only because that third shadow is theirs and nothing else on
+   the list wants it - `box-shadow` replaces rather than accumulates, so the
+   card's lift has to travel in the same declaration as the rim. */
+[data-fwm-liquid="on"] .fwm-monitor,
+[data-fwm-liquid="on"] .fwm-nav {
+  background-image: var(--fwm-liquid-sheen);
+  box-shadow: var(--fwm-glass-rim), var(--fwm-liquid-edge), var(--fwm-card-shadow);
+}
+
+[data-fwm-liquid="on"] {
+  /* The meniscus: bright where the surface curves away at the top, gone by the
+     middle. This is the single detail that separates glass from a tinted
+     rectangle, and it costs one gradient. */
+  --fwm-liquid-sheen:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--fwm-text) 14%, transparent) 0%,
+      transparent 38%
+    );
+  /* The rim. A lens is thickest at its edge, so the edge is where light piles
+     up; an inset ring reads as that without touching the backdrop. */
+  --fwm-liquid-edge:
+    inset 0 var(--fwm-hairline) 0 color-mix(in srgb, var(--fwm-text) 22%, transparent),
+    inset 0 calc(var(--fwm-hairline) * -1) 0 color-mix(in srgb, var(--fwm-text) 8%, transparent);
+}

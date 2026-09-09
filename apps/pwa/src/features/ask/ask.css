@@ -1,0 +1,617 @@
+/* ASK -- the voice screen.
+ *
+ * SOURCE: `.design-src-v2/Flockys App Screens v2.dc.html`, screen
+ * `04 · ASK - LISTENING` (lines 274-336). v2 is the later decision and wins
+ * wherever it disagrees with `.design-src/Flockys App Screens.dc.html`
+ * (lines 265-322) or with `Flockys Design System.dc.html`.
+ *
+ * Element order and copy are IDENTICAL in v1 and v2 -- there is not one string
+ * difference across the whole panel. Everything v2 changed is visual, and
+ * `docs/gaps-inbox/lookup-ask-v2.md` carries the style-by-style diff. The five
+ * that reach this file:
+ *
+ *   title            17px/.1em            -> 19px/.06em
+ *   voice band       7 solid 6px bars,    -> 9 dot-matrix 11px columns, 3px
+ *                    4px apart, centred      apart, bottom-aligned, over a
+ *                                            masked 5px dot field
+ *   answer card      1px #23262F, radius 2 -> no border, #12141A, radius 6
+ *   answer actions   radius 2, ink #000    -> radius 8, ink #0A0A0C
+ *   TRY chips        1px #3A3F4B, pill     -> no border, #1B1E25, radius 8
+ *
+ * That is the whole redesign in one line: the borders come off and a ladder of
+ * near-black FILLS does the work they were doing. Only `ON SWEEP` keeps a
+ * stroke, and it is one of the 30 borders v2 still draws.
+ *
+ * The stack itself is unchanged: the 52px header with the wake-word chip, the
+ * 84px voice band, the `LISTENING…` caption, the `YOU` rule-left block, the
+ * `DARKROUTE` answer card with its two actions, and the `TRY` chip row pinned to
+ * the bottom of the column.
+ *
+ * Every colour, length, radius, duration and easing below is `var(--fwm-*)` or
+ * a `calc()` over one. Lines that render a value the token set does not carry
+ * are marked `GAP:` and filed in `docs/gaps-inbox/ask.md`.
+ *
+ * =============================================================================
+ * HUE MEANS STATE HERE TOO
+ * =============================================================================
+ * One custom property, `--fwm-ask-hue`, is set once per phase on the root and
+ * read by the voice bars and the caption. It is deliberately NOT an alert hue:
+ *
+ *   idle         --fwm-text-muted      the bars are drawn, not running
+ *   listening    --fwm-accent-scan     #22C8E0, as the design renders it
+ *   answering    --fwm-accent-scan     still the scan hue; the caption changes
+ *   answered     --fwm-text-muted      back to idle's treatment
+ *   unavailable  --fwm-text-disabled   the platform cannot listen at all
+ *
+ * The one alert hue on this screen is the `DARKROUTE` label, which the design
+ * draws in #FF2D5E. It is a speaker label, and it is the only place a hue
+ * appears that is not carrying microphone state.
+ *
+ * =============================================================================
+ * THE BARS ARE ALWAYS DRAWN
+ * =============================================================================
+ * The design only draws the listening state, where nine columns animate. They
+ * are not created on press and destroyed on release: they are the press target
+ * itself, grey and still when idle, running and cyan while the microphone is
+ * open. A control that appears only after you have used it cannot be found.
+ *
+ * v2 does not change that, and it does not change the count of things that
+ * carry hue: the dot field behind the meter is --fwm-line-grid-1 in every
+ * phase, and the nine columns are --fwm-ask-hue in every phase. Idle is a grey
+ * lattice on a grey lattice; listening lights the columns only.
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product, same rule as RADAR. `AskView.test.tsx` reads this file
+ * off disk and fails if `:hover` appears.
+ * ========================================================================== */
+
+.fwm-ask {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design draws on the
+   * header and the cards, /2 is the 2px rule beside the YOU block. Derived, so
+   * a mode that rescales space rescales the strokes with it. Component-scoped
+   * locals, NOT new tokens. */
+  --fwm-ask-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-ask-quote-w: calc(var(--fwm-space-1) / 2);
+
+  /* GAP: see docs/gaps-inbox/ask.md#voice-band-and-bar-widths-have-no-token
+   * and docs/gaps-inbox/lookup-ask-v2.md#the-voice-meter-is-a-dot-matrix-now
+   * v2 keeps `height:84px` on the band and rewrites everything inside it:
+   * `width:11px` per column and `gap:3px` between them, where v1 drew 6px and
+   * 4px. All three are exact multiples of tokens -- 1.75 x --fwm-space-12 is
+   * 84px, 2.75 x --fwm-space-1 is 11px, .75 x --fwm-space-1 is 3px -- so a
+   * mode that rescales space rescales the meter with it. Component-scoped
+   * locals, NOT new tokens. */
+  --fwm-ask-band-h: calc(var(--fwm-space-12) * 1.75);
+  --fwm-ask-bar-w: calc(var(--fwm-space-1) * 2.75);
+  --fwm-ask-bar-gap: calc(var(--fwm-space-1) * 0.75);
+
+  /* GAP: see docs/gaps-inbox/lookup-ask-v2.md#dot-grid-geometry-has-no-token
+   * The 5px lattice v2 draws under and inside the meter, as
+   * `radial-gradient(circle at center, <hue> .7px, transparent 1.2px) 0 100%/5px 5px`
+   * on the field and the same at `.75px / 1.25px` on a column. --fwm-line-grid-1
+   * carries the field's COLOUR; nothing in the token set carries a cell size or
+   * a dot radius, and a sub-pixel radius is not a spacing step, so these are
+   * derived locals rather than invented tokens: 1.25 / .175 / .3 / .1875 /
+   * .3125 x --fwm-space-1. */
+  --fwm-ask-grid-cell: calc(var(--fwm-space-1) * 1.25);
+  --fwm-ask-field-dot: calc(var(--fwm-space-1) * 0.175);
+  --fwm-ask-field-dot-end: calc(var(--fwm-space-1) * 0.3);
+  --fwm-ask-bar-dot: calc(var(--fwm-space-1) * 0.1875);
+  --fwm-ask-bar-dot-end: calc(var(--fwm-space-1) * 0.3125);
+
+  /* GAP: see DESIGN-GAPS.md#animations-are-not-tokens
+   * v2 keeps v1's first seven fwmVoice periods unchanged -- .8s, 1.1s, .7s,
+   * 1.3s, .9s, 1.05s, .75s -- and adds two columns carrying 1.18s and .86s.
+   * All nine exceed --fwm-dur-alert (400ms), the longest duration the system
+   * exports, so each is an exact multiple of that token: 2x, 2.75x, 1.75x,
+   * 3.25x, 2.25x, 2.625x, 1.875x, 2.95x, 2.15x. No period repeats, which is
+   * what keeps the meter from reading as a rhythm.
+   * See docs/gaps-inbox/ask.md#voice-bar-periods-derived-from-dur-alert */
+  --fwm-ask-dur-1: calc(var(--fwm-dur-alert) * 2);
+  --fwm-ask-dur-2: calc(var(--fwm-dur-alert) * 2.75);
+  --fwm-ask-dur-3: calc(var(--fwm-dur-alert) * 1.75);
+  --fwm-ask-dur-4: calc(var(--fwm-dur-alert) * 3.25);
+  --fwm-ask-dur-5: calc(var(--fwm-dur-alert) * 2.25);
+  --fwm-ask-dur-6: calc(var(--fwm-dur-alert) * 2.625);
+  --fwm-ask-dur-7: calc(var(--fwm-dur-alert) * 1.875);
+  --fwm-ask-dur-8: calc(var(--fwm-dur-alert) * 2.95);
+  --fwm-ask-dur-9: calc(var(--fwm-dur-alert) * 2.15);
+
+  /* The fallback is the idle treatment. A phase that somehow arrives unset
+     draws still grey bars rather than a screen that claims to be listening. */
+  --fwm-ask-hue: var(--fwm-text-muted);
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  overflow-x: hidden; /* keyword */
+}
+
+.fwm-ask[data-fwm-ask-phase="listening"],
+.fwm-ask[data-fwm-ask-phase="answering"] {
+  --fwm-ask-hue: var(--fwm-accent-scan);
+}
+
+.fwm-ask[data-fwm-ask-phase="unavailable"] {
+  --fwm-ask-hue: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `ASK` at 19px/700/.06em, the wake-word chip on the right.
+ * Rendered: height 52px (= --fwm-header-h exactly), padding 0 16px, 1px rule.
+ * The 1px #23262F rule under it is one of the borders v2 KEPT: the screen's
+ * own chrome still uses strokes, only the controls inside it stopped.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  flex: none; /* keyword */
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-ask-rule-w) solid var(--fwm-line);
+}
+
+/* v2 raises the title to 19px and TIGHTENS the tracking from .1em to .06em.
+ * The type scale steps 17px -> 24px, so the size stays at --fwm-text-subtitle
+ * and only the tracking moves.
+ * GAP: see docs/gaps-inbox/lookup-ask-v2.md#no-19px-type-step
+ * GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+.fwm-ask-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.06);
+  white-space: nowrap; /* keyword */
+}
+
+/* The chip is a control, not a label: it arms and disarms wake word, and wake
+ * word may never be armed without a press. Rendered 10px mono at .1em.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor -- 11px here.
+ * GAP: see docs/gaps-inbox/ask.md#wake-word-chip-is-drawn-as-a-label
+ * The design draws no border and no box, so neither does this; the tap target
+ * is grown to the product's 44px floor with min-height instead. */
+.fwm-ask-wake {
+  display: flex;
+  align-items: center;
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* Armed is the state the design draws: #3DE08A. Green here is not an alert
+   hue borrowed for decoration -- it is the same "this is working" green the
+   GPS row uses, and wake word is a capability report. */
+.fwm-ask-wake[data-fwm-ask-wake="on"] {
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-ask-wake:disabled {
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * The notice strip.
+ *
+ * GAP: see docs/gaps-inbox/ask.md#no-drawn-surface-for-the-wake-word-reason
+ * The platform doc requires the WAKE WORD chip to render the real reason
+ * instead of a broken promise, and requires the off-device-audio fact to be
+ * shown BEFORE the first press. The design draws neither. This follows RADAR's
+ * OFFLINE strip -- mono micro, amber, full width under the header -- so the
+ * sentence lands in an idiom the product already has rather than in a new one
+ * invented for this screen. It is not a verbatim copy of that rule: there is no
+ * pulsing dot, and it wraps and grows past the 32px floor rather than
+ * truncating, because a privacy disclosure that ends in an ellipsis has not
+ * been disclosed. More than one line can be true at once, so more than one can
+ * be drawn -- see AskView.tsx.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  width: 100%;
+  min-height: var(--fwm-space-8);
+  margin: 0;
+  padding: var(--fwm-space-2) var(--fwm-space-4);
+  background: var(--fwm-surface-2);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.5;
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-alert-approaching);
+}
+
+/* A capability that is simply absent is not a warning; it is a fact. */
+.fwm-ask-notice[data-fwm-ask-notice="unsupported"] {
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack gap.
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * The scale steps 12 -> 16, so the 14px stack gap takes the nearest step below
+ * and the column reads slightly tighter than the reference.
+ *
+ * THIS SCREEN OWNS ITS SCROLL, LIKE ITS SIBLINGS DO.
+ * `App.tsx` renders `<main class="relative flex-1">` with no overflow of its
+ * own, so a screen that does not scroll internally pushes the shell instead:
+ * with a notice line or two wrapped, a long transcript and a long refusal, the
+ * `margin-top: auto` TRY row slides under the fixed dock. `dead-drop` already
+ * set this precedent on its list.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+  overflow-y: auto; /* keyword */
+  -webkit-overflow-scrolling: touch; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * The voice band -- v2's dot-matrix meter. 84px tall, nine 11px columns 3px
+ * apart, bottom-aligned, standing on a masked 5px dot field.
+ *
+ * It is a button because nothing else on the screen opens the microphone, and
+ * the microphone may only ever be opened from a press.
+ * GAP: see docs/gaps-inbox/ask.md#no-drawn-control-starts-listening
+ *
+ * WHAT V2 ACTUALLY CHANGED HERE
+ *   v1 drew seven solid 6px rectangles, vertically centred, 4px apart. v2 draws
+ *   nine 11px columns of 5px-pitch dots, bottom-aligned, 3px apart, each
+ *   clipping a masked fill that fades out toward its top -- and puts a dimmer
+ *   copy of the same lattice behind the whole band so the meter reads as an
+ *   instrument face with lit and unlit cells rather than as seven blocks.
+ *   Nothing about the CONTROL changed: same press target, same phases, same
+ *   first seven periods.
+ *
+ * THE FIELD IS FIRST IN THE DOM AND PAINTS UNDER THE COLUMNS
+ *   Both the field and the columns are positioned, so they paint in DOM order
+ *   within the same layer. `VoiceBars.tsx` renders the field first, exactly as
+ *   v2 does, and no z-index is needed. Do not reorder them.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-mic {
+  position: relative;
+  display: flex;
+  align-items: flex-end; /* keyword -- v2 stands the columns on the baseline */
+  justify-content: center;
+  gap: var(--fwm-ask-bar-gap);
+  flex: none; /* keyword */
+  width: 100%;
+  height: var(--fwm-ask-band-h);
+  padding: 0;
+  border: 0;
+  background: transparent; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* The unlit lattice behind the meter. Its hue is --fwm-line-grid-1, which is
+ * the token v2 authored for exactly this field, and it does NOT follow
+ * --fwm-ask-hue: the unlit cells of an instrument face do not light up.
+ * The mask fades it in from the top so the band has no hard upper edge. */
+.fwm-ask-field {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at center,
+      var(--fwm-line-grid-1) var(--fwm-ask-field-dot),
+      transparent var(--fwm-ask-field-dot-end)
+    )
+    0 100% / var(--fwm-ask-grid-cell) var(--fwm-ask-grid-cell);
+  -webkit-mask: var(--fwm-mask-voice-field);
+  mask: var(--fwm-mask-voice-field);
+}
+
+/* A column is a clip box, not the paint: it is full height and hides what
+ * overflows, so `fwmVoice` scaling the fill inside it never spills past the
+ * band. The fill is what carries the height, the lattice and the motion. */
+.fwm-ask-bar {
+  position: relative;
+  flex: none; /* keyword */
+  width: var(--fwm-ask-bar-w);
+  height: 100%;
+  overflow: hidden; /* keyword */
+}
+
+.fwm-ask-bar-fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background:
+    radial-gradient(
+      circle at center,
+      var(--fwm-ask-hue) var(--fwm-ask-bar-dot),
+      transparent var(--fwm-ask-bar-dot-end)
+    )
+    0 100% / var(--fwm-ask-grid-cell) var(--fwm-ask-grid-cell);
+  -webkit-mask: var(--fwm-mask-voice-bar);
+  mask: var(--fwm-mask-voice-bar);
+  transform-origin: bottom; /* keyword */
+}
+
+/* Percentages are keyframe/geometry, not design lengths: the token set models
+ * no such family. See DESIGN-GAPS.md#animations-are-not-tokens.
+ *
+ * Selected on `[data-fwm-ask-bar]` rather than `:nth-child`, because the field
+ * is the button's first child and an ordinal selector would silently address
+ * the wrong column the moment anything else is added to the band. */
+.fwm-ask-bar[data-fwm-ask-bar="1"] .fwm-ask-bar-fill { height: 70%; }
+.fwm-ask-bar[data-fwm-ask-bar="2"] .fwm-ask-bar-fill { height: 100%; }
+.fwm-ask-bar[data-fwm-ask-bar="3"] .fwm-ask-bar-fill { height: 55%; }
+.fwm-ask-bar[data-fwm-ask-bar="4"] .fwm-ask-bar-fill { height: 85%; }
+.fwm-ask-bar[data-fwm-ask-bar="5"] .fwm-ask-bar-fill { height: 65%; }
+.fwm-ask-bar[data-fwm-ask-bar="6"] .fwm-ask-bar-fill { height: 95%; }
+.fwm-ask-bar[data-fwm-ask-bar="7"] .fwm-ask-bar-fill { height: 50%; }
+.fwm-ask-bar[data-fwm-ask-bar="8"] .fwm-ask-bar-fill { height: 78%; }
+.fwm-ask-bar[data-fwm-ask-bar="9"] .fwm-ask-bar-fill { height: 60%; }
+
+/* Motion only while the microphone is actually open. An idle screen that
+ * animates a voice meter is claiming to hear something. */
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar-fill {
+  animation-name: fwmVoice;
+  animation-timing-function: var(--fwm-ease-mech);
+  animation-iteration-count: infinite; /* keyword */
+}
+
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="1"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-1); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="2"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-2); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="3"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-3); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="4"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-4); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="5"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-5); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="6"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-6); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="7"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-7); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="8"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-8); }
+.fwm-ask[data-fwm-ask-phase="listening"] .fwm-ask-bar[data-fwm-ask-bar="9"] .fwm-ask-bar-fill { animation-duration: var(--fwm-ask-dur-9); }
+
+/* Rendered 11px mono at .2em in the scan hue, centred. --fwm-text-micro is
+   11px exactly. */
+.fwm-ask-status {
+  flex: none; /* keyword */
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-ask-hue);
+  text-align: center; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * `YOU` -- what the microphone heard, behind a 2px rule.
+ *
+ * NOTHING HERE IS PERSISTED. The transcript lives in component state for as
+ * long as the screen is mounted and goes nowhere else: not to storage, not to
+ * the URL, not to a log, not to a notification. See AskScreen.tsx.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-you {
+  flex: none; /* keyword */
+  min-width: 0;
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-ask-quote-w) solid var(--fwm-line-strong);
+}
+
+/* Rendered 10px mono at .18em.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * -- the 6px gap under the label takes the nearest step below, 4px. */
+.fwm-ask-speaker {
+  margin: 0 0 var(--fwm-space-1);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 20px/600/1.3. --fwm-text-subtitle (17px) is the nearest step.
+ * GAP: see docs/gaps-inbox/ask.md#transcript-and-answer-type-steps-missing */
+.fwm-ask-transcript {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: break-word; /* keyword */
+}
+
+/* An interim result is not what you said yet -- it is the recogniser's current
+   guess, and it will change. Dimming it is the smallest honest difference. */
+.fwm-ask-transcript[data-fwm-ask-interim="true"] {
+  color: var(--fwm-text-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * `DARKROUTE` -- the answer card.
+ *
+ * v1: 1px --fwm-line edge, --fwm-surface-1 (#0E0F13) fill, 2px radius.
+ * v2: NO edge, --fwm-surface-card (#12141A) fill, 6px radius. Same 16px pad.
+ *
+ * This is the redesign in miniature. v2 does not simply delete the stroke and
+ * leave the old fill -- it lifts the fill one rung, from #0E0F13 to #12141A,
+ * so the card still separates from the #000 body once the edge is gone. Taking
+ * the border off WITHOUT the lift would have left a card that reads as flat
+ * black on black, which is why --fwm-surface-card exists at all. v2 draws this
+ * exact pair -- fill #12141A at radius 6 -- eleven times across the five
+ * screens, and this is one of them.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-answer {
+  flex: none; /* keyword */
+  min-width: 0;
+  padding: var(--fwm-space-4);
+  border: 0;
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card);
+}
+
+/* The one alert hue on this screen, and it is a speaker label. Rendered 10px
+ * mono at .18em in #FF2D5E, 10px above the answer -- nearest step below is 8px. */
+.fwm-ask-answer .fwm-ask-speaker {
+  margin-bottom: var(--fwm-space-2);
+  color: var(--fwm-alert-in-range);
+}
+
+/* Rendered 16px/1.5 in #F7F9FC. --fwm-text-body is 15px, the nearest step. */
+.fwm-ask-answer-text {
+  margin: 0;
+  font-size: var(--fwm-text-body);
+  line-height: 1.5;
+  color: var(--fwm-text);
+  overflow-wrap: break-word; /* keyword */
+}
+
+/* Rendered 14px above the row; nearest step below is 12px. */
+.fwm-ask-actions {
+  display: flex;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-3);
+}
+
+/* Rendered 44px tall = --fwm-touch-min exactly, 13px labels, and in v2 an 8px
+ * radius where v1 drew 2px. --fwm-text-body (15px) is the nearest step that
+ * keeps a car-mounted label legible.
+ *
+ * The transparent border stays on the base rule even though v2 draws no stroke
+ * on the primary: `ON SWEEP` still has one, and a border-box hairline on both
+ * is what keeps the two halves of the row the same height to the pixel. */
+.fwm-ask-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-2);
+  border: var(--fwm-ask-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-3);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* Rendered #FF2D5E, 700, .1em, and in v2 the ink is #0A0A0C rather than pure
+ * #000. That is not a rounding difference: v2 introduced --fwm-text-on-alert
+ * for the three labels that sit on a saturated fill, so the ink on a hue is a
+ * named role and stops being "the background colour, reused". A mode that
+ * remaps --fwm-bg no longer silently repaints this label.
+ * v2 draws no stroke on the filled key, so this sets no border-color. */
+.fwm-ask-action[data-fwm-ask-action-kind="primary"] {
+  background: var(--fwm-alert-in-range);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-body) / 10);
+  color: var(--fwm-text-on-alert);
+}
+
+/* Rendered 1px #3A3F4B, #A7AFBD, 600, .06em -- unchanged from v1 apart from
+ * the radius. `ON SWEEP` is the ONE control on this screen that v2 left a
+ * border on, which is what makes the outline still mean something: it is the
+ * quiet half of a two-key row, next to a filled key. */
+.fwm-ask-action[data-fwm-ask-action-kind="secondary"] {
+  border-color: var(--fwm-line-strong);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-body) * 0.06);
+  color: var(--fwm-text-2);
+}
+
+/* An action with nothing wired to it says so instead of pretending. Same rule
+   as RADAR's degraded action: drawn, dimmed, inert. */
+.fwm-ask-action:disabled {
+  border-color: var(--fwm-line);
+  background: transparent; /* keyword */
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * `TRY` -- the suggestion chips, pinned to the bottom of the column.
+ * ------------------------------------------------------------------------ */
+
+.fwm-ask-try {
+  flex: none; /* keyword */
+  margin-top: auto; /* keyword */
+}
+
+/* Rendered 10px above the chips; nearest step below is 8px. */
+.fwm-ask-try .fwm-ask-speaker {
+  margin-bottom: var(--fwm-space-2);
+}
+
+.fwm-ask-chips {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+/* Rendered `padding:9px 13px` at 12px, which lands a ~31px tall control --
+ * under the product's own 44px touch floor. Same call as RADAR's header keys:
+ * the floor wins and the chip is taller than the reference.
+ * GAP: see docs/gaps-inbox/ask.md#try-chips-are-below-the-touch-floor
+ *
+ * v1: 1px #3A3F4B, radius 999px, no fill -- an outlined pill.
+ * v2: no border, --fwm-surface-control (#1B1E25), radius 8 -- a filled key.
+ *
+ * The pill is gone deliberately. v2 still draws 999px twenty-eight times, all
+ * of them on things that are actually round (dots, rings, the 36px `+`), and
+ * gives every rectangular control the same 8px corner. A chip is a control, so
+ * it takes the control radius. #1B1E25 is the same fill every other flat key
+ * in v2 gets, which is what makes a TRY chip and a LOOKUP plate field read as
+ * the same kind of object. */
+.fwm-ask-chip {
+  display: flex;
+  align-items: center;
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: 0;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* v2 draws no disabled chip, and with the border gone dimming the label alone
+ * would leave a chip that still looks pressable. The fill IS the affordance
+ * now, so an inert chip drops a rung to --fwm-surface-1 and sinks toward the
+ * body instead. Drawn, dimmed, inert -- the same rule as the actions above.
+ * GAP: see docs/gaps-inbox/lookup-ask-v2.md#no-disabled-state-for-a-filled-control */
+.fwm-ask-chip:disabled {
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}

@@ -1,0 +1,97 @@
+plugins {
+    id 'com.android.application'
+}
+
+/**
+ * The host and start path come from gradle.properties so that the manifest,
+ * the asset statement and the deep-link intent filter cannot drift apart.
+ * There is exactly one place to change them.
+ */
+def fwmHost = project.findProperty('fwm.host') ?: 'darkroute.ai'
+def fwmStartPath = project.findProperty('fwm.startPath') ?: '/?src=twa'
+
+android {
+    namespace 'ai.darkroute.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'ai.darkroute.app'
+
+        // 26 is the floor for adaptive launcher icons, and TWAs need Chrome 72+
+        // anyway. Nothing below Oreo can run this app usefully.
+        minSdk 26
+        targetSdk 36
+
+        versionCode 1
+        versionName '0.1.0'
+
+        manifestPlaceholders = [
+            fwmHost     : fwmHost,
+            fwmStartUrl : "https://${fwmHost}${fwmStartPath}".toString(),
+            fwmSiteUrl  : "https://${fwmHost}/".toString(),
+        ]
+
+        resValue 'string', 'fwm_host', fwmHost
+        // The Digital Asset Link statement, as a string resource. Escaped
+        // quotes are required: this is JSON living inside XML.
+        resValue 'string', 'asset_statements',
+            "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], " +
+            "\\\"target\\\": { \\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${fwmHost}/\\\" } }]".toString()
+    }
+
+    signingConfigs {
+        release {
+            // Never in the repo. `keystore.properties` is gitignored and the
+            // keystore itself lives outside the working tree entirely — losing
+            // it means never being able to update the app on Play again.
+            def props = new Properties()
+            def file = rootProject.file('keystore.properties')
+            if (file.exists()) {
+                file.withInputStream { props.load(it) }
+                storeFile = rootProject.file(props['storeFile'])
+                storePassword = props['storePassword']
+                keyAlias = props['keyAlias']
+                keyPassword = props['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (rootProject.file('keystore.properties').exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // The TWA shell: LauncherActivity, the splash handoff, DelegationService.
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+
+    // THE REASON THIS PROJECT EXISTS.
+    //
+    // Location delegation makes the web app's geolocation calls resolve
+    // through ANDROID'S location permission and the fused provider, instead of
+    // through Chrome's per-site permission. Without it, `watchPosition` stops
+    // when the screen locks and no service worker or wake lock changes that —
+    // which for an app whose whole job is warning a driver about a camera
+    // ahead is not a limitation, it is the feature not working.
+    //
+    // The web side needs no change: the page keeps calling the standard
+    // Geolocation API. This is separate from the optional injected-bridge
+    // contract in services/adapters/twaLocationBridge.ts.
+    implementation 'com.google.androidbrowserhelper:locationdelegation:1.1.2'
+}

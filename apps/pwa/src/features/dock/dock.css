@@ -1,0 +1,2357 @@
+/* THE DOCK.
+ *
+ * One inset pane at the bottom of the screen, three locked heights, nineteen
+ * states. `dockv3.dc.html` is the specification and this file is a transcription
+ * of it: every measurement below is that page's own, and where a value is not
+ * on that page it is not here either.
+ *
+ * =============================================================================
+ * ONE PANE, NOT TWO SLABS
+ * =============================================================================
+ * v2 shipped the alert card and the tab bar as two opaque slabs pinned edge to
+ * edge with a visible seam between them. They are ONE element now: one hairline
+ * around the whole thing, one radius, and a 1px divider where the seam was. The
+ * tab row is the pane's floor rather than a second surface under it, which is
+ * why all three published heights count its 63px.
+ *
+ * =============================================================================
+ * THE THREE HEIGHTS, AND NOTHING BETWEEN THEM
+ * =============================================================================
+ * COLLAPSED 150, NAVIGATING 170, EXPANDED 302 -- border-box, hairline included,
+ * so `height: 150px` is literally correct and the content box is 148 / 168 /
+ * 300. The height comes from `data-fwm-pane` and from nothing else, because the
+ * whole argument of the design is that the dock escalates by COLOUR and WEIGHT
+ * and never by size: a surface that grows under a thumb at 70mph moves the
+ * control the thumb was reaching for. If a label would grow a row it truncates.
+ *
+ * The old 147 / 288 / 168 are gone, and so is the family that carried them. A
+ * lit drive state is not a taller dock -- CRUISING, APPROACHING, UNDER
+ * SURVEILLANCE, CLEARED and OFFLINE are all the collapsed 150, identical in
+ * geometry to IDLE, and only the tint and the ink change.
+ *
+ * =============================================================================
+ * FOUR-LAYER GLASS, AND THE ORDER MATTERS
+ * =============================================================================
+ * Tint, crossed grain, blur, hairline. Drop any one and it stops reading as
+ * glass. All four are `--dr-*` tokens the chrome already ships, so the dock,
+ * the bar, the chips, the rail and the menus are visibly one system.
+ *
+ * THE TINT IS 0.72 AND IT LOOKS LIKE A ROUNDING ERROR. At 0.84 over a near-
+ * black basemap the surface is optically a flat plate -- the blur runs, but
+ * nothing behind it is bright enough to smear. It does not go lower either:
+ * below 0.72 the muted text tier drops under 4.5:1 against a bright basemap
+ * tile, and that text is the distance to a camera. `--dr-surface-thin`, never
+ * `--dr-surface`.
+ *
+ * THE GRAIN RIDES THE STATE'S GROUND rather than a fixed colour, so the lit
+ * states keep their own amber, pink and green at the same 0.72 and still read
+ * as the same glass: `background: var(--dr-grain), <the state ground>`. The two
+ * grain periods are 2px and 3px, coprime on purpose, so they never phase into a
+ * visible plaid. Light theme inverts the grain INK as well as the surface --
+ * `--dr-grain-ink` does that in tokens.css -- because white grain on white
+ * glass is invisible.
+ *
+ * AND THE INK IS THE FILE'S OWN, NOT A DEVIATION. `DarkRoute Dock V3 (2).html`
+ * draws `rgba(255,255,255,0.022)` on every one of its thirty-two grain stops
+ * and `--dr-grain-ink` is `rgba(255, 255, 255, 0.022)`. A measurement of the
+ * built pane reads the alpha back as 0.024 and that is a SERIALISATION, not a
+ * difference: Chromium stores a legacy `rgba()` alpha as a single byte, so
+ * 0.022 lands on 6/255 = 0.0235 and `getComputedStyle` prints "0.024" for it.
+ * Feed the same element 0.024 and it prints the identical string. The two
+ * cannot be told apart through the CSSOM, so no readback can be evidence that
+ * this value drifted.
+ *
+ * =============================================================================
+ * NO GRAB HANDLE, NO EXPAND CHEVRON
+ * =============================================================================
+ * The chevron collided with the pane's corner and with the report key; the grab
+ * bar under the tab row duplicated the system gesture bar three pixels below
+ * it. Both are deleted -- the rules, not just the markup -- and the WHOLE PANE
+ * BODY is the tap target instead. `.fwm-dock-tap` is that target: a real button
+ * stretched over the body, painted with nothing, sitting under the keys that
+ * share the row so a press still lands where the driver aimed.
+ *
+ * =============================================================================
+ * STATE COLOUR STOPS AT THE DIVIDER
+ * =============================================================================
+ * Above the line is the state. Below it the tab row keeps neutral ink, full
+ * contrast and its 47px hit targets in all nineteen states, including a live
+ * amber alert mid-turn. Tinting the tabs to match an alert spends amber on
+ * furniture and teaches a driver to stop trusting it. There is not one rule in
+ * section 6 that reads `--fwm-dk-hue`, and that is the mechanism.
+ *
+ * =============================================================================
+ * COLOUR IS `var(--fwm-*)` OR `var(--dr-*)`, NEVER A LITERAL
+ * =============================================================================
+ * The spec page is standalone and hardcodes its palette. Every value resolves
+ * to a token here, because a hex in a component is a colour that is right in
+ * one skin and wrong in sixteen. `scripts/check-design-values.mjs` fails the
+ * build on a raw hex, a raw length, a `color-mix()` or a `:hover` anywhere in
+ * this file.
+ *
+ * WHERE THE MAPPING IS HONEST AND WHERE IT IS APPROXIMATE. The neutral pane,
+ * the divider, the accent, the active tab fill and every ink tier land on an
+ * existing token that matches the spec to within a rounding step. The four LIT
+ * grounds do not: the spec draws them as the state's hue mixed into the glass
+ * at the same 0.72, and tokens.css has no translucent ground family, only
+ * OPAQUE `--fwm-dock-ground-*`. An opaque ground is exactly the flat plate the
+ * 0.72 exists to avoid, so the lit panes are assembled instead -- the thin
+ * glass, then the state's own transparent tint as a second background layer.
+ * The proper fix is five `--dr-ground-*` tokens at 0.72 in tokens.css and one
+ * word here; it is the owner's call, not this file's.
+ *
+ * =============================================================================
+ * WHY THE LOCALS ARE `--fwm-dk-` AND NOT `--fwm-dock-`
+ * =============================================================================
+ * tokens.css already owns twenty-one `--fwm-dock-*` names. Declaring a local of
+ * the same name would leave two live definitions of one name with different
+ * values, one shadowing the other inside a subtree. Locals here are
+ * `--fwm-dk-*`; anything spelled `--fwm-dock-*` in this file is READ from
+ * tokens.css, never written.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE SCALE
+ * =============================================================================
+ * `height: 150px` cannot be written even though 150 is the spec's number, so
+ * geometry is `calc(var(--fwm-space-1) * n)` off the 4px step and type is a
+ * ratio off the type scale. The spec's own pixel value is written beside every
+ * one of them, because the ratio is the compliant spelling and the pixel is the
+ * design. The three heights are spelled as the SUM OF THEIR PARTS rather than
+ * as a single ratio, so a row that changes height cannot silently disagree with
+ * the total the brief published.
+ */
+
+/* =========================================================================
+ * 1. THE PANE
+ *
+ * Identical in all nineteen: inset 10 on every side, radius 24, one hairline,
+ * four layers of glass, `overflow: hidden` so the tab row's corners are the
+ * pane's corners. Only the ground, the edge and the height ever change.
+ * ====================================================================== */
+
+.fwm-dock {
+  /* --- geometry, all of it, in one place ------------------------------- */
+  --fwm-dk-hairline: var(--fwm-rule-w); /* 1 -- the pane's own edge */
+  --fwm-dk-divider: var(--fwm-rule-w); /* 1 -- the line above the tabs */
+  /* #8d97a1 -- the second line of a LIST row, in every frame of the file, and
+     not the pane's state ink. See `.fwm-dock-list .fwm-dock-sub`. */
+  --fwm-dk-sub-row: var(--fwm-text-2);
+  --fwm-dk-inset: calc(var(--fwm-space-1) * 2.5); /* 10 -- all four sides */
+  --fwm-dk-radius: calc(var(--fwm-space-1) * 6); /* 24 */
+
+  --fwm-dk-pad-t: var(--fwm-space-3); /* 12 */
+  --fwm-dk-pad-b: var(--fwm-space-1); /* 4 */
+  --fwm-dk-pad-x: var(--fwm-space-4); /* 16 */
+
+  /* the collapsed body: a 44px lede over a 24px meta line */
+  --fwm-dk-lede-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-dk-meta-h: var(--fwm-space-6); /* 24 */
+  --fwm-dk-lede-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-dk-meta-gap: var(--fwm-space-3); /* 12 */
+  --fwm-dk-split-gap: var(--fwm-space-3); /* 12 */
+
+  /* the navigating body: a 56px maneuver row over a 32px footer. Declared
+     here because the PANE's height is the sum, and section E owns what goes
+     inside them. */
+  --fwm-dk-maneuver-h: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-dk-footer-h: var(--fwm-space-8); /* 32 */
+  /* 13 AND NOT THE SPLIT'S 12. The maneuver row is the one place the leading
+     glyph is drawn bigger than 20 -- 28 to 34 across the six states -- and the
+     spec opens the gap beside it by one step to keep the readout off it. */
+  --fwm-dk-maneuver-gap: calc(var(--fwm-space-1) * 3.25); /* 13 */
+
+  /* THE EXPANDED PANE HAS TWO SPLITS OF ONE 302, NOT ONE.
+     C  84 head over a 151 list -- 12 pad + 44 lede + 24 meta + 4 pad
+     F  100 head over a 135 list -- 12 pad + 56 maneuver + 32 footer
+     Both come to 2 hairline + head + 1 + list + 1 + 63 = 302, so the pane
+     never learns which view is inside it. */
+  --fwm-dk-head-h: calc(var(--fwm-space-1) * 21); /* 84 */
+  --fwm-dk-list-h: calc(var(--fwm-space-1) * 37.75); /* 151 */
+  --fwm-dk-head-nav-h: calc(var(--fwm-space-1) * 25); /* 100 */
+  --fwm-dk-list-nav-h: calc(var(--fwm-space-1) * 33.75); /* 135 */
+
+  --fwm-dk-tabs-h: calc(var(--fwm-space-1) * 15.75); /* 63 */
+  --fwm-dk-tab-h: calc(var(--fwm-space-1) * 11.75); /* 47 -- the hit target */
+  --fwm-dk-tab-pad-y: var(--fwm-space-2); /* 8 */
+  --fwm-dk-tab-pad-x: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-dk-tab-gap: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-dk-tab-radius: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-dk-tab-stack: var(--fwm-mark-w); /* 3 */
+  --fwm-dk-tab-icon: calc(var(--fwm-space-1) * 5.25); /* 21 */
+
+  --fwm-dk-mark: calc(var(--fwm-space-1) * 5); /* 20 -- the leading glyph */
+  --fwm-dk-map: calc(var(--fwm-space-1) * 14); /* 56 -- the static map inset */
+  --fwm-dk-map-nav: var(--fwm-space-12); /* 48 -- the same tile in navigation */
+  --fwm-dk-map-radius: var(--fwm-space-3); /* 12 */
+  /* 11 ON THE 48, AND IT IS THE DRAWING'S NUMBER RATHER THAN THE CHIP'S.
+     Section G compresses both tiles into one `map inset 56 - nav 48 - radius
+     12`; every one of the three 48px tiles the file actually draws is
+     `border-radius: 11px`, and the smaller tile wants the tighter corner for
+     the same optical reason the mute key and the hero tile do not share a
+     radius either. */
+  --fwm-dk-map-nav-radius: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-dk-scrim-h: calc(var(--fwm-space-1) * 45); /* 180 */
+
+  /* THE RIGHT SLOT'S HIT TARGET. 40, inside a 24px row: the label is padded
+     and the row is NOT grown. See section 4. */
+  --fwm-dk-action-h: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-dk-action-pad: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-dk-action-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-dk-action-icon: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-dk-report: calc(var(--fwm-space-1) * 13.5); /* 54 */
+  --fwm-dk-report-lap: calc(var(--fwm-space-1) * -1.5); /* -6 */
+
+  /* --- THE THREE HEIGHTS, AS THE SUM OF THEIR PARTS -------------------- */
+  --fwm-dk-h-collapsed: calc(
+    var(--fwm-dk-hairline) * 2 + var(--fwm-dk-pad-t) + var(--fwm-dk-lede-h) +
+      var(--fwm-dk-meta-h) + var(--fwm-dk-pad-b) + var(--fwm-dk-divider) +
+      var(--fwm-dk-tabs-h)
+  ); /* 150 */
+  --fwm-dk-h-navigating: calc(
+    var(--fwm-dk-hairline) * 2 + var(--fwm-dk-pad-t) + var(--fwm-dk-maneuver-h) +
+      var(--fwm-dk-footer-h) + var(--fwm-dk-pad-b) + var(--fwm-dk-divider) +
+      var(--fwm-dk-tabs-h)
+  ); /* 170 */
+  --fwm-dk-h-expanded: calc(
+    var(--fwm-dk-hairline) * 2 + var(--fwm-dk-head-h) + var(--fwm-dk-divider) * 2 +
+      var(--fwm-dk-list-h) + var(--fwm-dk-tabs-h)
+  ); /* 302 */
+
+  /* --- the rows the navigating and expanded panes still draw ----------- */
+  /* THE PANE ITSELF HAS NO FLEX GAP ANY MORE -- section 4's rows are spaced by
+     their own fixed heights -- but the held rows in section 6 still read this
+     one, so it stays declared until those panes are rebuilt. */
+  --fwm-dk-gap: var(--fwm-space-3); /* 12 */
+  --fwm-dk-status-h: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-dk-status-gap: var(--fwm-space-3); /* 12 */
+  --fwm-dk-primary-gap: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-dk-secondary-h: calc(var(--fwm-space-1) * 10.25); /* 41 */
+  --fwm-dk-secondary-pad: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-dk-secondary-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  /* 1, AND 2 WHERE THE READOUT IS A PHRASE. The spec sets every figure-over-
+     line pair at `gap: 1px` and opens it to 2 only in the three states that
+     draw a 19px sentence instead of a number, where the pair is two lines of
+     prose rather than one reading. */
+  --fwm-dk-stack-gap: calc(var(--fwm-space-1) / 4); /* 1 */
+  --fwm-dk-stack-gap-titled: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-dk-title-gap: calc(var(--fwm-space-1) * 1.75); /* 7 -- figure to unit */
+  --fwm-dk-row-pad: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  --fwm-dk-tile: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-dk-tile-radius: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-dk-mute: calc(var(--fwm-space-1) * 15); /* 60 */
+  --fwm-dk-mute-radius: calc(var(--fwm-space-1) * 4.25); /* 17 */
+  --fwm-dk-key-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-dk-key-pad: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-dk-key-radius: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-dk-undo-radius: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-dk-act-radius: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-dk-key-gap: calc(var(--fwm-space-1) * 1.75); /* 7 */
+  --fwm-dk-thumb: calc(var(--fwm-space-1) * 13); /* 52 */
+  --fwm-dk-step: calc(var(--fwm-space-1) * 5.5); /* 22 */
+  --fwm-dk-dot: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  /* THE NEARBY ROW, from `DarkRoute Dock V3 (2).html`: 44 tall, 11 of gap, and
+     a list inset 5 down / 10 across. */
+  --fwm-dk-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-dk-row-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-dk-list-pad-y: calc(var(--fwm-space-1) * 1.25); /* 5 */
+  --fwm-dk-list-pad-x: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-dk-dot-row: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  /* F1's turn list and F2's route chooser draw the same box at their own
+     numbers: a shorter row on a tighter inset, and cards on a looser one. */
+  --fwm-dk-list-pad-steps: var(--fwm-space-1); /* 4 */
+  --fwm-dk-list-pad-routes: var(--fwm-space-2); /* 8 */
+  --fwm-dk-step-h: calc(var(--fwm-space-1) * 10.5); /* 42 */
+  --fwm-dk-step-dist: calc(var(--fwm-space-1) * 11); /* 44 -- a fixed cell */
+  --fwm-dk-option-h: calc(var(--fwm-space-1) * 13.5); /* 54 */
+  --fwm-dk-option-radius: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-dk-radio-ring: calc(var(--fwm-rule-w) * 1.5); /* 1.5 */
+  --fwm-dk-radio-pip: calc(var(--fwm-space-1) * 1.75); /* 7 */
+  --fwm-dk-halo: var(--fwm-space-1); /* 4 */
+  --fwm-dk-detour-h: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-dk-detour-pad: var(--fwm-space-2); /* 8 */
+
+  /* --- type. Sizes that exist on the scale are read from it; the rest are
+     ratios off `--fwm-text-title`, which is 24px and is the one size in the
+     dock that no mode has ever re-cut. ---------------------------------- */
+  --fwm-dk-t-11: var(--fwm-text-micro); /* 11 -- tab label */
+  --fwm-dk-t-12: calc(var(--fwm-text-title) / 2); /* 12 -- a list row's second line */
+  --fwm-dk-t-13: var(--fwm-text-forecast); /* 13 -- the meta line, the keys */
+  --fwm-dk-t-14: var(--fwm-text-label); /* 14 */
+  --fwm-dk-t-15: var(--fwm-text-body); /* 15 -- the line beside the figure */
+  --fwm-dk-t-17: var(--fwm-text-subtitle); /* 17 */
+  --fwm-dk-t-19: calc(var(--fwm-text-title) * 19 / 24); /* 19 -- the headline */
+  --fwm-dk-t-20: calc(var(--fwm-text-title) * 5 / 6); /* 20 */
+  --fwm-dk-t-21: calc(var(--fwm-text-title) * 7 / 8); /* 21 */
+  --fwm-dk-t-24: var(--fwm-text-title); /* 24 */
+  --fwm-dk-t-25: calc(var(--fwm-text-title) * 25 / 24); /* 25 */
+  --fwm-dk-t-26: calc(var(--fwm-text-title) * 13 / 12); /* 26 */
+  --fwm-dk-t-30: calc(var(--fwm-text-title) * 5 / 4); /* 30 -- the figure */
+  --fwm-dk-t-38: calc(var(--fwm-text-readout) * 0.95); /* 38 */
+  /* -0.02em. The scale carries -0.01 and -0.03 and skips the middle. */
+  --fwm-dk-track-mid: calc(var(--fwm-card-track-tight) * 2);
+
+  /* --- the state's own colours. Section 3 reassigns them per state, and
+     the defaults are the neutral pane's. -------------------------------- */
+  --fwm-dk-edge: var(--dr-hairline);
+  --fwm-dk-ground: var(--dr-surface-thin);
+  /* the transparent wash a LIT pane lays over the glass. Only the four lit
+     states set it, and only those four draw the extra background layer. */
+  --fwm-dk-tint: var(--dr-row-fill);
+  /* the leading glyph, and the right slot's key */
+  --fwm-dk-hue: var(--dr-accent);
+  --fwm-dk-wash: var(--fwm-tint-scan);
+  --fwm-dk-rim: var(--fwm-tint-scan-ring);
+  /* THE INK LADDER. THREE TIERS PER LIT STATE, NOT ONE. The spec draws a lit
+     state in three strengths of its own hue and the difference between them
+     is the whole escalation: APPROACHING sets its 30px figure in a PALE
+     amber, its 15px sentence in the FULL one, and its meta line in a third,
+     quieter step. Collapsing those to one value makes a countdown shout in a
+     voice it was drawn to keep. */
+  --fwm-dk-glyph: var(--dr-ink-muted); /* the 20px leading mark */
+  --fwm-dk-figure: var(--dr-ink); /* the 30px numeral */
+  --fwm-dk-headline: var(--dr-ink-3); /* the 19px sentence, and the 15px line */
+  --fwm-dk-sub: var(--dr-ink-muted); /* the 13px meta line */
+  --fwm-dk-ink-2: var(--fwm-text-2); /* the navigating pane's own rail */
+  --fwm-dk-hue-2: var(--fwm-accent-scan);
+  /* THE THIRD STEP, AND WHY IT IS AN ALPHA AND NOT A COLOUR. The spec's third
+     tier is its pale tier pulled one step further towards the ink. The
+     spelling of that pull is `color-mix()`, and tokens.css is the only file
+     allowed to hold a colour function. So the step is carried where a
+     component IS allowed to carry one -- the layer's own alpha, with the
+     colour still a token. `intel.css` does the same thing for the same
+     reason, and says so. */
+  --fwm-dk-quiet: 0.8;
+
+  /* --- the pane itself -------------------------------------------------- */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* keyword -- the tab row's corners are the pane's */
+  border: var(--fwm-dk-hairline) solid var(--fwm-dk-edge);
+  border-radius: var(--fwm-dk-radius);
+  /* THE GRAIN SITS OVER THE GROUND, so a lit state keeps its own tint at the
+     same 0.72 and still reads as the same glass as the top bar. */
+  background: var(--dr-grain), var(--fwm-dk-ground);
+  /* THE READ-BACK, AND THE LIT EDGE THAT IS NOT A SHADOW. `backdrop-filter`
+     is what makes 0.72 read as glass over a live map rather than as a grey
+     plate. The lift and `--dr-specular` travel in ONE declaration because
+     `box-shadow` replaces rather than accumulates -- the lift seats the pane
+     on the map, the specular is the 1px inset highlight along its top edge,
+     and dropping either leaves half a material.
+
+     `--dr-dock-lift` AND NOT `--dr-lift`. The file draws
+     `0 12px 34px rgba(0,0,0,0.5)` under the pane in both of its IN-CONTEXT
+     frames -- section A's `COLLAPSED, IN CONTEXT` and section C's `EXPANDED`,
+     the two that draw the pane inside a phone over a basemap. Its tab-cropped
+     state cards draw the same geometry one step lighter at 0.45; the
+     in-context frames are the drawing of the thing that ships, so they are
+     the ones followed. `--dr-lift` is `0 10px 30px rgba(0,0,0,0.5)`, which is
+     neither, and belongs to the top bar and the menus. */
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-dock-lift), var(--dr-specular);
+  /* SAFE AREA ADDS BELOW THE 10. `app/global.css` gives the wrapper the 10px
+     inset on all four sides; this lifts the pane clear of the gesture area on
+     top of it. A margin and not padding: the three heights are border-box and
+     a padding here would eat 34px out of the 150 on a notched phone. */
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+  font-family: var(--fwm-font-ui);
+  /* A counting distance must not jitter. `0.8 mi` ticks to `0.7 mi` eight
+     times a minute and proportional digits reflow the line when it does. */
+  font-variant-numeric: tabular-nums; /* keyword */
+  color: var(--fwm-text-2);
+}
+
+/* The spec writes `display:block` on every one of its `<svg>` elements. Once,
+   here, rather than once per drawing in `icons.tsx`. Paint arrives through
+   `currentColor` from whatever slot holds the mark. */
+.fwm-dock svg,
+.fwm-dock-report svg {
+  display: block; /* keyword */
+  flex: none; /* keyword */
+}
+
+/* =========================================================================
+ * 2. THE THREE HEIGHTS
+ *
+ * Hard heights, no `min-height`, and the sums are in section 1 so a row that
+ * changes cannot silently disagree with the total.
+ *
+ * `data-fwm-pane` AND NOT `data-fwm-family`. The old family split -- browse,
+ * expanded, drive -- carried the old 147 / 288 / 168 and no longer describes
+ * the design: five of the nine states it called `drive` are the collapsed 150
+ * now. `Dock.tsx` still emits `data-fwm-family` because `styles/global.css`
+ * reads it to pad the screen under the dock, and that stylesheet is out of
+ * scope here; it is an alias, not a second source of truth.
+ * ====================================================================== */
+
+.fwm-dock[data-fwm-pane='collapsed'] {
+  height: var(--fwm-dk-h-collapsed);
+}
+
+.fwm-dock[data-fwm-pane='navigating'] {
+  height: var(--fwm-dk-h-navigating);
+}
+
+.fwm-dock[data-fwm-pane='expanded'] {
+  height: var(--fwm-dk-h-expanded);
+}
+
+/* =========================================================================
+ * 3. THE STATE GROUNDS, EDGES AND INK
+ *
+ * HUE CARRIES EXACTLY ONE MEANING. Pink Flock and alert multiplicity, cyan
+ * other operators and system-positive, purple unverified, amber alert, red
+ * reported abuse, green cleared and route.
+ *
+ * HUE SAYS WHAT, SCOPE SAYS WHEN. Amber on the NUMBER means how exposed this
+ * area is; amber on the WHOLE PANE means you are approaching one. Never both
+ * meanings in one scope -- which is why the density ramp in section 5 colours
+ * the figure, the glyph and one word and never touches the ground.
+ *
+ * FOUR STATES LIGHT THE PANE and the rest share the one hairline. The spec
+ * drew six desaturated borders in v2 and the chrome brief replaced them with
+ * `--dr-hairline`; only a state the spec still draws LIT sets an edge of its
+ * own, and the escalation is entirely in the colour -- all four are the same
+ * 150px as CRUISING.
+ * ====================================================================== */
+
+/* --- the four lit panes: glass, then the state's own transparent tint ----- */
+
+.fwm-dock[data-fwm-state='approaching'],
+.fwm-dock[data-fwm-state='passing'],
+.fwm-dock[data-fwm-state='cleared'],
+.fwm-dock[data-fwm-state='abuse-entering'],
+.fwm-dock[data-fwm-state='turn-imminent'],
+.fwm-dock[data-fwm-state='camera-on-route'],
+.fwm-dock[data-fwm-state='arrived'] {
+  /* A SECOND BACKGROUND LAYER, NOT A SECOND GROUND. The tint has to be a
+     `<image>` to sit above the ground in a background list, and a flat colour
+     is not one, so it is spelled as a gradient between one colour and itself.
+     The base stays `--dr-surface-thin` at 0.72 -- see the header on why there
+     is no translucent ground token to reach for instead. */
+  background:
+    var(--dr-grain),
+    linear-gradient(var(--fwm-dk-tint), var(--fwm-dk-tint)),
+    var(--dr-surface-thin);
+}
+
+/* NEUTRAL. Nothing is happening, and MESH SYNC counts as nothing happening:
+   seven drivers confirming a camera is not a thing the driver has to act on. */
+.fwm-dock[data-fwm-state='idle'],
+.fwm-dock[data-fwm-state='muted'],
+.fwm-dock[data-fwm-state='offline'],
+.fwm-dock[data-fwm-state='mesh-sync'] {
+  /* THE HEADLINE IS THE WHOLE MESSAGE in these four -- `Clear for 4.2 mi`,
+     `Working from cache` -- so the line under it sits at the muted tier and
+     the sentence itself takes the third ink. */
+  --fwm-dk-headline: var(--dr-ink-3);
+  --fwm-dk-sub: var(--dr-ink-muted);
+}
+
+/* MUTED and OFFLINE lead with a grey mark, not a coloured one. The mute is a
+   thing the driver did and the outage is a fact; neither is an alert. OFFLINE
+   still offers `Retry` in the accent, because the offer is the one actionable
+   thing on a degraded pane. */
+.fwm-dock[data-fwm-state='muted'],
+.fwm-dock[data-fwm-state='offline'] {
+  --fwm-dk-glyph: var(--dr-ink-muted);
+}
+
+/* MULTIPLE -- magenta. Severity, not operator: while driving, who owns the
+   camera is irrelevant and proximity is everything. */
+.fwm-dock[data-fwm-state='armed'],
+.fwm-dock[data-fwm-state='cruising'],
+.fwm-dock[data-fwm-state='unmapped'] {
+  --fwm-dk-hue: var(--fwm-alert-multiple);
+  --fwm-dk-wash: var(--fwm-tint-multiple);
+  --fwm-dk-rim: var(--fwm-tint-multiple-line);
+  --fwm-dk-hue-2: var(--fwm-alert-multiple);
+}
+
+/* CRUISING IS NOT AN ALERT AND THE SPEC DRAWS IT NEUTRAL. Its glyph is the
+   grey camera, its figure is white, its line is the third ink and its key is
+   the accent -- the pane is doing nothing but counting what is ahead. The
+   magenta above survives on ARMED's dot and on the expanded list. */
+.fwm-dock[data-fwm-state='cruising'] {
+  --fwm-dk-glyph: var(--dr-ink-muted);
+  --fwm-dk-hue: var(--dr-accent);
+  /* CRUISING's rail reads the NEXT camera, which is unverified. Violet inside
+     a neutral shell, and that disagreement is the point. */
+  --fwm-dk-hue-2: var(--fwm-accent-mesh);
+}
+
+/* SCAN -- the navigation family. Teal is the system speaking rather than a
+   camera. Section E owns what fills these; the ink ladder is here so the two
+   cannot drift. */
+.fwm-dock[data-fwm-state='navigating'],
+.fwm-dock[data-fwm-state='navigating-expanded'] {
+  --fwm-dk-hue: var(--fwm-accent-scan);
+  --fwm-dk-wash: var(--fwm-tint-scan);
+  --fwm-dk-rim: var(--fwm-tint-scan-ring);
+  --fwm-dk-hue-2: var(--fwm-alert-approaching);
+  /* THE ONE RAIL THE SPEC LEAVES AT FULL SATURATION. A reader on the route you
+     are already driving is the only thing on the screen the driver has not
+     already dealt with, so it does not go quiet with the rest. */
+  --fwm-dk-ink-2: var(--fwm-alert-approaching);
+}
+
+/* THE DENSITY STATES. Amber, desaturated -- a density reading and a degraded
+   fix. Neither is an alarm; both are amber because amber is the alert hue and
+   these are the quiet end of it. The FIGURE's own amber is the ramp's, not
+   this one: see section 5. */
+/* AND `armed-expanded`, WHICH IS THE NEARBY LIST. It used to sit in the magenta
+   group above with ARMED, so the same pane drew its detour key cyan collapsed
+   and MAGENTA expanded - one control, two colours, on a press that changes
+   nothing about the world. Section C draws the expanded frame exactly like the
+   collapsed dense one: the ramp on the figure, the accent on the key. It is the
+   same content one height taller, so it takes the same hue. */
+.fwm-dock[data-fwm-state='dense'],
+.fwm-dock[data-fwm-state='armed-expanded'],
+.fwm-dock[data-fwm-state='gps-weak'] {
+  --fwm-dk-glyph: var(--fwm-alert-approaching);
+  --fwm-dk-wash: var(--fwm-tint-approaching);
+  --fwm-dk-rim: var(--fwm-tint-approaching-ring);
+  --fwm-dk-hue-2: var(--fwm-alert-approaching);
+  --fwm-dk-sub: var(--fwm-alert-approaching-text);
+}
+
+/* ABUSE, desaturated. Red is a distinct axis from magenta and never stands in
+   for it: one says a camera is close, the other says an agency was caught. */
+.fwm-dock[data-fwm-state='abuse-zone'] {
+  --fwm-dk-glyph: var(--fwm-alert-in-range);
+  --fwm-dk-hue: var(--fwm-alert-in-range);
+  --fwm-dk-wash: var(--fwm-tint-in-range);
+  --fwm-dk-rim: var(--fwm-tint-in-range-line);
+  --fwm-dk-hue-2: var(--fwm-alert-in-range);
+  --fwm-dk-figure: var(--fwm-alert-in-range);
+  --fwm-dk-sub: var(--fwm-alert-in-range-text);
+}
+
+/* --- the lit four ------------------------------------------------------- */
+
+/* APPROACHING. The pane is amber because you are approaching a reader; the
+   number on it is a distance, not a density, so the ramp does not apply. */
+.fwm-dock[data-fwm-state='approaching'] {
+  --fwm-dk-edge: var(--fwm-tint-approaching-ring);
+  --fwm-dk-tint: var(--fwm-tint-approaching);
+  --fwm-dk-glyph: var(--fwm-alert-approaching);
+  --fwm-dk-hue: var(--fwm-alert-approaching);
+  --fwm-dk-wash: var(--fwm-tint-approaching);
+  --fwm-dk-rim: var(--fwm-tint-approaching-ring);
+  --fwm-dk-hue-2: var(--fwm-alert-approaching);
+  /* ALL THREE TIERS, IN ONE STATE, AND IN THIS ORDER. The 30px `600` is PALE
+     -- the ground under it is already warm and the figure is meant to be
+     read, not obeyed. The 15px `ft - Antioch & 119th` is PALE and bold,
+     because that is the sentence doing the warning. The 13px meta line
+     underneath is the third step, one further towards the ground; it is
+     provenance, and provenance at full saturation would compete with the
+     countdown for the same glance. The key stays FULL: it is the one thing
+     here to act on. */
+  --fwm-dk-figure: var(--fwm-alert-approaching-text);
+  --fwm-dk-headline: var(--fwm-alert-approaching-text);
+  --fwm-dk-sub: var(--fwm-alert-approaching-text);
+  --fwm-dk-ink-2: var(--fwm-alert-approaching-text);
+}
+
+/* UNDER SURVEILLANCE. The one state with no figure at all: a plate read is
+   happening now and a number would be a thing to work out rather than a thing
+   to know. One 19px sentence, and the pane says the rest. */
+.fwm-dock[data-fwm-state='passing'] {
+  --fwm-dk-edge: var(--fwm-tint-multiple-line);
+  --fwm-dk-tint: var(--fwm-tint-multiple);
+  --fwm-dk-glyph: var(--fwm-alert-multiple);
+  --fwm-dk-hue: var(--fwm-alert-multiple);
+  --fwm-dk-wash: var(--fwm-alert-multiple);
+  --fwm-dk-rim: var(--fwm-alert-multiple);
+  --fwm-dk-hue-2: var(--fwm-alert-multiple);
+  --fwm-dk-headline: var(--fwm-alert-multiple-text);
+  --fwm-dk-sub: var(--fwm-alert-multiple-text);
+  --fwm-dk-ink-2: var(--fwm-alert-multiple-text);
+}
+
+/* CLEARED, and the two other good outcomes. Green is the one hue in the dock
+   that means the driver can stop reading. */
+.fwm-dock[data-fwm-state='cleared'],
+.fwm-dock[data-fwm-state='rerouted'],
+.fwm-dock[data-fwm-state='arrived'] {
+  --fwm-dk-edge: var(--fwm-tint-clear);
+  --fwm-dk-tint: var(--fwm-corridor-clear-fade);
+  --fwm-dk-glyph: var(--fwm-alert-clear);
+  --fwm-dk-hue: var(--fwm-alert-clear);
+  --fwm-dk-wash: var(--fwm-tint-clear);
+  --fwm-dk-rim: var(--fwm-tint-clear);
+  --fwm-dk-headline: var(--fwm-alert-clear-text);
+  --fwm-dk-sub: var(--fwm-alert-clear-text);
+  --fwm-dk-hue-2: var(--fwm-accent-scan);
+}
+
+/* Success does not mean finished. REROUTED still has a reader on the new route
+   and says so in amber; ARRIVED logs the trip against the unverified marker. */
+.fwm-dock[data-fwm-state='rerouted'] {
+  --fwm-dk-hue-2: var(--fwm-alert-approaching);
+}
+
+.fwm-dock[data-fwm-state='arrived'] {
+  --fwm-dk-hue-2: var(--fwm-accent-mesh);
+}
+
+/* ABUSE, ENTERING -- the fourth lit pane. Fires on jurisdiction ENTRY, not on
+   proximity, and only with an outlet and a date behind it. */
+.fwm-dock[data-fwm-state='abuse-entering'] {
+  --fwm-dk-edge: var(--fwm-tint-in-range-line);
+  --fwm-dk-tint: var(--fwm-tint-in-range);
+  --fwm-dk-glyph: var(--fwm-alert-in-range);
+  --fwm-dk-hue: var(--fwm-alert-in-range);
+  --fwm-dk-wash: var(--fwm-tint-in-range);
+  --fwm-dk-rim: var(--fwm-tint-in-range-line);
+  --fwm-dk-hue-2: var(--fwm-alert-in-range);
+  --fwm-dk-headline: var(--fwm-alert-in-range-text);
+  --fwm-dk-sub: var(--fwm-alert-in-range-text);
+  --fwm-dk-ink-2: var(--fwm-alert-in-range-text);
+}
+
+/* --- THE NAVIGATION FAMILY'S OWN SIX IDS ---------------------------------
+ *
+ * `DriveRows` names its states `route-proposed` through `arrived` rather than
+ * reusing the nineteen, and its header hands the grounds to this stylesheet.
+ * Section E draws four of the six on plain glass and lights two: E2 in the
+ * accent because the system is telling you to turn, E3 in amber because a
+ * reader is sitting on that turn. E6 ARRIVED is the third lit one and shares
+ * the green rule above -- the id is the same word in both vocabularies.
+ *
+ * E5 OFF ROUTE takes a slightly stronger hairline and no tint at all: it is a
+ * degraded state rather than an alarm, and the spec says so with 0.14 against
+ * the 0.10 the other neutrals use. `--dr-hairline` is the only edge token in
+ * the family, so the step is one it does not draw; listed in the report.
+ * ---------------------------------------------------------------------- */
+
+.fwm-dock[data-fwm-state='turn-imminent'] {
+  --fwm-dk-edge: var(--dr-accent-line);
+  --fwm-dk-tint: var(--dr-accent-fill);
+  --fwm-dk-glyph: var(--dr-accent);
+  --fwm-dk-hue: var(--dr-accent);
+  --fwm-dk-wash: var(--fwm-tint-scan);
+  --fwm-dk-rim: var(--fwm-tint-scan-ring);
+  --fwm-dk-figure: var(--dr-ink);
+  --fwm-dk-headline: var(--dr-ink-3);
+  --fwm-dk-hue-2: var(--fwm-accent-scan);
+}
+
+.fwm-dock[data-fwm-state='camera-on-route'] {
+  --fwm-dk-edge: var(--fwm-tint-approaching-ring);
+  --fwm-dk-tint: var(--fwm-tint-approaching);
+  --fwm-dk-glyph: var(--fwm-alert-approaching);
+  --fwm-dk-hue: var(--fwm-alert-approaching);
+  --fwm-dk-wash: var(--fwm-tint-approaching);
+  --fwm-dk-rim: var(--fwm-tint-approaching-ring);
+  --fwm-dk-figure: var(--fwm-alert-approaching-text);
+  --fwm-dk-headline: var(--fwm-alert-approaching-text);
+  --fwm-dk-sub: var(--fwm-alert-approaching-text);
+  --fwm-dk-hue-2: var(--fwm-alert-approaching);
+}
+
+/* E1 and E4 are plain glass. The route hue still reaches the tile and the key,
+   because a proposed line and a line being re-found are both the system
+   speaking rather than a camera. */
+.fwm-dock[data-fwm-state='route-proposed'],
+.fwm-dock[data-fwm-state='rerouting'] {
+  --fwm-dk-glyph: var(--fwm-accent-scan);
+  --fwm-dk-hue: var(--dr-accent);
+  --fwm-dk-wash: var(--fwm-tint-scan);
+  --fwm-dk-rim: var(--fwm-tint-scan-ring);
+  --fwm-dk-hue-2: var(--fwm-accent-scan);
+}
+
+/* E5. Degraded, not alarming: a grey mark and the muted ink, and the one key
+   in the footer is still the accent because recalculating is the way out. */
+.fwm-dock[data-fwm-state='off-route'] {
+  --fwm-dk-glyph: var(--dr-ink-muted);
+  --fwm-dk-hue: var(--dr-accent);
+  --fwm-dk-headline: var(--dr-ink-3);
+}
+
+/* =========================================================================
+ * 4. THE COLLAPSED BODY
+ *
+ * 12 pad, a 44px lede, a 24px meta line, 4 pad. That is section A's own
+ * arithmetic and section B's five drive states reuse it byte for byte -- the
+ * escalation is hue, weight and the number, never geometry, and the pane must
+ * be dead still under a thumb at 70mph.
+ *
+ * THE SPLIT IS ALWAYS DRAWN, even when there is no map inset beside it, so the
+ * five states share one box model instead of two. With no tile the column is
+ * the split's only child and the geometry is identical to the spec's.
+ * ====================================================================== */
+
+.fwm-dock-body {
+  /* THE FLEXIBLE BOX, AND THE ONLY ONE. The expanded pane's list scrolls
+     inside it; the collapsed and navigating panes fill it exactly. */
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fwm-dock[data-fwm-pane='collapsed'] .fwm-dock-body,
+.fwm-dock[data-fwm-pane='navigating'] .fwm-dock-body {
+  padding-top: var(--fwm-dk-pad-t);
+  padding-bottom: var(--fwm-dk-pad-b);
+}
+
+/* THE WHOLE PANE IS THE TAP TARGET, and this is the whole of that.
+ *
+ * A real `<button>` stretched over the body rather than a click handler on the
+ * body itself: a handler on a `<div>` is unreachable by keyboard, invisible to
+ * a screen reader and has no accessible name, and a `role="button"` on a box
+ * that CONTAINS buttons is invalid nesting. Stretched and transparent, it is a
+ * genuine control that happens to be the size of the card.
+ *
+ * IT IS FIRST IN THE DOM AND UNDER EVERYTHING ELSE. The keys that share the
+ * row -- the detour offer, Undo, Wrong? -- take `position: relative` in section
+ * 5, which puts them in the positioned layer after this one, so a press on a
+ * key lands on the key and a press anywhere else expands. */
+.fwm-dock-tap {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* --- the two rows -------------------------------------------------------- */
+
+.fwm-dock-split {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-split-gap);
+  min-width: 0;
+  padding: 0 var(--fwm-dk-pad-x);
+}
+
+.fwm-dock-column {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 44px, FIXED. The leading mark lands in the same place whether the state
+   draws a figure or a sentence, and a state that gains a number does not move
+   the line beside it. */
+.fwm-dock-lede {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-lede-gap);
+  min-width: 0;
+  height: var(--fwm-dk-lede-h);
+}
+
+/* 24px, FIXED, and no rule above it. The seam is gone: the only line in the
+   pane is the divider above the tab row. */
+.fwm-dock-meta {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-meta-gap);
+  min-width: 0;
+  height: var(--fwm-dk-meta-h);
+}
+
+/* --- the navigation rows, and the expanded head -------------------------- */
+
+/* THESE FIVE BOXES HAD NO RULES AT ALL, WHICH IS WHY THE PANE OVERFLOWED.
+ *
+ * `DriveRows` and `ExpandedPanel` emitted `.fwm-dock-maneuver`,
+ * `.fwm-dock-footer`, `.fwm-dock-unit`, `.fwm-dock-head`, `.fwm-dock-option`
+ * and the two radio parts, and the stylesheet declared none of them. An
+ * unstyled div is a BLOCK, so the maneuver row stacked its glyph, its readout
+ * and its 48px tile vertically instead of laying them in a row -- roughly 150px
+ * of content inside a 56px allowance. Everything below was pushed past the
+ * pane's locked height and clipped: the navigating pane measured about 200
+ * against 170, the expanded one about 380 against 302, the footer sentence was
+ * cut in half by the divider, and the map inset was rendered off the bottom of
+ * the pane where nobody could see it.
+ *
+ * Every number here is section G's, and none is new. The heights that section
+ * 2 already sums into `--fwm-dk-h-navigating` and `--fwm-dk-h-expanded` are the
+ * heights the rows are now actually given, so the total and its parts agree
+ * instead of only the total being written down. */
+
+/* 56px, FIXED, and a ROW -- the glyph, the readout, then the tile. Same
+   composition as `.fwm-dock-split` one pane up, which is the point: a driver
+   who has learned where to look in the collapsed pane looks in the same place
+   mid-turn. */
+.fwm-dock-maneuver {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-maneuver-gap);
+  min-width: 0;
+  height: var(--fwm-dk-maneuver-h);
+  padding: 0 var(--fwm-dk-pad-x);
+}
+
+/* 32px, FIXED, AND SPLIT FROM THE MANEUVER ROW BY A FULL-WIDTH RULE.
+   Section E says it in words -- `a 56px maneuver row and a 32px footer split
+   by a full-width divider` -- and every one of the eight navigation frames
+   draws that rule as the footer's own `border-top`. It is INSIDE the 32,
+   border-box, so the 170 is untouched; the pane still has one line ACROSS it,
+   which is the divider above the tab row, and this one is the seam of a pair.
+
+   THE RULE IS THE NEUTRAL ROW HAIRLINE IN ALL EIGHT and the spec tints it per
+   state -- 0.07 neutral, 0.16 cyan, 0.20 amber, 0.16 green. There is no
+   half-strength edge token: `--fwm-dk-edge` is the PANE's edge and lands at
+   0.34-0.45 on the lit grounds, which is three times this line. The neutral
+   0.08 the divider already takes is within a rounding step of the spec's
+   neutral 0.07 and the file draws it under six of the eight states as it is.
+
+   `space-between` rather than a spacer element so a state with no key leaves
+   the sentence the full width instead of a gap. */
+.fwm-dock-footer {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-dk-split-gap);
+  min-width: 0;
+  height: var(--fwm-dk-footer-h);
+  padding: 0 var(--fwm-dk-pad-x);
+  border-top: var(--fwm-dk-divider) solid var(--dr-hairline-row);
+}
+
+/* `ft` / `mi` / `min · 7.2 mi` beside the figure, at 14. It sits on the
+   figure's baseline through `.fwm-dock-title`, so this only has to be the
+   smaller, quieter half -- a unit set at the number's size reads as part of
+   the number. It is NOT the footer's 13: this run is on the readout's own
+   baseline and drops below the line beside it if it goes a step further. */
+.fwm-dock-unit {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-14);
+  font-weight: 500;
+  color: var(--fwm-dk-sub);
+}
+
+/* THE EXPANDED PANE'S FIRST BAND, AND IT IS TWO HEIGHTS BECAUSE THE FILE
+   PUBLISHES TWO.
+ *
+ * Section C  `2 hairline + 84 + 1 divider + 151 list + 1 divider + 63 tabs`
+ * Section F  `12 + 56 + 32 + 1 + 135 list + 1 + 63 tabs, +2 hairline`
+ *
+ * Both come to 302. C's 84 is the collapsed body entire -- 12 pad + 44 lede +
+ * 24 meta + 4 pad -- and F's 100 is the navigating body without its 4, because
+ * in F the list takes the place that pad was holding. Neither head is nominal
+ * and neither one has to be squeezed: a navigation body is 12 + 56 + 32 = 100
+ * and it is given 100.
+ *
+ * THE 12 AND THE 4 ARE THE HEAD'S OWN PAD HERE. `.fwm-dock-body` carries the
+ * pane's padding in the collapsed and navigating panes; the expanded body
+ * carries none, because its two heads do not pad the same and the list under
+ * them must run to the pane's edge. */
+.fwm-dock-head {
+  flex: none; /* keyword */
+  display: flex;
+  flex-direction: column; /* keyword */
+  min-width: 0;
+  padding-top: var(--fwm-dk-pad-t);
+  /*
+   * NO CLIP HERE, AND IT WAS CUTTING A KEY'S HIT AREA OFF.
+   *
+   * `overflow: hidden` on this band was doing two jobs and only one of them was
+   * its own. The band is 84 (or 100), and the spec's own meta row puts a 40px
+   * key inside a 24px line on `margin: -8px 0` -- so the key deliberately
+   * paints 8px past the row, and 4px past the band. Clipping it took 4px off
+   * the bottom of `Reroute around N`, and 5px off `End` in the navigating pane:
+   * a press landing in that strip hit nothing.
+   *
+   * THE ELLIPSIS NEVER NEEDED THIS RULE. `.fwm-dock-sub` and
+   * `.fwm-dock-line-meta` each carry their own `overflow: hidden` with
+   * `text-overflow: ellipsis`, which is where a truncation belongs -- on the
+   * run of text that truncates, not on the band around it. The pane's own
+   * radius still clips anything that would reach its edge.
+   */
+  overflow: visible; /* keyword */
+}
+
+.fwm-dock-head[data-fwm-head='nearby'] {
+  height: var(--fwm-dk-head-h); /* 84 = 12 + 44 + 24 + 4 */
+  padding-bottom: var(--fwm-dk-pad-b);
+}
+
+.fwm-dock-head[data-fwm-head='navigating'] {
+  height: var(--fwm-dk-head-nav-h); /* 100 = 12 + 56 + 32 */
+}
+
+/* --- the route-choice rows ----------------------------------------------- */
+
+/* A ROW IN THE ROUTE CHOOSER, AND IT IS A CARD RATHER THAN A LIST ROW.
+   54 tall on a 14 radius with 12 of side pad, which is the tab pill's corner
+   and not the 12 the turn list uses: F2 draws two lines you are choosing
+   BETWEEN, each with its own ground and its own hairline, where F1 draws a
+   list of steps that are already decided. The 11px gap is the nearby row's,
+   because a mark leading a line of text is the same object in both. */
+.fwm-dock-option {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-row-gap);
+  width: 100%;
+  min-width: 0;
+  height: var(--fwm-dk-option-h);
+  padding: 0 var(--fwm-space-3); /* 12 */
+  appearance: none;
+  /* THE EDGE IS THE CARD LINE AND THE GROUND IS THE ROW FILL, which is what
+     the file draws on the untaken route: `border: 1px solid
+     rgba(255,255,255,0.08); background: rgba(255,255,255,0.035)`.
+     `--dr-card-line` is that 0.08 and `--dr-row-fill` is that 0.035;
+     `--dr-hairline`, which this had been taking, is 0.10 -- the PANE's edge,
+     not a card's. */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-dk-option-radius);
+  background: var(--dr-row-fill);
+  font: inherit; /* keyword */
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* THE ONE ON OFFER TAKES THE ACTIVE TAB'S SURFACE -- 13% accent fill and an
+   accent hairline at 0.38. The same affordance as the tab that says "you are
+   here", because this is the same claim about a different object, and the file
+   draws it with the same two numbers: `border: 1px solid
+   rgba(47,212,212,0.38); background: rgba(47,212,212,0.13)`. */
+.fwm-dock-option[data-fwm-chosen='true'] {
+  border-color: var(--dr-dock-accent-line);
+  background: var(--dr-accent-fill);
+}
+
+/* The ring. Drawn rather than a native `input[type=radio]`: the platform
+   control cannot be sized to 15px with a 7px pip on a glass surface across
+   seventeen skins, and it brings its own colour that no token controls. */
+.fwm-dock-radio {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-dk-action-icon); /* 15 */
+  height: var(--fwm-dk-action-icon);
+  /* 1.5 AND NOT THE PANE'S HAIRLINE. A 15px ring drawn at 1px reads as a hole
+     rather than as a control; the spec thickens this one edge and nothing
+     else in the dock. */
+  border: var(--fwm-dk-radio-ring) solid var(--fwm-dk-rim);
+  border-radius: var(--fwm-radius-full);
+}
+
+/* THE CHOSEN RING IS THE ACCENT AT FULL STRENGTH, which is what the file
+   draws: `border: 1.5px solid #2fd4d4`, opaque. It was taking
+   `--dr-accent-line` -- the same accent at 0.42 -- so the one control in the
+   pane that says WHICH ROUTE YOU ARE TAKING was drawn at less than half the ink
+   of the tab that says which screen you are on. */
+.fwm-dock-option[data-fwm-chosen='true'] .fwm-dock-radio {
+  border-color: var(--fwm-accent-scan);
+}
+
+/* The pip, and it exists only when the route is taken -- `aria-checked` carries
+   the state for anyone who cannot see the dot. */
+.fwm-dock-radio-dot {
+  width: var(--fwm-dk-radio-pip); /* 7 */
+  height: var(--fwm-dk-radio-pip);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-accent);
+}
+
+/* --- what goes in them --------------------------------------------------- */
+
+/* The 20px leading glyph. Never a text character -- `icons.tsx` draws every
+   mark in the dock as SVG, so a font that lacks an arrow cannot silently
+   substitute one. */
+.fwm-dock-mark {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  color: var(--fwm-dk-glyph);
+}
+
+.fwm-dock-mark svg {
+  width: var(--fwm-dk-mark);
+  height: var(--fwm-dk-mark);
+}
+
+/* THE FIGURE. 30px, weight 800, line-height 1, tracked in, tabular. It is the
+   number the driver reads without looking, and it is the only thing in the
+   collapsed pane set above 19. */
+.fwm-dock-count {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-30);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-dk-track-mid);
+  color: var(--fwm-dk-figure);
+}
+
+/* 26 IN A MANEUVER ROW, BECAUSE A UNIT AND A STREET SHARE THE ROW WITH IT.
+   The collapsed figure stands alone over one line; this one carries `min ·
+   7.2 mi` on its baseline and a road name under it, so the spec drops it a
+   step and opens the leading to 1.05 to hold the two lines apart. */
+.fwm-dock-maneuver .fwm-dock-count {
+  font-size: var(--fwm-dk-t-26);
+  line-height: 1.05;
+}
+
+/* EXCEPT UNDER 800 FEET, WHERE IT GOES BACK TO 30. E2 is the one navigation
+   state whose number is the whole message -- the driver has stopped reading
+   the pane and is counting down to a corner -- so the figure takes the
+   collapsed pane's own size. Its unit goes bold with it. */
+.fwm-dock[data-fwm-state='turn-imminent'] .fwm-dock-maneuver .fwm-dock-count {
+  font-size: var(--fwm-dk-t-30);
+}
+
+.fwm-dock[data-fwm-state='turn-imminent'] .fwm-dock-unit {
+  font-weight: 700;
+}
+
+/* The 19px sentence a state draws INSTEAD of a figure. One line, ellipsised:
+   the pane does not grow and a long street name is not worth a second row. */
+.fwm-dock-headline {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-dk-t-19);
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight);
+  color: var(--fwm-dk-headline);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The 15px line that qualifies a figure. `cameras within 2 mi`. */
+.fwm-dock-caption {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-dk-t-15);
+  font-weight: 500;
+  color: var(--fwm-dk-headline);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* APPROACHING sets its caption bold: it is the sentence doing the warning,
+   and the figure above it is deliberately the paler of the two. */
+.fwm-dock[data-fwm-state='approaching'] .fwm-dock-caption {
+  font-weight: 700;
+}
+
+/* 14 UNDER A MANEUVER, NOT 15. In the collapsed lede this run sits BESIDE the
+   figure and qualifies it, so it takes the body size; in a maneuver row it
+   sits UNDER the readout as the second of two stacked lines, and 15 there
+   makes the road name compete with the number it belongs to. E2 is the
+   exception and takes it back -- see below. */
+.fwm-dock-maneuver .fwm-dock-caption {
+  font-size: var(--fwm-dk-t-14);
+}
+
+/* The 13px meta line. The one flexible, ellipsised run in the second row. */
+.fwm-dock-line-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-dk-t-13);
+  color: var(--fwm-dk-sub);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE DENSITY TIER'S WORD, WHICH IS WHY THE RAMP IS NOT COLOUR ALONE.
+   `exposure high` at weight 700 in the tier's own hue, leading the meta line.
+   Anyone who cannot use hue reads the word instead, and the two are computed
+   from one number in `BrowseRow` so they cannot disagree. */
+.fwm-dock-tier {
+  font-weight: 700;
+  color: var(--fwm-dk-tier);
+}
+
+/* The small trailing value: MUTED's countdown, UNDER SURVEILLANCE's operator,
+   IDLE's mapped count. */
+.fwm-dock-value {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-13);
+  color: var(--fwm-dk-sub);
+  white-space: nowrap; /* keyword */
+}
+
+/* A word in the right slot that is NOT a control. CLEARED's `Dismiss` and
+   ABUSE, ENTERING's `Read` are drawn as static text in the spec, and a word
+   that looks pressable and is not is worse than a word that does not. */
+.fwm-dock-static {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-13);
+  color: var(--fwm-dk-sub);
+  white-space: nowrap; /* keyword */
+}
+
+/* THE RIGHT SLOT'S KEY, AND A 40px HIT TARGET INSIDE A 24px ROW.
+ *
+ * NO FILL AND NO BORDER. The slot held a 13px span in every state that has
+ * one, and a chip with chrome on it would be a new object in a row that has
+ * not changed size since the spec was drawn. So it is TEXT: the same 13px as
+ * the span it replaces, at weight 700 in the state's own full-strength accent
+ * -- which is the whole escalation vocabulary of this dock.
+ *
+ * NEVER SHIP A 13px TAP TARGET FOR SOMEONE DRIVING. The row is 24 and must not
+ * grow -- 150 is locked in all fourteen collapsed states -- so the PADDING
+ * grows and the box does not: a 40px `flex: none` child of a fixed-height flex
+ * row overflows symmetrically, 8px above and 8px below, into the pane's own
+ * 12px and 4px pads. Nothing moves, nothing is clipped, and nothing is painted
+ * out there because the key has no ground of its own.
+ *
+ * `position: relative` puts it above `.fwm-dock-tap`, which is the only reason
+ * pressing it does its own thing rather than expanding the pane. */
+/* `.fwm-dock-detour` IS THE NAVIGATION PANE'S SPELLING OF THE SAME KEY. Two
+   class names on one rule rather than two rules, because there is one key look
+   in the whole dock and a second declaration is a second thing to keep in
+   step. `DriveRows` writes that name; the collapsed row writes this one. */
+.fwm-dock-action,
+.fwm-dock-detour {
+  position: relative;
+  flex: none; /* keyword */
+  display: inline-flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-dk-action-gap);
+  height: var(--fwm-dk-action-h);
+  margin: calc((var(--fwm-dk-meta-h) - var(--fwm-dk-action-h)) / 2) 0;
+  padding: 0 var(--fwm-dk-action-pad);
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-dk-t-13);
+  font-weight: 700;
+  color: var(--fwm-dk-hue);
+  cursor: pointer; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-dock-action svg,
+.fwm-dock-detour svg {
+  width: var(--fwm-dk-action-icon);
+  height: var(--fwm-dk-action-icon);
+}
+
+/* TWO KEYS DO NOT TAKE THE PANE'S HUE, AND THE SPEC IS EXPLICIT ABOUT BOTH.
+ *
+ * The rule above paints every key in `--fwm-dk-hue`, which is right for Start,
+ * Recalculate, Save drive and Reroute around N -- each of those continues what
+ * the pane is already saying. It is wrong for two.
+ *
+ * END is red in E2 and in F1, on panes whose own hue is cyan and neutral
+ * respectively. It is the only key in the navigation family that THROWS AWAY
+ * the thing the driver asked for, and a discard painted in the same colour as
+ * Start is a discard somebody presses by muscle memory at 45 mph. Hue-
+ * independent on purpose: it means the same thing in all eight states.
+ *
+ * CANCEL is neutral ink in E4. That pane is already spinning and already says
+ * `keep driving - old route stays live`; the cyan there belongs to the search
+ * in progress, and a Cancel wearing it reads as the recommended next step. */
+.fwm-dock-action[data-fwm-action='end'] {
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-dock-action[data-fwm-action='cancel'] {
+  color: var(--dr-ink);
+}
+
+/* E2 BOLDS THE STREET, AND ONLY E2.
+ *
+ * Rule 5: escalation is colour, weight and the number, never size. Under 800
+ * feet the street name is the instruction -- the driver has stopped reading the
+ * pane and is looking for one phrase -- so it goes to 700 where every other
+ * state leaves it at 500. E3 deliberately does NOT, because there the amber
+ * belongs to the reader and a turn instruction shouting in the alert's own
+ * weight is a second alert. */
+.fwm-dock[data-fwm-state='turn-imminent'] .fwm-dock-maneuver .fwm-dock-caption {
+  font-size: var(--fwm-dk-t-15);
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+/* THE STATIC MAP INSET. 56px in the collapsed pane, 48 in navigation, radius
+   12, and a STATIC TILE -- no pan, no zoom, no labels, and no live map
+   instance inside a dock row. It shows the one thing words cannot: which way
+   the camera faces. */
+.fwm-dock-inset {
+  flex: none; /* keyword */
+  position: relative;
+  overflow: hidden; /* keyword */
+  width: var(--fwm-dk-map);
+  height: var(--fwm-dk-map);
+  border: var(--fwm-rule-w) solid var(--fwm-dk-rim);
+  border-radius: var(--fwm-dk-map-radius);
+  /* THE BLOCKS AND THE STREETS BETWEEN THEM, drawn as two crossed gradients
+     rather than as an asset: it is a diagram of a grid, it never moves, and a
+     tile that cannot be fetched cannot be blocked or fail to load. */
+  background:
+    repeating-linear-gradient(90deg, var(--dr-hairline-row) 0 var(--fwm-space-1), transparent var(--fwm-space-1) var(--fwm-space-6)),
+    repeating-linear-gradient(0deg, var(--dr-hairline-row) 0 var(--fwm-space-1), transparent var(--fwm-space-1) var(--fwm-space-6)),
+    var(--fwm-dock-sunk);
+  color: var(--fwm-dk-hue);
+}
+
+.fwm-dock[data-fwm-pane='navigating'] .fwm-dock-inset {
+  width: var(--fwm-dk-map-nav);
+  height: var(--fwm-dk-map-nav);
+  border-radius: var(--fwm-dk-map-nav-radius); /* 11 */
+}
+
+.fwm-dock-inset svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* THE SEVEN PARTS OF THE SCHEMATIC, EACH CARRYING ONE MEANING.
+ *
+ * `MapInset` already sets every geometry attribute inline -- the stroke widths,
+ * the dash, the opacities -- and paints all of it in `currentColor`, so with no
+ * rules here the whole tile is one hue and reads as a monochrome doodle. Rule 2
+ * says a hue carries exactly one meaning, and a picture whose route, whose
+ * reader and whose maneuver are the same colour is not carrying any of them.
+ *
+ * So each part names its own role and nothing else changes. Green is the route,
+ * because rule 2 gives green to cleared and route. The state's hue is the
+ * reader, which is what the tile is for. The accent is the thing you are about
+ * to do -- the lit corner and its chevron. */
+
+.fwm-dock-inset-route {
+  color: var(--fwm-alert-clear);
+}
+
+/* E2 ONLY. The corner about to be taken is the subject of that tile, so it
+   leaves the route green and takes the accent -- the component sets the
+   attribute, and this is the only thing that reads it. */
+.fwm-dock-inset-route[data-fwm-lit='true'],
+.fwm-dock-inset-turn {
+  color: var(--dr-accent);
+}
+
+/* The reader and its cone are the state's own hue: amber approaching, pink for
+   a Flock, whatever `--fwm-dk-hue` is in the pane this tile is sitting in. */
+.fwm-dock-inset-cone,
+.fwm-dock-inset-mark {
+  color: var(--fwm-dk-hue);
+}
+
+/* THE DRIFT IS NOT A ROAD and must not read as one, so it takes the muted ink
+   rather than the route green its dashes sit beside. */
+.fwm-dock-inset-drift {
+  color: var(--fwm-dk-sub);
+}
+
+/* Where you are, in the pane's own ink -- the one mark on the tile that is not
+   making a claim about the world. */
+.fwm-dock-inset-you {
+  color: var(--dr-ink);
+}
+
+/* And where you are going: a ring, in the accent, for the same reason the
+   maneuver takes it. */
+.fwm-dock-inset-goal {
+  color: var(--dr-accent);
+}
+
+/* =========================================================================
+ * 5. THE DENSITY RAMP
+ *
+ * Four tiers, and no fifth. A downtown grid reading sixty cameras still says
+ * `high`: escalating past it would cost a hue that alerting needs, and a
+ * driver cannot act on the difference between forty and sixty anyway.
+ *
+ * IT COLOURS THE NUMBER, THE GLYPH AND ONE WORD -- NEVER THE PANE. Text colour
+ * is WHERE YOU ARE; surface colour is ACT NOW. Keeping them in different
+ * scopes is what lets density and proximity stay separable at 60mph, and it is
+ * why `data-fwm-density` lands on the body and not on the pane.
+ *
+ * The thresholds and the words live in `BrowseRow.tsx`, which is the only
+ * place a count is turned into a tier.
+ * ====================================================================== */
+
+/* 0 -- nothing within 2 mi. The same green as CLEARED, so the two agree. */
+.fwm-dock-body[data-fwm-density='clear'] {
+  --fwm-dk-tier: var(--fwm-alert-clear);
+  --fwm-dk-figure: var(--fwm-alert-clear);
+  --fwm-dk-glyph: var(--fwm-alert-clear);
+}
+
+/* 1-5 -- neutral ink on purpose. Most of a drive lives here and should not
+   shout, so the tier that means "normal" is the one with no hue at all. */
+.fwm-dock-body[data-fwm-density='low'] {
+  --fwm-dk-tier: var(--dr-ink-3);
+  --fwm-dk-figure: var(--dr-ink);
+  --fwm-dk-glyph: var(--dr-ink-muted);
+}
+
+/* 6-12 -- warm but unsaturated, and visibly NOT the alert amber one step above
+   it. `--fwm-alert-approaching-text` is the alert hue pulled towards the ink,
+   which is exactly the relationship the spec draws between the two tiers. */
+.fwm-dock-body[data-fwm-density='moderate'] {
+  --fwm-dk-tier: var(--fwm-alert-approaching-text);
+  --fwm-dk-figure: var(--fwm-alert-approaching-text);
+  --fwm-dk-glyph: var(--fwm-alert-approaching-text);
+}
+
+/* 13+ -- the ceiling. There is deliberately nothing worse than high. */
+.fwm-dock-body[data-fwm-density='high'] {
+  --fwm-dk-tier: var(--fwm-alert-approaching);
+  --fwm-dk-figure: var(--fwm-alert-approaching);
+  --fwm-dk-glyph: var(--fwm-alert-approaching);
+}
+
+/* =========================================================================
+ * 6. HELD FOR THE NAVIGATING AND EXPANDED PANES
+ *
+ * These rules are NOT the collapsed pane's and are not this brief's work. They
+ * are the rows the navigating body and the expanded sheet still draw -- the
+ * maneuver row, the reader rail, the scrolling lists, the hero tile, the mute
+ * key, the labelled keys and the 38px figure -- carried across unchanged so
+ * that neither pane renders unstyled while sections E and F are built against
+ * `dockv3.dc.html`.
+ *
+ * WHAT WAS DROPPED FROM THEM, AND WHY. `.fwm-dock-grabber` and
+ * `.fwm-dock-expand`: the spec deletes the grab handle and the expand chevron
+ * outright and the whole pane is the target now, so the rules are gone rather
+ * than left orphaned. Any node still emitting those class names paints
+ * nothing.
+ *
+ * `.fwm-dock-status`, `.fwm-dock-primary` and `.fwm-dock-secondary` are the
+ * OLD rows and keep their old geometry here; the collapsed pane's own rows are
+ * `.fwm-dock-lede` and `.fwm-dock-meta` in section 4 and share no class with
+ * them, so the two cannot collide while the other panes are rebuilt.
+ * ====================================================================== */
+
+/* --- browse: one fixed 40px status row ----------------------------------- */
+
+/* FIXED, NOT FLEXIBLE. The row is 40px in all six browse states so the leading
+   mark lands in the same place whether it is a dot, an icon or nothing, and so
+   ARMED can add a distance without the line moving. */
+.fwm-dock-status {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-status-gap);
+  min-width: 0;
+  height: var(--fwm-dk-status-h);
+}
+
+/* --- drive: a flexible primary over a fixed secondary --------------------- */
+
+/* THE ONLY FLEXIBLE BOX IN THE DRIVE FAMILY, and what it resolves to:
+ *
+ *   168  the family height, border-box
+ *    -2  the 1px border, top and bottom
+ *   -12  padding-top
+ *   -10  padding-bottom
+ *   -12  the one remaining shell gap, primary to secondary
+ *   -41  the secondary rail
+ *   ---
+ *    91  the primary row
+ *
+ * IT WAS 72 AND IT IS 91, and the nineteen points are the home indicator's:
+ * 5 for the pill, 2 for its margin, and 12 for the shell gap that died with
+ * it, because a flex gap belongs to the pair of items it separates and the
+ * last item took its gap with it. The dock did not shrink and the rail did not
+ * grow -- the rail is `flex: none` at 41 and still is; the slack landed in the
+ * one box that was already asking for it, which is what `flex: 1 1 auto`
+ * means. Measured in Chromium at 91.
+ *
+ * (The comment this replaces said 70. It was written against the spec's 4px
+ * home margin and the file ships 2, so it had been two pixels wrong since the
+ * margin was cut. Read the number off the browser, not off the comment.)
+ *
+ * Written as flex rather than as 91px so the arithmetic cannot drift out of
+ * agreement with the shell. The tallest thing it holds is the 60px mute key,
+ * so nothing in it is ever squeezed.
+ */
+.fwm-dock-primary {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-primary-gap);
+  min-width: 0;
+}
+
+/* 41px INCLUDING the 11px pad, border-box. The rule above it is the same cool
+   hairline in every state, unadjusted for the four warm grounds -- the spec
+   does not warm it and a rule that changed temperature per state would read as
+   a second signal. */
+.fwm-dock-secondary {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-secondary-gap);
+  min-width: 0;
+  height: var(--fwm-dk-secondary-h);
+  padding-top: var(--fwm-dk-secondary-pad);
+  border-top: var(--fwm-rule-w) solid var(--fwm-line-soft);
+}
+
+/* NO FIXED HEIGHT, unlike the browse row it replaces: the header is as tall as
+   the 52px thumbnail inside it and the expanded family has room to spare. */
+.fwm-dock-hero {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-dk-gap);
+  min-width: 0;
+}
+
+/* NAVIGATING, EXPANDED puts an ETA on the baseline instead of a thumbnail. */
+.fwm-dock[data-fwm-state='navigating-expanded'] .fwm-dock-hero {
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-dk-secondary-gap); /* 10 */
+}
+
+/* Three runs on one baseline rather than a figure over a line: the ETA, then
+   the distance beside it, then the destination pushed to the right edge and
+   given the slack, because it is the only one of the three that may truncate. */
+.fwm-dock[data-fwm-state='navigating-expanded'] .fwm-dock-hero .fwm-dock-sub {
+  flex: none; /* keyword */
+}
+
+.fwm-dock[data-fwm-state='navigating-expanded'] .fwm-dock-hero .fwm-dock-line {
+  font-size: var(--fwm-dk-t-13);
+  text-align: right; /* keyword */
+}
+
+/* The reader rail under that ETA. `margin-top` pulls it back against the shell
+   gap so the two read as one block -- 6px apart, not 12. */
+.fwm-dock-note {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2); /* 8 */
+  min-width: 0;
+  margin-top: calc(var(--fwm-space-1) * -1.5); /* -6 */
+}
+
+.fwm-dock-note .fwm-dock-line {
+  font-size: var(--fwm-dk-t-13);
+  font-weight: 700;
+  color: var(--fwm-dk-hue-2);
+}
+
+/* THE ONE BOX THAT SCROLLS, and the only child of an expanded dock that is not
+   `flex: none`. `min-height: 0` is what actually lets it shrink; without it the
+   list refuses to be smaller than its rows and pushes the tab row off the
+   bottom, which is the whole failure the locked height exists to prevent.
+   The scrollbar is hidden because the rows' own hairlines already say there is
+   more below. */
+/* ABOVE THE PANE'S TAP TARGET, and that is not a nicety.
+ *
+ * `.fwm-dock-tap` is `position: absolute; inset: 0` - v3 makes the whole pane
+ * body one press. An absolutely positioned element paints ABOVE its static
+ * siblings, so an unpositioned list sits UNDER it and the tap layer receives
+ * everything: the list could not be scrolled, a row could not be tapped, and
+ * every press on a row landed on "collapse the pane" instead of opening the
+ * camera it named.
+ *
+ * The keys already solved this - section 5 gives them `position: relative` for
+ * exactly this reason, so a press on a key lands on the key. The list is the
+ * same case and was simply missed, because the collapsed pane has no list and
+ * that is the pane the rule was written against. */
+.fwm-dock-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: start; /* keyword */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+  /* THE LIST'S OWN `border-top` IS THE DIVIDER ABOVE IT, so it is drawn in the
+     same token as the one below the list rather than in a skin rule. The file
+     draws both as `rgba(255,255,255,0.08)`; `--fwm-line-soft` is an OPAQUE
+     slate (`#243239` on the default skin), which is a different material at
+     the same width. */
+  border-top: var(--fwm-rule-w) solid var(--dr-dock-divider);
+  /* `padding: 5px 10px`, from the spec's own list box:
+       <div style="height: 151px; overflow-y: auto; padding: 5px 10px;">
+     The rows inset from the pane's edge rather than running into it, which is
+     what lets each one carry a 12px radius and read as a card. */
+  padding: var(--fwm-dk-list-pad-y) var(--fwm-dk-list-pad-x);
+}
+
+/* THE THREE LISTS DO NOT SHARE AN INSET, AND THE FILE DRAWS EACH ONE.
+     C   `height: 151px; overflow-y: auto; padding: 5px 10px`
+     F1  `height: 135px; overflow-y: auto; padding: 4px 10px`
+     F2  `height: 135px; ... padding: 8px 10px; display: grid; gap: 8px`
+   The 10 across is the same in all three -- it is what lets a row carry a
+   radius and read as a card -- and the pad down the top is what each list has
+   room for: 5 over four 44px rows, 4 over four 42px steps, 8 over two 54px
+   cards that carry their own ground and need air between them. */
+.fwm-dock-list[data-fwm-list='steps'] {
+  padding-top: var(--fwm-dk-list-pad-steps); /* 4 */
+  padding-bottom: var(--fwm-dk-list-pad-steps);
+}
+
+.fwm-dock-list[data-fwm-list='routes'] {
+  gap: var(--fwm-space-2); /* 8 */
+  padding-top: var(--fwm-dk-list-pad-routes); /* 8 */
+  padding-bottom: var(--fwm-dk-list-pad-routes);
+}
+
+.fwm-dock-list::-webkit-scrollbar {
+  display: none; /* keyword */
+}
+
+/* Every row carries its own bottom rule, so the last visible one is ruled too
+   and the list reads as continuing rather than as ending. */
+.fwm-dock-row {
+  /* IT IS A BUTTON NOW, so the four things a button brings have to go: the UA
+     background, its border, its centred text and its inherited-nothing font.
+     The row's own geometry below is unchanged from when it was a div. */
+  appearance: none;
+  width: 100%;
+  background: none; /* keyword */
+  border: 0; /* keyword */
+  font: inherit; /* keyword */
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  /*
+   * THE SPEC'S ROW, COPIED, AND IT WAS 17px TALLER THAN THE DRAWING.
+   *
+   * `DarkRoute Dock V3 (2).html` draws the nearby row as:
+   *
+   *   height: 44px; border-radius: 12px; padding: 0 8px;
+   *   display: flex; align-items: center; gap: 11px; min-width: 0
+   *
+   * This carried 9px of vertical padding and a bottom hairline instead, which
+   * made it 61 -- so a 151px list showed two rows and a half-row sliced by the
+   * tab bar under it, and the trailing distance sat hard against the pane's
+   * edge. Four rows fit the drawing; two and a bit fit ours.
+   *
+   * THE HAIRLINE PER ROW IS NOT IN THE SPEC and it goes with the height. The
+   * drawing separates rows with the radius and the pressed fill, not a rule --
+   * a rule under every row in a scrolling list is a ladder, and it is what made
+   * the sliced row read as broken rather than as continuing.
+   */
+  gap: var(--fwm-dk-row-gap);
+  min-width: 0;
+  height: var(--fwm-dk-row-h);
+  padding: 0 var(--fwm-space-2);
+  border-radius: var(--fwm-space-3);
+  /* The row's disclosure chevron takes this and nothing else does -- every
+     other child of a row sets its own colour. An icon stroke, not text. */
+  color: var(--fwm-text-icon);
+}
+
+/* 42 IN THE TURN LIST, WHERE THE NEARBY LIST IS 44. F1 fits its four steps
+   into 135 where C fits four rows into 151, and the two pixels come off the
+   row rather than off the inset: a step carries a road and a note, which is
+   one line less than a reader's place, operator and distance. */
+.fwm-dock-list[data-fwm-list='steps'] .fwm-dock-row {
+  height: var(--fwm-dk-step-h); /* 42 */
+}
+
+/* 9px, WHICH IS WHAT THE DRAWING SAYS. This block read "THE ROW DOT IS 7px,
+   NOT 9" and the spec's own row is `width: 9px; height: 9px`. The claim was
+   wrong, so the 7 went with it. It is still the one place operator identity
+   survives -- a named operator sits beside it, so the colour marks a row rather
+   than making a claim. The component sets the hue per row. */
+.fwm-dock-list .fwm-dock-dot {
+  width: var(--fwm-dk-dot-row);
+  height: var(--fwm-dk-dot-row);
+}
+
+/* AND ITS HUE IS THE OPERATOR'S, which is the one thing the row's own words
+   cannot carry at a glance. The spec's C list draws four distinct dots down a
+   five-row list -- a Flock, a police department, a private lot, an unverified
+   report -- and `--dr-owner-*` already names all five for the map's own pins,
+   so a dot in the dock and a pin on the map are the same colour for the same
+   reason. `ExpandedPanel` publishes the attribute; nothing about whose
+   hardware is on the pole is decided here. */
+.fwm-dock-list .fwm-dock-dot[data-fwm-owner='flock'] {
+  background: var(--dr-owner-flock);
+}
+
+.fwm-dock-list .fwm-dock-dot[data-fwm-owner='police'] {
+  background: var(--dr-owner-police);
+}
+
+.fwm-dock-list .fwm-dock-dot[data-fwm-owner='hoa'] {
+  background: var(--dr-owner-hoa);
+}
+
+.fwm-dock-list .fwm-dock-dot[data-fwm-owner='private'] {
+  background: var(--dr-owner-private);
+}
+
+.fwm-dock-list .fwm-dock-dot[data-fwm-owner='unverified'] {
+  background: var(--dr-owner-unverified);
+}
+
+/* A fixed 22px cell holding a 20px turn mark, so a left, a right and a straight
+   all start their text at the same x.
+
+   HELD, AND NOT DRAWN BY V3. Section F1 leads a step with its DISTANCE in a
+   fixed 44px cell and closes it with a 15px chevron; there is no turn arrow on
+   a step anywhere in the file, because the arrow was carrying what the road
+   name already carries. `ExpandedPanel` emits no `.fwm-dock-step`, and this
+   rule is section 6's furniture rather than a measurement off the drawing. */
+.fwm-dock-step {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-dk-step);
+  height: var(--fwm-dk-step);
+  color: var(--fwm-text-soft);
+}
+
+/* Arrive is the one step the driver is heading for, and the only one in teal. */
+.fwm-dock-step[data-fwm-turn='end'] {
+  color: var(--fwm-accent-scan);
+}
+
+/* 14/500 IN EVERY LIST ROW, which is the drawing, in C and in F1 alike:
+     <div style="font-size: 14px; font-weight: 500; color: #e8ecf0;">{{ c.where }}
+     <div style="font-size: 14px; font-weight: 500; color: #c3cbd3;">{{ s.road }}
+   It was dropped to 13 with the rest of the list; the street is the row's
+   subject and the file sets it at the same size as the pane above it. Only
+   F2's cards go a step up -- see below -- because those are a choice. */
+.fwm-dock-list .fwm-dock-line {
+  font-size: var(--fwm-dk-t-14);
+  font-weight: 500;
+  color: var(--fwm-text);
+}
+
+.fwm-dock[data-fwm-state='navigating-expanded'] .fwm-dock-list .fwm-dock-line {
+  color: var(--fwm-text);
+}
+
+/* 12 ON THE SECOND LINE OF A LIST ROW, and the same 12 in all three lists: the
+   operator under a reader's place, the camera count under a step, the mileage
+   under a route. It is the one size in the dock the type scale skips, and it
+   is a step below the 13 the meta line takes because this run is subordinate
+   to the line above it rather than to the pane. */
+.fwm-dock-list .fwm-dock-sub {
+  font-size: var(--fwm-dk-t-12);
+  /*
+   * AND THE FILE'S OWN INK, WHICH THE PANE'S STATE WAS OVERRULING.
+   *
+   * `DarkRoute Dock V3 (2).html` draws `{{ c.who }}` at `#8d97a1` in every
+   * frame of the nearby list. The built app painted it AMBER whenever the pane
+   * was armed, because `dense`, `armed-expanded` and `gps-weak` re-cut
+   * `--fwm-dk-sub` to the approaching text for the pane's OWN meta line, and a
+   * list row two bands below reads the same local.
+   *
+   * The state belongs to the sentence in the head, not to the operator under a
+   * street name: `GENETEC` is not more alarming because a reader is close. So
+   * the row takes the file's ink directly and stops inheriting a pane-level
+   * decision it is not part of.
+   */
+  color: var(--fwm-dk-sub-row);
+}
+
+/* EACH STEP CARRIES ITS CAMERA COUNT IN ITS OWN HUE, which is what makes the
+   exposure of a whole route readable without leaving the dock. The spec hands
+   every step a colour directly -- amber where a reader sits on it, the muted
+   ink where it is clear, green on the destination -- and `ExpandedPanel`
+   publishes which of the three it is rather than the colour. */
+.fwm-dock-list .fwm-dock-sub[data-fwm-tone='alert'] {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-dock-list .fwm-dock-sub[data-fwm-tone='quiet'] {
+  color: var(--dr-ink-muted);
+}
+
+.fwm-dock-list .fwm-dock-sub[data-fwm-tone='clear'] {
+  color: var(--fwm-alert-clear);
+}
+
+/* F2'S CARDS SET THEIR HEADLINE AT 15, and the one on offer sets it bold. The
+   route chooser is the only list in the dock whose rows are a choice rather
+   than a lookup, so its first line is a step above the other two and weight
+   carries which one is taken -- the ring beside it is a confirmation, not the
+   signal. */
+.fwm-dock-list[data-fwm-list='routes'] .fwm-dock-line {
+  font-size: var(--fwm-dk-t-15);
+}
+
+.fwm-dock-option[data-fwm-chosen='true'] .fwm-dock-line {
+  font-weight: 700;
+}
+
+/* `font-size: 14px; font-weight: 700; color: #c3cbd3`, and `flex: none` so the
+   distance is never the thing that truncates -- the street beside it is, and it
+   is recoverable from the map in a way a distance is not. */
+.fwm-dock-list .fwm-dock-trail {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-14);
+  font-weight: 700;
+  color: var(--fwm-text-soft);
+}
+
+/* THE TURN LIST LEADS WITH ITS DISTANCE INSTEAD, so the same run is 13 in a
+   FIXED 44px cell: a left, a right and a merge all start their road name at
+   the same x, which is what makes the column of distances read as a column.
+   `0.4 mi` and `7.2 mi` are the same width in tabular figures; `12.4 mi` is
+   not, and the cell is what absorbs it. */
+.fwm-dock-list[data-fwm-list='steps'] .fwm-dock-trail {
+  width: var(--fwm-dk-step-dist); /* 44 */
+  font-size: var(--fwm-dk-t-13);
+}
+
+/* Reroute and End sit exactly where the tab row sits in a browse state -- same
+   slot, different object, and 48px tall rather than 52. */
+.fwm-dock-actions {
+  flex: none; /* keyword */
+  display: flex;
+  gap: var(--fwm-space-2); /* 8 */
+}
+
+/* --- the runs of text that fill those rows -------------------------------- */
+
+/* THE ONE THAT GIVES. Every row has exactly one, it takes the slack, and it is
+   the only thing in the dock allowed to truncate: a street name is recoverable
+   from the map, a distance is not. */
+.fwm-dock-line {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-dk-t-14);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* THE BROWSE STATUS LINE IS THE STATE'S OWN SENTENCE, so it takes the same ink
+   the drive family's second line takes rather than a rule per state: neutral
+   above the body ink in the four resting states, the pale hue in the three
+   that are reporting something, and the plain body ink in ARMED, where the
+   line is a caption to the distance beside it. Eight states, one declaration.
+   It is `.fwm-dock-status .fwm-dock-line` and not `.fwm-dock-line`, so the
+   rail and the list rows keep their own inks. */
+.fwm-dock-status .fwm-dock-line {
+  color: var(--fwm-dk-sub);
+}
+
+/* THE SECONDARY RAIL'S LINE. Its ink is the rail's, not the shell's: FULL on
+   NAVIGATING, PALE on PASSING, the third step on APPROACHING and ABUSE ZONE,
+   ENTERING, and the plain body ink on the five states that leave it grey.
+   NAVIGATING and PASSING also bold it -- a reader on the route you are
+   driving is not a caption. */
+.fwm-dock-secondary .fwm-dock-line {
+  color: var(--fwm-dk-ink-2);
+}
+
+.fwm-dock[data-fwm-state='navigating'] .fwm-dock-secondary .fwm-dock-line,
+.fwm-dock[data-fwm-state='passing'] .fwm-dock-secondary .fwm-dock-line {
+  font-weight: 700;
+}
+
+/* ABUSE ZONE, ENTERING drops its rail to 13px. It is a citation, not a warning;
+   the warning is the 25px title above it. */
+.fwm-dock[data-fwm-state='abuse-entering'] .fwm-dock-secondary .fwm-dock-line {
+  font-size: var(--fwm-dk-t-13);
+}
+
+/* THE RIGHT-HAND SLOT. Never truncates and never flexes: a count, a date, a
+   timer or a one-word affordance. */
+.fwm-dock-trail {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-13);
+  color: var(--fwm-text-3);
+}
+
+/* MUTED states its remaining duration in the alert hue and at body size -- the
+   one number in a browse row that is not grey. */
+.fwm-dock[data-fwm-state='muted'] .fwm-dock-trail {
+  font-size: var(--fwm-dk-t-14);
+  font-weight: 700;
+  color: var(--fwm-alert-approaching);
+}
+
+/* ONE AFFORDANCE STILL DRAWN AS TEXT. `Read` on ABUSE ZONE, ENTERING is bold
+   and hue-coloured, and stays a span: it is a citation, not an action this
+   build can carry out. APPROACHING's `Reroute` was the second one and is a
+   real key now -- `.fwm-dock-detour`, section 7b -- which is why the selector
+   below no longer names it. `Flock · SE` on PASSING is a label. */
+.fwm-dock[data-fwm-state='abuse-entering'] .fwm-dock-trail {
+  font-weight: 700;
+  color: var(--fwm-dk-hue-2);
+}
+
+/* PASSING's is the third step of the rail it sits in, not a second reading of
+   the shell: `Flock - SE` is who owns the camera, under a line that has
+   already said a plate was read. */
+.fwm-dock[data-fwm-state='passing'] .fwm-dock-trail {
+  color: var(--fwm-dk-ink-2);
+}
+
+/* ==========================================================================
+ * THE THIRD STEP, APPLIED.
+ *
+ * Five slots across three states, all of them a rail that sits under a
+ * reading already carrying the state's colour. The colour on each is
+ * `--fwm-dk-ink-2` above -- a token, resolved per state; this only takes it
+ * one step further down. See the note on `--fwm-dk-quiet` at the head of the
+ * file for why the step is an alpha and not a sixth colour.
+ *
+ * Every one of the five is a leaf -- a text run, or a span holding one 17px
+ * mark -- so the alpha lands on the ink and on nothing else; no box, no rule
+ * and no ground is dimmed with it, and the layout is untouched.
+ * ======================================================================= */
+.fwm-dock[data-fwm-state='approaching'] .fwm-dock-secondary .fwm-dock-lead,
+.fwm-dock[data-fwm-state='approaching'] .fwm-dock-secondary .fwm-dock-line,
+.fwm-dock[data-fwm-state='abuse-entering'] .fwm-dock-secondary .fwm-dock-lead,
+.fwm-dock[data-fwm-state='abuse-entering'] .fwm-dock-secondary .fwm-dock-line,
+.fwm-dock[data-fwm-state='passing'] .fwm-dock-secondary .fwm-dock-trail {
+  opacity: var(--fwm-dk-quiet);
+}
+
+/* The figure and its line, as one block. 1px apart, which is closer than any
+   other pair in the dock: they are one reading, not two, and the spec sets
+   every one of them -- the maneuver readout, a nearby row, a turn step, a
+   route card -- at the same single pixel. */
+.fwm-dock-stack {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: var(--fwm-dk-stack-gap);
+}
+
+/* 2 WHERE THE READOUT IS A PHRASE. REROUTING, OFF ROUTE and ARRIVED draw a
+   19px sentence over a 14px one instead of a number over a line, and two runs
+   of prose need the extra pixel that one reading does not. */
+.fwm-dock-stack[data-fwm-shape='titled'] {
+  gap: var(--fwm-dk-stack-gap-titled);
+}
+
+/* The figure and its unit on one baseline, 7 apart. */
+.fwm-dock-title {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-dk-title-gap); /* 7 */
+  min-width: 0;
+}
+
+.fwm-dock-title .fwm-dock-line {
+  color: var(--fwm-text);
+}
+
+.fwm-dock-sub {
+  font-size: var(--fwm-dk-t-14);
+  color: var(--fwm-dk-sub);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* 15px WHERE THE SECOND LINE IS THE WHOLE MESSAGE. Five states put their
+   substance here -- `Logged - 88 reads all time`, `Nothing mapped at this
+   signal` -- and read one step up for it. NAVIGATING, CRUISING and ABUSE ZONE,
+   ENTERING stay at 14: their figure is already carrying the reading. */
+.fwm-dock[data-fwm-state='approaching'] .fwm-dock-sub,
+.fwm-dock[data-fwm-state='cleared'] .fwm-dock-sub,
+.fwm-dock[data-fwm-state='rerouted'] .fwm-dock-sub,
+.fwm-dock[data-fwm-state='unmapped'] .fwm-dock-sub,
+.fwm-dock[data-fwm-state='arrived'] .fwm-dock-sub {
+  font-size: var(--fwm-dk-t-15);
+}
+
+/* DELETED: `.fwm-dock[data-fwm-state='armed-expanded'] .fwm-dock-sub` at 13.
+   Its comment called it "the expanded camera header", and the expanded head
+   does not carry that class -- `ExpandedPanel.tsx` draws the head's sentence
+   as `.fwm-dock-line-meta`, and `.fwm-dock-sub` exists in exactly three
+   places, all of them the second line of a LIST row. So the rule's only
+   effect was to out-specify `.fwm-dock-list .fwm-dock-sub` (0,3,0 against
+   0,2,0) and set section C's `{{ c.who }}` at 13 where the file draws
+     <div style="font-size: 12px; color: #8d97a1;">{{ c.who }}</div>
+   The 12 was correct in the token and in the rule; the cascade took it. */
+
+/* Bold on the two that are counting down at you. Escalation by weight. */
+.fwm-dock[data-fwm-state='approaching'] .fwm-dock-sub,
+.fwm-dock[data-fwm-state='abuse-entering'] .fwm-dock-sub {
+  font-weight: 700;
+}
+
+/* NAVIGATING's right-hand pair: the arrival time over the distance left, both
+   right-aligned so the two numbers stack on their own edge. */
+.fwm-dock-eta {
+  flex: none; /* keyword */
+  display: grid;
+  justify-items: end; /* keyword */
+  gap: calc(var(--fwm-space-1) / 2); /* 2 */
+  font-size: var(--fwm-dk-t-17);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-dock-eta .fwm-dock-trail {
+  font-weight: 400;
+}
+
+/* =========================================================================
+ * 5. TILES, DOTS AND KEYS
+ * ====================================================================== */
+
+/* THE 9px STATUS DOT. Bare in IDLE; ARMED and PASSING add a ring. */
+.fwm-dock-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-dk-dot);
+  height: var(--fwm-dk-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-dk-hue-2);
+}
+
+/* AN OUTLINE AND NOT A SHADOW. The spec draws `0 0 0 4px` -- a hard ring with
+   no blur and no offset, which is what an outline is. It is also the only
+   spelling the gate accepts: a `box-shadow` has to be a whole token and there
+   is no token for this ring, only for its colour. Neither one affects layout,
+   so the dot stays 9x9 either way. */
+.fwm-dock[data-fwm-state='armed'] .fwm-dock-dot {
+  outline: var(--fwm-dk-halo) solid var(--fwm-tint-multiple-halo);
+}
+
+.fwm-dock[data-fwm-state='passing'] .fwm-dock-secondary .fwm-dock-dot {
+  outline: var(--fwm-dk-halo) solid var(--fwm-tint-multiple-strong);
+}
+
+/* THE BARE LEADING SLOT. Three different shapes lead a browse row -- a dot, an
+   icon in a bare span, or nothing at all -- and this is the middle one. It
+   carries no background and no size of its own; the mark sets both. */
+.fwm-dock-lead {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  color: var(--fwm-dk-hue);
+}
+
+/* The secondary rail's leading mark, where there is one, is the dimmer partner
+   of the rail's own hue rather than the shell's -- and it is literally that:
+   the same `--fwm-dk-ink-2` the line beside it takes, so a clock and the words
+   after it are one object. Only APPROACHING and ABUSE ZONE, ENTERING draw one;
+   every other rail leads with a dot, which stays full saturation. */
+.fwm-dock-secondary .fwm-dock-lead {
+  color: var(--fwm-dk-ink-2);
+}
+
+/* THE 56px HERO TILE. Wash inside, rim around it, mark in the middle -- except
+   on PASSING, where the wash IS the hue and the mark inverts to the dark ink.
+   Two radii sit side by side in this row on purpose: 15 here, 17 on the key
+   opposite, because the key is bigger and a shared radius would make the
+   smaller one look tighter than it is. */
+.fwm-dock-tile {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-dk-tile);
+  height: var(--fwm-dk-tile);
+  border: var(--fwm-rule-w) solid var(--fwm-dk-rim);
+  border-radius: var(--fwm-dk-tile-radius);
+  background: var(--fwm-dk-wash);
+  color: var(--fwm-dk-hue);
+}
+
+.fwm-dock[data-fwm-state='passing'] .fwm-dock-tile {
+  color: var(--fwm-text-on-alert);
+}
+
+/* THE EXPANDED CAMERA THUMBNAIL. A sunk tile with a hatch over it: there is no
+   photograph, and a flat empty box would read as one that failed to load. */
+.fwm-dock-thumb {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-dk-thumb);
+  height: var(--fwm-dk-thumb);
+  border-radius: var(--fwm-dk-key-radius); /* 13 */
+  background-color: var(--fwm-dock-sunk);
+  background-image: var(--fwm-card-hatch);
+  color: var(--fwm-text-icon);
+  /* THE MAP INSIDE IS 52x52 AND NOTHING ELSE.
+     `MiniMap` sizes itself for the intel card and the alert takeover, where it
+     is the biggest thing on the surface. Dropped in here it kept that size,
+     blew the tile open and shoved the reader's distance and street off the
+     left edge of the sheet. The tile is the authority on its own size: the
+     child fills it exactly, and the radius clips the corners the map would
+     otherwise square off. */
+  overflow: hidden; /* keyword */
+}
+
+.fwm-dock-thumb > * {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The caption `MiniMap` draws under itself has no room at 52px and no reader
+   at this size -- the picture is a locator, not a document. The card and the
+   takeover still draw it, because there it is the surface's main subject. */
+.fwm-dock-thumb .fwm-minimap-note {
+  display: none; /* keyword */
+}
+
+/* `MiniMap` is a `<figure>` with its own margin and a column layout sized for a
+   card. At 52px the canvas is the whole picture. */
+.fwm-dock-thumb .fwm-minimap {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fwm-dock-thumb .fwm-minimap-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* THE MUTE KEY. 60x60, radius 17, and neutral chrome on every ground including
+   the two lit ones -- only its mark goes warm. Silencing an alert must not look
+   like part of the alert. */
+.fwm-dock-mute {
+  flex: none; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-dk-mute);
+  height: var(--fwm-dk-mute);
+  border: var(--fwm-rule-w) solid var(--fwm-dock-raise-2);
+  border-radius: var(--fwm-dk-mute-radius);
+  background: var(--fwm-dock-raise);
+  color: var(--fwm-text);
+  cursor: pointer; /* keyword */
+}
+
+/* PALE, not full: the mute mark is drawn one tier below the sentence it
+   silences, and it is the only mark on the amber ground that is not a
+   reading. The key's own chrome stays neutral -- see above. */
+.fwm-dock[data-fwm-state='approaching'] .fwm-dock-mute {
+  color: var(--fwm-alert-approaching-text);
+}
+
+/* The expanded state has room for a list and not for a 60px key, so it drops to
+   44 -- and fills, because in a sheet the mute is the one action on offer. */
+.fwm-dock[data-fwm-state='armed-expanded'] .fwm-dock-mute {
+  width: var(--fwm-dk-key-h); /* 44 */
+  height: var(--fwm-dk-key-h);
+  border: none; /* keyword */
+  border-radius: var(--fwm-dk-key-radius); /* 13 */
+  background: var(--fwm-alert-multiple);
+  color: var(--fwm-text-on-alert);
+}
+
+/* THE TEXT KEY. 44 tall, radius 13, raised chrome, its label bold at 14 with a
+   7px gap to the mark. Every variant below is a whole state's worth of change,
+   so each one is keyed to its action rather than to a modifier class. */
+.fwm-dock-key {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-dk-key-gap);
+  height: var(--fwm-dk-key-h);
+  padding: 0 var(--fwm-dk-key-pad);
+  border: var(--fwm-rule-w) solid var(--fwm-dock-raise-2);
+  border-radius: var(--fwm-dk-key-radius);
+  background: var(--fwm-dock-raise);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-dk-t-14);
+  font-weight: 700;
+  color: var(--fwm-text);
+  cursor: pointer; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* MUTED's Undo is the smallest key in the dock, because it shares a 40px row
+   with a line of text and a timer. 36 tall, radius 10, 14 of side padding. */
+.fwm-dock[data-fwm-state='muted'] .fwm-dock-key {
+  height: calc(var(--fwm-space-1) * 9); /* 36 */
+  padding: 0 calc(var(--fwm-space-1) * 3.5); /* 14 */
+  border-radius: var(--fwm-dk-undo-radius); /* 10 */
+  font-size: var(--fwm-dk-t-13);
+}
+
+/* CLEARED's `Wrong?` is the one key that takes the state's colour, and it is
+   the only key in the dock that argues with its own screen: the dock has just
+   said you are clear and this is how you tell it that it was wrong. */
+.fwm-dock-key[data-fwm-action='wrong'] {
+  border-color: var(--fwm-dock-key-clear-line);
+  background: var(--fwm-dock-key-clear);
+  color: var(--fwm-alert-clear-text);
+}
+
+/* REROUTE takes the width and the fill; END takes a fixed 56 and stays chrome.
+   Both are 48 tall on a 14 radius -- the button row's geometry, not the key's. */
+.fwm-dock-key[data-fwm-action='reroute'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--fwm-space-12); /* 48 */
+  border: none; /* keyword */
+  border-radius: var(--fwm-dk-act-radius); /* 14 */
+  background: var(--fwm-accent-scan);
+  font-size: var(--fwm-dk-t-15);
+  color: var(--fwm-text-on-alert);
+  gap: var(--fwm-space-2); /* 8 */
+}
+
+.fwm-dock-key[data-fwm-action='end'] {
+  width: var(--fwm-dk-tile); /* 56 */
+  height: var(--fwm-space-12); /* 48 */
+  padding: 0;
+  border-radius: var(--fwm-dk-act-radius); /* 14 */
+}
+
+/* ARRIVED closes with a 60x60 square on a 17 radius -- the mute key's shape,
+   not the text key's and not the Report key's circle. It is the same size as
+   the key it replaces, so the row does not reflow at the end of a trip. */
+.fwm-dock-key[data-fwm-action='dismiss'] {
+  width: var(--fwm-dk-mute); /* 60 */
+  height: var(--fwm-dk-mute); /* 60 */
+  padding: 0;
+  border-radius: var(--fwm-dk-mute-radius); /* 17 */
+}
+
+/* ADD is fixed-width rather than padding-driven, and it is the only filled
+   magenta key: one tap drops a pin, and the details come later. */
+.fwm-dock-key[data-fwm-action='add'] {
+  width: calc(var(--fwm-space-1) * 19); /* 76 */
+  height: var(--fwm-dk-mute); /* 60 */
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-dk-mute-radius); /* 17 */
+  background: var(--fwm-alert-multiple);
+  font-size: var(--fwm-dk-t-15);
+  color: var(--fwm-text-on-alert);
+}
+
+/* THE FIGURE. 38px, line-height 1, tracked in.
+   HELD, AND NOT V3's. V3's readout is `.fwm-dock-count` at 30 in a collapsed
+   lede and 26 in a maneuver row, and nothing this file renders emits this
+   class any more. It stays until the last of section 6 is rebuilt, so a held
+   pane cannot render unstyled in the meantime. */
+.fwm-dock-figure {
+  flex: none; /* keyword */
+  font-size: var(--fwm-dk-t-38);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: var(--fwm-card-track-tighter); /* -0.03em */
+  /* WHITE UNLESS THE STATE SAYS OTHERWISE, and fourteen of the nineteen draw a
+     figure at all. Eleven of those fourteen are `#fff` in the spec and stay on
+     `--fwm-sign-face`; three tint, and each says so where its other colours
+     are set rather than in a rule of its own down here. */
+  color: var(--fwm-dk-figure);
+}
+
+/* The browse family carries the same number at 20 -- it is a reading you are
+   choosing to look at, not one being pushed at you. */
+.fwm-dock[data-fwm-family='browse'] .fwm-dock-figure {
+  font-size: var(--fwm-dk-t-20);
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em */
+}
+
+.fwm-dock[data-fwm-state='armed-expanded'] .fwm-dock-figure {
+  font-size: var(--fwm-dk-t-21);
+  letter-spacing: var(--fwm-dk-track-mid); /* -0.02em */
+}
+
+.fwm-dock[data-fwm-state='navigating-expanded'] .fwm-dock-figure {
+  font-size: var(--fwm-dk-t-24);
+  letter-spacing: var(--fwm-dk-track-mid); /* -0.02em */
+}
+
+/* PASSING is the only figure that wraps, so it is the only one with a line
+   height above 1 -- two lines at 38 would not fit a 70px row. */
+.fwm-dock[data-fwm-state='passing'] .fwm-dock-figure {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-dk-t-26);
+  line-height: 1.1;
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em */
+}
+
+.fwm-dock[data-fwm-state='cleared'] .fwm-dock-figure {
+  letter-spacing: var(--fwm-dk-track-mid); /* -0.02em */
+}
+
+.fwm-dock[data-fwm-state='abuse-entering'] .fwm-dock-figure {
+  font-size: var(--fwm-dk-t-25);
+}
+
+/* The nearby list's leading distance: 15px and bold, so the column of distances
+   reads down the left edge before any street name does. */
+.fwm-dock-row .fwm-dock-figure {
+  font-size: var(--fwm-dk-t-15);
+  letter-spacing: normal; /* keyword */
+  color: var(--fwm-text);
+}
+
+/* =========================================================================
+ * 7. THE DIVIDER, AND THE TAB ROW THAT IS THE PANE'S FLOOR
+ *
+ * ONE ELEMENT, ONE HAIRLINE, ONE DIVIDER. v2 drew the alert card and the tab
+ * bar as two slabs with different fills and a hard seam. There is one surface
+ * now; this 1px line is where the seam was, and it is the ONLY rule inside the
+ * pane.
+ *
+ * THE TAB ROW IS PERMANENT CHROME. It is never absent, in any of the nineteen
+ * states, and all three published heights count its 63px -- which is why
+ * `Dock.tsx` draws it outside the three bodies rather than inside any of them.
+ *
+ * AND IT IS NEUTRAL IN ALL NINETEEN. Not one declaration below reads
+ * `--fwm-dk-hue`, `--fwm-dk-tint` or `--fwm-dk-edge`. State colour stops at
+ * the divider: tinting the tabs to match a live amber alert would spend amber
+ * on furniture and teach a driver to stop trusting it. Tapping Mesh during a
+ * drive state swaps the body above the line and leaves the drive state running
+ * underneath.
+ *
+ * 47px HIT TARGETS, IN ALL NINETEEN TOO. 63 less the 8px pads is 47, and the
+ * column's contents -- a 21px mark over an 11px label, 3 apart -- come to 35,
+ * so the remaining 12 is hit area rather than drawn space.
+ * ====================================================================== */
+
+/* THE HAIRLINE, AT 0.08 AND NOT AT THE ROW RULE'S 0.07. The file writes
+   `height: 1px; background: rgba(255,255,255,0.08)` five times -- above the
+   list and below it, in A, C, F1 and F2 -- and draws no other alpha for it.
+   `--dr-hairline-row` is 0.07, which is what the NAVIGATING pane's own footer
+   rule takes; the pane carries both numbers and they are two values. */
+.fwm-dock-divider {
+  flex: none; /* keyword */
+  height: var(--fwm-dk-divider);
+  background: var(--dr-dock-divider);
+}
+
+.fwm-dock-tabs {
+  flex: none; /* keyword */
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--fwm-dk-tab-gap);
+  height: var(--fwm-dk-tabs-h);
+  padding: var(--fwm-dk-tab-pad-y) var(--fwm-dk-tab-pad-x);
+}
+
+.fwm-dock-tab {
+  display: grid;
+  place-items: center; /* keyword */
+  align-content: center; /* keyword */
+  gap: var(--fwm-dk-tab-stack);
+  height: var(--fwm-dk-tab-h);
+  padding: 0;
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-dk-tab-radius);
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-dk-t-11);
+  font-weight: 500;
+  /* THE INACTIVE INK IS `--dr-ink-muted` AND NOT `--fwm-text-3`. The tab row
+     sits on the same glass as the search bar's own chips and has to match
+     them; `--dr-*` is the chrome's ink ladder and this row is chrome. */
+  color: var(--dr-ink-muted);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-dock-tab svg {
+  width: var(--fwm-dk-tab-icon);
+  height: var(--fwm-dk-tab-icon);
+}
+
+/* THE ACTIVE TAB HAS A SURFACE NOW, and colour alone was carrying it before.
+   13% accent fill and an accent hairline, which is the same affordance the top
+   bar's active chip draws, because the dock and the bar are one system and
+   "you are here" should not be drawn twice.
+
+   THE HAIRLINE IS 0.38 AND THE FILL IS 0.13. Both come off the tab row in the
+   file -- `border: 1px solid rgba(47,212,212,0.38); background:
+   rgba(47,212,212,0.13)` -- and only the fill matches `--dr-accent-fill`.
+   `--dr-accent-line` is 0.42, so the edge takes the dock's own token and the
+   fill keeps the shared one. */
+.fwm-dock-tab[data-fwm-active] {
+  border-color: var(--dr-dock-accent-line);
+  background: var(--dr-accent-fill);
+  font-weight: 700;
+  color: var(--dr-accent);
+}
+
+/* =========================================================================
+ * 8. THE REPORT KEY
+ *
+ * A standalone key, never a tab, present in all nineteen states -- including
+ * the four lit ones, where reporting a camera is exactly what a driver might
+ * be doing. It sits OUTSIDE the pane, above it and hard right.
+ *
+ * Its ring is the magenta rail and never changes, on the amber ground and the
+ * red one alike: the key is the same object in every state, and a border that
+ * tracked the state would make it look like part of the alert.
+ *
+ * The chevron that used to collide with it is deleted, so it no longer has to
+ * share the pane's top-right corner with anything.
+ * ====================================================================== */
+
+.fwm-dock-report {
+  flex: none; /* keyword */
+  align-self: flex-end; /* keyword */
+  display: grid;
+  place-items: center; /* keyword */
+  /* DECLARED HERE AND NOT ON `.fwm-dock`. The key is the pane's SIBLING, not
+     its child, so nothing on the pane inherits down to it. */
+  --fwm-dk-report: calc(var(--fwm-space-1) * 13.5); /* 54 */
+  --fwm-dk-report-lap: calc(var(--fwm-space-1) * -1.5); /* -6 */
+  width: var(--fwm-dk-report);
+  height: var(--fwm-dk-report);
+  border: var(--fwm-rule-w) solid var(--fwm-tint-multiple-line);
+  border-radius: var(--fwm-radius-full);
+  /* THE SAME GLASS AS THE PANE BELOW IT, and for the same reason: it is a 54px
+     surface floating over a live map, and a solid plate with a cast shadow on
+     it is the exact pair the chrome brief bans. */
+  background: var(--dr-grain), var(--dr-surface-thin);
+  backdrop-filter: var(--dr-blur);
+  margin-bottom: var(--fwm-dk-report-lap);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+  color: var(--fwm-alert-multiple);
+  cursor: pointer; /* keyword */
+}
+
+/* =========================================================================
+ * 9. THE SCRIM
+ *
+ * 180px of gradient to 85% ink behind the whole dock, so street labels stop
+ * colliding with chrome. Cheap, and it does what a heavier blur was being
+ * asked to do.
+ *
+ * FULL BLEED, WHICH THE PANE IS NOT. The pane is inset 10 on all four sides
+ * and the scrim runs to the screen edges under it, so it is a sibling in
+ * `.fwm-shell-dock` pulled back out through that wrapper's own padding rather
+ * than a pseudo-element on the pane. A `::before` could not do it: the pane's
+ * `backdrop-filter` opens a stacking context, and a negative-z child of that
+ * context paints ABOVE the pane's own background rather than behind it.
+ *
+ * THE ONE SELECTOR IN THIS FILE THAT NAMES A CHROME CLASS, and it names it
+ * only to opt out. `global.css` gives every direct child of the wrapper
+ * `pointer-events: auto` so the dock can be pressed; a 180px transparent sheet
+ * inheriting that would swallow every tap on the bottom fifth of the map. The
+ * `:root` raises specificity above that rule and nothing else here does. */
+:root .fwm-shell-dock > .fwm-dock-scrim {
+  pointer-events: none; /* keyword */
+}
+
+.fwm-dock-scrim {
+  /* A SIBLING OF THE PANE, so the pane's locals do not reach it. Spelled
+     again rather than inherited, and the conformance suite pins both copies
+     to the same number so they cannot drift apart. */
+  --fwm-dk-inset: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-dk-scrim-h: calc(var(--fwm-space-1) * 45); /* 180 */
+  position: absolute;
+  right: calc(var(--fwm-dk-inset) * -1);
+  bottom: calc(var(--fwm-dk-inset) * -1);
+  left: calc(var(--fwm-dk-inset) * -1);
+  height: var(--fwm-dk-scrim-h);
+  /* THE FILE'S OWN THREE STOPS -- `to top, rgba(7,9,11,0.85),
+     rgba(7,9,11,0.4) 45%, transparent`, off the 180px sheet in section A's
+     in-context frame. It had been built as two stops of `--fwm-shadow-ink`,
+     which is the app's ink at 82% and is neither the 0.85 nor the 0.4, and
+     the missing middle stop straightened the ramp. All three stops now travel
+     in ONE token because the middle one cannot be written here -- this file
+     may not hold a colour -- and because a gradient assembled from three
+     tokens is a gradient the next surface can assemble differently. */
+  background: var(--dr-dock-scrim);
+}

@@ -1,0 +1,442 @@
+/* THE NAVIGATION CARD.
+ *
+ * Three columns over the map: the destination and what the route costs, the
+ * turn list, and the closest-camera panel. One card on the screen at a time and
+ * no mini variant of it - see the note at the top of `NavigationCard.tsx`.
+ */
+
+/* THE RAIL. Same mechanics as `.fwm-monitor`, and the argument for them is
+   written out in full at the top of `monitorCard.css` rather than twice: three
+   columns, always horizontal, snap-scrolling sideways when the phone is too
+   narrow to show all three. The owner's `Dynamic Cards.dc.html` builds both
+   cards out of the same rail and the same tokens. */
+.fwm-nav {
+  display: flex;
+  gap: var(--fwm-card-rail-pad);
+  padding: var(--fwm-card-rail-pad);
+  /* LOCKED, the same 180px monitor takes - the two cards occupy one band over
+     the map and swap when a destination is set, so a difference in height would
+     make the map jump under the driver at the moment they start navigating. */
+  height: var(--fwm-card-rail-h);
+  overflow-x: auto; /* keyword */
+  overflow-y: hidden; /* keyword */
+  overscroll-behavior-x: contain; /* keyword */
+  scroll-snap-type: x mandatory; /* keyword */
+  scrollbar-width: none; /* keyword */
+  border-radius: var(--fwm-card-rail-radius);
+  /* THE DEBT AT THE TOP OF THIS FILE IS PAID. The hairline, the fill, the blur
+     and the shadow are gone from here; `.fwm-nav` is named in the shared
+     floating-control chrome in `drive.css` alongside `.fwm-monitor`, so one
+     definition moves this card with every other floating control when the
+     material settings change. */
+}
+
+.fwm-nav::-webkit-scrollbar { display: none; /* keyword */ }
+
+/* The three columns are direct children of the rail. `display: contents`
+   dissolves this wrapper so the markup can keep the reader column first - which
+   is the order a screen reader wants - while the picture puts it last. */
+.fwm-nav-cols { display: contents; /* keyword */ }
+
+.fwm-nav-plan { order: 1; }
+.fwm-nav-list { order: 2; }
+.fwm-nav .fwm-closest { order: 3; }
+
+.fwm-nav-col {
+  container-type: inline-size;
+  min-width: 0;
+  min-height: 0;
+  /* START, NOT CENTER. With `scroll-snap-type: x mandatory` the browser rests
+     on the nearest snap point, and CENTRING a column wider than the rail puts
+     that point at a positive scrollLeft - so the card opened on column two.
+     Snapping to the start means the rail rests at 0, on the reader. */
+  scroll-snap-align: start; /* keyword */
+  overflow-y: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-nav-col::-webkit-scrollbar { display: none; /* keyword */ }
+
+/* COLUMN ONE, the route summary - the one column the design boxes. */
+.fwm-nav-plan {
+  flex: var(--fwm-card-col-grow) 0 var(--fwm-card-col-route);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-card-panel-gap);
+  padding: var(--fwm-card-panel-pad);
+  border: var(--fwm-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-card-panel-radius);
+  background: var(--fwm-surface-sunk);
+}
+
+/* COLUMN TWO, the turns. */
+.fwm-nav-list {
+  flex: var(--fwm-card-col-grow) 0 var(--fwm-card-col-route);
+  display: grid;
+  align-content: start; /* keyword */
+}
+
+/* --- column one: the route summary --------------------------------------- */
+
+/* LINE ONE. The ETA and the distance hold their size; the destination gives.
+   `align-items: baseline` is what sits a 38px figure and an 11px name on the
+   same line without the small one floating. */
+.fwm-nav-figures {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-space-2);
+  margin: 0;
+  min-width: 0;
+}
+
+.fwm-nav-eta {
+  flex: none; /* keyword */
+  font-size: var(--fwm-card-text-eta);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--fwm-card-track-tighter);
+  color: var(--fwm-text);
+}
+
+.fwm-nav-miles {
+  flex: none; /* keyword */
+  font-size: var(--fwm-card-text-eta-sub);
+  color: var(--fwm-text-2);
+}
+
+/* IT TRUNCATES AND THE FIGURES DO NOT. A destination is recoverable - it is on
+   the turn list's last row and on the map - where a mis-read ETA is not. */
+.fwm-nav-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-card-text-dest);
+  font-weight: 700;
+  color: var(--fwm-text);
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* LINE TWO: the address and the detour's price, on one quiet line. */
+.fwm-nav-detail {
+  flex: none; /* keyword */
+  margin: 0;
+  font-size: var(--fwm-card-text-detail);
+  line-height: 1.4;
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* LINE THREE: what is still on the line, and what was cleared.
+
+   BOTH HALVES, ALWAYS. An avoidance feature that prints only the cameras it
+   avoided is selling rather than reporting - the count that could NOT be
+   avoided is the one a driver has to act on. */
+.fwm-nav-online {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-card-row-gap);
+  margin: 0;
+  min-width: 0;
+}
+
+.fwm-nav-online-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-card-pin);
+  height: var(--fwm-card-pin);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-nav-online-say {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fwm-card-text-eta-sub);
+  font-weight: 700;
+  color: var(--fwm-alert-approaching);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-nav-avoided {
+  flex: none; /* keyword */
+  font-size: var(--fwm-card-text-detail);
+  color: var(--fwm-alert-approaching);
+}
+
+/* Once nothing is left on the line the whole row turns, dot included - the
+   alert engine's own "clear" rather than a second green. */
+.fwm-nav-online[data-fwm-nav-clear='true'] .fwm-nav-online-dot,
+.fwm-nav-online[data-fwm-nav-clear='true'] .fwm-nav-online-say,
+.fwm-nav-online[data-fwm-nav-clear='true'] .fwm-nav-avoided {
+  color: var(--fwm-alert-clear);
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-nav-online[data-fwm-nav-clear='true'] .fwm-nav-online-say,
+.fwm-nav-online[data-fwm-nav-clear='true'] .fwm-nav-avoided {
+  background: none; /* keyword */
+}
+
+/* LINE FOUR: THE TWO KEYS, and until now they had no rules at all.
+ *
+ * `NavigationCard.tsx` has rendered `.fwm-nav-actions` with a REROUTE button and
+ * an END button since the owner approved the pair, and this stylesheet never
+ * said anything about either selector - so both arrived as bare `<button>`
+ * elements with the user-agent's own paint, which in a flex column is two runs
+ * of text: "➤ Reroute · 1 reader still on itEnd". The markup was right and
+ * nothing drew it. That is the whole bug.
+ *
+ * The owner's drawing is specific about the pair and it is not two matching
+ * keys: REROUTE is a WIDE FILLED pill that takes the row, and END is a small
+ * OUTLINED one beside it. The asymmetry is the message - one of these is the
+ * thing you opened the card to do and the other is the way out, and drawing
+ * them as equals invites a driver at a light to press the wrong one. */
+.fwm-nav-actions {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-card-row-gap);
+  min-width: 0;
+  /* PINNED TO THE BOTTOM of the column. The three lines above it are as tall as
+     their content and the card's height is fixed, so without this the keys
+     float directly under line three and the leftover space collects below them
+     - which puts the primary action in a different place on a route with a cost
+     line than on one without. `auto` on the top margin of a flex item is what
+     pushes it to the end of the main axis. */
+  margin-top: auto; /* keyword */
+}
+
+/* THE PRIMARY KEY. Filled, and it takes whatever the row has left. */
+.fwm-nav-reroute {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  height: var(--fwm-card-reroute-h);
+  padding: 0 var(--fwm-card-reroute-pad);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-card-text-key);
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight);
+  /* THE LABEL IS A SENTENCE AND THE KEY IS A FIXED HEIGHT. "Reroute · 1 reader
+     still on it" does not fit a narrow column, and a wrapped label inside a
+     46px pill is a clipped label - so it truncates, which still leaves the word
+     that says what the key does at the front of it. */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE WAY OUT. Outlined, sized to its own word, and no wider.
+ *
+ * END is the only caller of `routeActions.clear()` in the app, so it cannot be
+ * dropped - and it is also the key nobody wants to hit by accident at 70mph,
+ * which is why it is the narrow one. It still clears the touch floor: 46px is
+ * over `--fwm-touch-min` in the block axis and the padding carries the inline
+ * axis past it. */
+.fwm-nav-end {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  height: var(--fwm-card-reroute-h);
+  padding: 0 var(--fwm-card-reroute-pad);
+  border: var(--fwm-rule-w) solid var(--fwm-line-strong);
+  border-radius: var(--fwm-radius-full);
+  background: transparent; /* keyword */
+  color: var(--fwm-text-2);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-card-text-key);
+  white-space: nowrap; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The press, on both. No `:hover` - this is a touch product and hover never
+   fires on the device it ships to. */
+.fwm-nav-reroute:active,
+.fwm-nav-end:active {
+  filter: brightness(0.88);
+}
+
+/* --- column two: the turns ------------------------------------------------ */
+
+/* THE LIST SCROLLS INSIDE ITSELF, never the card and never the page. A drive
+   across the metro is forty maneuvers, and a card that grows to hold all of
+   them covers the map it is drawn on. `overscroll-behavior` so reaching the end
+   of the turns does not hand the gesture to whatever is behind the card, and
+   `overflow-x: hidden` because a long instruction wraps here - it never
+   sideways-scrolls a column. */
+/* THE ONE REGION ON THIS CARD THAT SCROLLS, and it does it inside its own
+   column without moving anything beside it. It takes whatever height the card's
+   fixed frame leaves it and cuts the list there - which lands mid-row more
+   often than not, and a row cut in half is the only thing on a list with no
+   scrollbar that tells a driver there is more of it under their thumb.
+
+   It used to cap itself with a `--fwm-nav-turns-max` local, back when the card
+   grew to its content and something had to stop the turn list from taking the
+   whole screen. The card has a fixed height now, so the cap is the card.
+   (`.fwm-nav-list` is the flex column this measures itself against; its rule
+   sits with the other column placements near the top of this file.) */
+.fwm-nav-turns {
+  list-style: none; /* keyword */
+  margin: 0;
+  padding: 0;
+}
+
+/* TWO TRACKS, NOT THREE. The arrival row is the only one that carries figures
+   on its right, and declaring its empty track on every turn above it does not
+   cost nothing: a grid puts its gap between adjacent tracks whether or not the
+   later one has anything in it, so a third `auto` track sized to zero still
+   took 12px off the end of every instruction and wrapped long street names a
+   word early against a gutter with nothing in it. The arrival row asks for the
+   third track itself, below. */
+.fwm-nav-turn {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-2) 0;
+}
+
+.fwm-nav-turn + .fwm-nav-turn {
+  border-top: var(--fwm-hairline) solid var(--fwm-line-soft);
+}
+
+/* THE CONNECTOR DOWN THE GLYPH COLUMN, in two pieces rather than one.
+ *
+ * A single hairline running the height of the row would cross the arrow it is
+ * meant to join, so it is drawn in the row's padding above the glyph and in the
+ * padding below it, and stops at the drawing. `--fwm-icon-size / 2` is the
+ * centre of the first grid track, which is exactly one icon wide.
+ *
+ * It ends where the list does: no lead-in above the first turn, and nothing
+ * trailing off the bottom of the checkered flag, because the flag is the end of
+ * the route and a line continuing past it says otherwise. */
+.fwm-nav-turn::before,
+.fwm-nav-turn::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--fwm-icon-size) / 2);
+  width: var(--fwm-hairline);
+  height: var(--fwm-space-2);
+  background-color: var(--fwm-line-soft);
+  transform: translateX(-50%);
+}
+
+.fwm-nav-turn::before { top: 0; }
+.fwm-nav-turn::after { bottom: 0; }
+
+.fwm-nav-turn:first-child::before,
+.fwm-nav-turn:last-child::after {
+  display: none; /* keyword */
+}
+
+.fwm-nav-turn-glyph {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+}
+
+/* Geometry is in `NavigationCard.tsx`; paint is here, so an arrow takes the
+   colour of whatever row it is drawn in. Stroke on the platform's 1.6 grid, the
+   same unitless SVG user units the dock marks use - not a CSS length, so there
+   is no token for it. */
+.fwm-nav-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+  color: var(--fwm-text-2);
+  fill: none; /* keyword */
+  stroke: currentcolor; /* keyword */
+  stroke-width: 1.6;
+  stroke-linecap: round; /* keyword */
+  stroke-linejoin: round; /* keyword */
+}
+
+/* The parts drawn solid: START's pin and the checkered flag's four squares. */
+.fwm-nav-glyph-fill {
+  fill: currentcolor; /* keyword */
+  stroke: none; /* keyword */
+}
+
+.fwm-nav-turn-say {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--fwm-space-1);
+}
+
+/* "Turn right onto West 135th Street" is longer than any column on a phone, and
+   a street name has nowhere natural to break, so it is allowed to break
+   anywhere rather than widen its column. See `.fwm-nav-col`. */
+.fwm-nav-turn-instruction {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-nav-turn-far {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* THE ARRIVAL ROW is the destination, so it is painted like one: the flag takes
+   the full text colour rather than the muted grey the turns above it use, and
+   it is the only row that asks for the third track - the eta and the miles it
+   repeats from the head of the card, so that the whole trip can be read at the
+   end of the list without scrolling it back to the top. */
+.fwm-nav-turn.fwm-nav-arrive {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.fwm-nav-arrive .fwm-nav-glyph {
+  color: var(--fwm-text);
+}
+
+.fwm-nav-arrive-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* keyword */
+  gap: var(--fwm-space-1);
+}
+
+.fwm-nav-arrive-eta {
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-nav-arrive-miles {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* THE TWO STATES THAT ARE NOT A ROUTE. They stand where the figures do, so the
+   card keeps its shape while a plan is being built rather than collapsing and
+   snapping back. */
+.fwm-nav-status {
+  margin: 0;
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+/* The router's own sentence. Amber rather than red: "no route avoids all of
+   those" is an answer, not a fault. */
+.fwm-nav-failed {
+  margin: 0;
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-alert-approaching);
+}

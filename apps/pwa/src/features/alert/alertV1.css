@@ -1,0 +1,811 @@
+/* THE ALERT - v1. The full-screen takeover.
+ *
+ * The one surface in the product designed to be read at a glance from a driving
+ * position, and the only one that is allowed to cover everything else.
+ *
+ * =============================================================================
+ * PORTRAIT IS THE TARGET. A WIDE SCREEN IS THE VARIANT.
+ * =============================================================================
+ * The reference render is tall. Laid out literally on a phone it puts the two
+ * keys off the bottom, and a takeover whose dismiss is below the fold cannot be
+ * dismissed - which on this surface is the whole product failing.
+ *
+ * So the surface is a four-row column: the brand row, the card, the keys, the
+ * hint. Only the CARD flexes; the keys and the hint are its siblings and are
+ * therefore on screen at every height. Inside the card the same split again:
+ * `-head` never scrolls, `-more` does.
+ *
+ * WHAT GIVES WAY ON A SHORT SCREEN, in order:
+ *   1. the picture. `--fwm-alertv1-map-h` halves under the height query below.
+ *   2. the figure's SIZE, hero -> readout. Never the figure itself.
+ *   3. everything in `-more`, into its own scroll.
+ * What never gives way: the figure and the two keys.
+ *
+ * The measurement behind that, at the repo's 390px reference phone. Outside the
+ * card: 32 of surface padding + a 24px brand row + 36 of column gaps (three, at
+ * --fwm-space-3) + a 56px key + a 16px hint = 164px. The card's own chrome and
+ * head: 32 of card padding + the 12px gap down to `-more` + a 28px kind row + a
+ * 68px figure + two 20px lines + 24 of head gaps (three, at --fwm-space-2) =
+ * 204px. 368px before `-more` has drawn a single row, so the head survives every
+ * phone this ships to and `-more` is the only box ever squeezed.
+ *
+ * NO SIDE-BY-SIDE MEDIA QUERY. The fact column, the picture and the two panels
+ * each carry a flex-basis and the rows wrap: below roughly 420px of card they
+ * stack, above it they sit two across. A phone in portrait is under that by
+ * construction, so the stacked layout is the shipped one and the wide one falls
+ * out of the same rule rather than out of a second copy of the design.
+ *
+ * =============================================================================
+ * THE MATERIAL, AND THE ONE SURFACE HERE THAT IS EXEMPT FROM IT
+ * =============================================================================
+ * This file used to name the word `glass` nowhere at all. Every box on the
+ * takeover painted its own chrome - the card on `--fwm-surface-1`, the two
+ * disclosure panels on `--fwm-surface-control`, the compass badge and the
+ * location chip on `--fwm-surface-card-over` - and all three of those are fixed
+ * fills. So the four material controls in SETTINGS moved MORE, MESH, LOOK UP,
+ * TRIAGE and DRIVE and left this screen exactly as it was: a driver who turned
+ * the blur off, went clear, or flattened the relief got every surface in the
+ * product except the one that interrupts them. That does not read as a screen
+ * with its own look. It reads as a screen that did not get the setting.
+ *
+ * So the card, the panels and the two map chips now take the shared tokens -
+ * `--fwm-surface-glass` for the tint, `--fwm-glass-border` for the hairline,
+ * `--fwm-glass-filter` for the optics and `--fwm-glass-rim` for the specular
+ * edge - which is the same retrofit `triageV1.css` records, for the same
+ * reason and in the same four declarations.
+ *
+ * WHAT IS NOT NEGOTIABLE IS THE LAYER ITSELF. `.fwm-alertv1` keeps its opaque
+ * `--fwm-bg` and takes no filter, no tint and no rim. Everything under this
+ * loses; a translucent takeover would put the screen it interrupted back into
+ * the driver's eye, which is the one thing a takeover exists not to do. It is
+ * written twice on purpose - here and on the rule - because "make the alert
+ * respect the material" is exactly the sweep that would otherwise reach it.
+ *
+ * WHAT THE READ-BACK COSTS HERE, since `drive.css` is right to count it: the
+ * ground under this layer is that flat `--fwm-bg`, not a MapLibre canvas
+ * repainting at 60 fps. The backdrop is static between GPS ticks, so the blur
+ * is paid on state change rather than per frame - and `glass=off` still
+ * resolves `--fwm-glass-filter` to `none`, which removes the whole cost rather
+ * than the visible half of it.
+ *
+ * THE CARD KEEPS ITS CRIMSON EDGE. `--fwm-alertv1-hue` on that border is the
+ * alert state speaking, not chrome, and a hairline that carries a reading is
+ * not something the material axes should be able to wash out - the same
+ * exception `triageV1.css` makes for its amber hero. Under it now sits the
+ * design's own `0 18px 40px` drop shadow, which is `--fwm-card-shadow` and
+ * which this file had simply never drawn.
+ */
+
+.fwm-alertv1 {
+  /* THE STATE HUE, once, so the border, the pill, the figure, the marks and
+     the filled key cannot disagree. The default is the in-range crimson: the
+     two states that authorize a takeover are `in_range` and `multiple`, and a
+     surface that painted its resting colour on an unrecognized state would be
+     a warning that does not look like one. */
+  --fwm-alertv1-hue: var(--fwm-alert-in-range);
+  --fwm-alertv1-wash: var(--fwm-tint-in-range-weak);
+  --fwm-alertv1-ink: var(--fwm-text-on-alert);
+  /* The figure. Derived from the type scale rather than typed, so a theme that
+     moves the hero moves this with it. */
+  --fwm-alertv1-figure: var(--fwm-text-hero);
+  /* The picture's height. It was four touch targets - the smallest box in which
+     a junction still reads as a junction - and that was sized for a surface
+     that owned the whole screen. This is a modal in the band between the chrome
+     and the dock now, and the picture is the single biggest thing competing for
+     that band with the number a driver is actually reading. Two targets still
+     shows the junction and the facing cone; brief 4's camera modal draws the
+     same picture smaller still, at 62. */
+  --fwm-alertv1-map-h: calc(var(--fwm-touch-min) * 2);
+  /* The marks. Smaller than --fwm-icon-size, which is the 24px dock grid and is
+     twice what a fact row's cap height can carry. */
+  --fwm-alertv1-glyph-w: var(--fwm-space-4);
+  /* Where a row stops stacking and starts sitting beside its neighbour. Half a
+     panel, so two of them plus a gap need a whole one. */
+  --fwm-alertv1-split: calc(var(--fwm-panel-w) / 2);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  /* A CARD, NOT A SHEET. `height: 100%` filled the whole layer, which was right
+     while the layer was the screen and is wrong now that the layer is the band
+     between the chrome and the dock - see `global.css`. It sizes to its content
+     and scrolls only if the content outgrows the band, so the map stays visible
+     around it on every phone. */
+  max-height: 100%;
+  overflow-y: auto;
+  border-radius: var(--fwm-radius-2);
+  padding: var(--fwm-space-4);
+  /* OPAQUE, NEVER GLASS, AND THE ONE SURFACE ON THIS SCREEN THAT IS EXEMPT
+     FROM THE MATERIAL. Everything under this loses; a translucent takeover
+     would put the screen it interrupted back into the driver's eye. The card,
+     the panels and the map chips inside it all take the shared glass tokens -
+     see the header - so this rule is the exception and has to say so, or the
+     next material sweep reads it as the surface that was missed. */
+  background: var(--fwm-bg);
+  /* Nothing may escape the layer. `-more` is the only box allowed to scroll. */
+  overflow: hidden; /* keyword */
+}
+
+/* THE STATE RAMP, in the alert engine's own spelling - `in_range`, underscore
+   and all. `ClosestPanel` shipped `in-range` here once and the hottest band
+   matched nothing, so a camera in range drew in the resting colour. */
+.fwm-alertv1[data-fwm-state='approaching'] {
+  --fwm-alertv1-hue: var(--fwm-alert-approaching);
+  --fwm-alertv1-wash: var(--fwm-notice-wash);
+}
+
+.fwm-alertv1[data-fwm-state='multiple'] {
+  --fwm-alertv1-hue: var(--fwm-alert-multiple);
+}
+
+/* THE SURFACE AROUND THE CARD IS THE DISMISS TARGET, behind everything rather
+   than over it. It used to cover the card as well, which was right when the
+   card was four lines of text and is wrong now that it holds a link, a picture
+   and two disclosure panels: a press meant for VIEW ON MAP would have closed
+   the screen instead. */
+/* THE TWO CLOSURES, TOP-RIGHT, over the card's own corner.
+ *
+ * Absolute so they cost the head no height - the band is tight and the figure
+ * is what a driver is reading. 44px targets because they are the two controls
+ * that end the surface and a missed press means fighting it. */
+.fwm-alertv1-keys-top {
+  position: absolute;
+  top: var(--fwm-space-2);
+  right: var(--fwm-space-2);
+  z-index: 2;
+  display: flex;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-alertv1-key-top {
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  color: var(--fwm-alertv1-ink);
+  cursor: pointer; /* keyword */
+}
+
+.fwm-alertv1-key-top svg {
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+}
+
+.fwm-alertv1-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+}
+
+/* Everything else sits above the scrim and takes its own presses. */
+.fwm-alertv1-top,
+.fwm-alertv1-card,
+.fwm-alertv1-keys,
+.fwm-alertv1-hint {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- the brand row -------------------------------------------------------- */
+
+.fwm-alertv1-top {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+.fwm-alertv1-eyebrow {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-text-muted);
+}
+
+/* THE LIVE PILL. Filled with the state wash rather than the state hue: it is a
+   status, and a solid crimson pill beside a solid crimson card border is two
+   objects competing to be the loudest thing in a row that carries neither the
+   distance nor the keys. */
+.fwm-alertv1-live {
+  display: inline-flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-1);
+  margin: 0;
+  padding: var(--fwm-space-1) var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-alertv1-hue);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alertv1-wash);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-alertv1-hue);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-alertv1-live-dot {
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alertv1-hue);
+}
+
+/* --- the card ------------------------------------------------------------- */
+
+.fwm-alertv1-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  /* THE ONLY ROW THAT FLEXES. `min-height: 0` is what actually lets it shrink:
+     a flex item's default `min-height: auto` is its content, so without this
+     the card refuses to be smaller than the picture inside it and pushes the
+     keys off the bottom - the exact failure this layout exists to prevent. */
+  flex: 1;
+  min-height: 0;
+  padding: var(--fwm-space-4);
+  /* THE STATE HUE STAYS A DRAWN EDGE, at rule weight rather than at the
+     hairline the glass tokens carry: this border is the alert speaking. See
+     the header for why the material is not allowed to wash it out. */
+  border: var(--fwm-rule-w) solid var(--fwm-alertv1-hue);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  /* ONE DECLARATION, because `box-shadow` does not accumulate - the lesson
+     `drive.css` records after its two cards were left either flat or unlit
+     depending on which sheet loaded last. The rim is the inset specular pair
+     that lights the material's edge; `--fwm-card-shadow` is the cast shadow
+     the design draws under this card and that this file never had. */
+  box-shadow: var(--fwm-glass-rim), var(--fwm-card-shadow);
+}
+
+/* NEVER SCROLLS, NEVER SHRINKS. The kind, the figure, the street and the ETA
+   are what a driver reads without looking straight at the screen. */
+.fwm-alertv1-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+.fwm-alertv1-kind {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+/* The rounded square the camera mark sits in. Washed rather than filled: the
+   mark is an icon for the row, not a second alert. */
+.fwm-alertv1-tile {
+  display: inline-flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  flex: none; /* keyword */
+  padding: var(--fwm-space-1);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-alertv1-wash);
+  color: var(--fwm-alertv1-hue);
+}
+
+.fwm-alertv1-kind-label {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text);
+  /* A kind is one or two words and the operator beside it must never be pushed
+     off the row, so the kind is what ellipses. */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* OUTLINED, NOT FILLED, and that is the whole difference between it and the
+   tile: the tile says what the thing is, this says who runs it. Two filled
+   chips in one row read as two titles.
+
+   IN THE STATE HUE, though, which is the design's own reading and not this
+   file's first one. It shipped in `--fwm-text-muted` on the argument that an
+   attribution should be quiet - and quiet is right next to a FILLED chip, not
+   next to an outlined one. Drawn in grey it read as metadata about the row
+   above it; drawn in the hue it reads as part of the same warning, which is
+   what "FLOCK SAFETY, 338 feet ahead" actually is. The fill is still absent,
+   so the tile is still the louder of the two. */
+.fwm-alertv1-operator {
+  flex: none; /* keyword */
+  margin-left: auto; /* keyword */
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  border: var(--fwm-hairline) solid var(--fwm-alertv1-hue);
+  border-radius: var(--fwm-radius-full);
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--fwm-alertv1-hue);
+  white-space: nowrap; /* keyword */
+}
+
+/* --- the headline --------------------------------------------------------- */
+
+.fwm-alertv1-figure-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-space-3);
+  margin: 0;
+  min-width: 0;
+}
+
+.fwm-alertv1-figure {
+  font-size: var(--fwm-alertv1-figure);
+  font-weight: 800;
+  line-height: 0.8;
+  color: var(--fwm-alertv1-hue);
+}
+
+/* The unit and the side stack beside the figure, because "FEET" and "straight
+   ahead" are two type sizes and one string cannot be two type sizes. */
+.fwm-alertv1-unit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-width: 0;
+}
+
+.fwm-alertv1-unit-word {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 800;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text);
+}
+
+.fwm-alertv1-side {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-alertv1-where {
+  display: flex;
+  align-items: flex-start; /* keyword */
+  gap: var(--fwm-space-2);
+  margin: 0;
+  font-size: var(--fwm-text-label);
+  font-weight: 600;
+  color: var(--fwm-text);
+}
+
+/* THE PIN IS IN THE HUE, THE STREET IS NOT. The design tints this one mark and
+   leaves the name in the reading colour, and that division is doing real work:
+   the mark says "this is a place on your route" in the same colour as the
+   figure above it, and the street stays at full text contrast because it is the
+   thing being read rather than the thing being flagged. Colouring the whole
+   line would put a crimson street name under a crimson figure and lose which
+   of the two is the warning. */
+.fwm-alertv1-where .fwm-alertv1-glyph {
+  color: var(--fwm-alertv1-hue);
+}
+
+.fwm-alertv1-where-text {
+  min-width: 0;
+  /* A street and a cross street is two names, and a phone is 320px wide at its
+     narrowest, so this breaks inside a word rather than running off the card. */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+.fwm-alertv1-quiet {
+  margin: 0;
+  font-size: var(--fwm-text-forecast);
+  color: var(--fwm-text-muted);
+}
+
+/* --- everything a stopped driver might want -------------------------------- */
+
+/* THE ONE SCROLLING BOX ON THE SURFACE.
+   `overscroll-behavior: contain` so reaching the end of it does not hand the
+   scroll to whatever is behind the takeover. */
+.fwm-alertv1-more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto; /* keyword */
+  overscroll-behavior: contain; /* keyword */
+}
+
+.fwm-alertv1-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-alertv1-fact {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  min-width: 0;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-alertv1-fact-text {
+  font-size: var(--fwm-text-forecast);
+  color: var(--fwm-text-2);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* A LINK, NOT A KEY. The two keys at the foot of the screen are the decisions;
+   this is a way out to another surface, and drawing it as a third key would put
+   three equal-weight controls in front of a driver who has time for one. */
+.fwm-alertv1-fact-link {
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  font-size: var(--fwm-text-forecast);
+  font-weight: 600;
+  color: var(--fwm-alertv1-hue);
+  text-decoration: underline; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The marks are geometry in `AlertV1.tsx`; the paint is here, so whatever row
+   carries one drives it through `currentColor` - the same division
+   `components/dock/icons.css` makes for the dock marks. */
+.fwm-alertv1-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-alertv1-glyph-w);
+  height: var(--fwm-alertv1-glyph-w);
+  fill: none; /* keyword */
+  stroke: currentcolor; /* keyword */
+  /* The design's 1.6 stroke grid. Unitless SVG user units rather than a CSS
+     length, so there is no --fwm-* token for it. */
+  stroke-width: 1.6;
+  stroke-linecap: round; /* keyword */
+  stroke-linejoin: round; /* keyword */
+}
+
+.fwm-alertv1-glyph-fill {
+  fill: currentcolor; /* keyword */
+  stroke: none; /* keyword */
+}
+
+.fwm-alertv1-glyph-stroke {
+  stroke: currentcolor; /* keyword */
+}
+
+/* --- the picture ---------------------------------------------------------- */
+
+.fwm-alertv1-map {
+  position: relative;
+  flex: none; /* keyword */
+  height: var(--fwm-alertv1-map-h);
+  border: var(--fwm-hairline) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-4);
+  /* The picture runs to the panel's edge, so the corners have to cut it. */
+  overflow: hidden; /* keyword */
+}
+
+/* THE THUMBNAIL BECOMES THE PANEL. `miniMap.css` sizes itself from
+   `--fwm-minimap-size`, a 112px square meant to sit BESIDE a readout; here the
+   picture is the panel. That property is the component's one published geometry
+   knob, so overriding it is the sanctioned lever rather than a reach into
+   internals - `closestPanel.css` pulls the same one for the same reason. */
+.fwm-alertv1-map .fwm-minimap {
+  --fwm-minimap-size: 100%;
+  width: 100%;
+  height: 100%;
+}
+
+/* THE TILES ARE KNOCKED BACK; THE MARKS ARE NOT. A map at full contrast under
+   a chip and an overlay makes all three unreadable, and the obvious fix - a
+   second backdrop-filter - would put a per-frame read-back on the most
+   expensive surface in the app. Fading the CANVAS costs nothing and leaves the
+   camera dot and its facing cone at full strength. */
+.fwm-alertv1-map .fwm-minimap-canvas {
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-0);
+  opacity: 0.4;
+}
+
+/* Out of flow, so the caption cannot shrink the canvas and slide the mark off
+   the point the map is centred on - the bug `closestPanel.css` records. */
+.fwm-alertv1-map .fwm-minimap-note {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 0 var(--fwm-space-2) var(--fwm-space-1);
+}
+
+/* THE TWO CHIPS OVER THE PICTURE ARE THE MOST OBVIOUS GLASS ON THE SCREEN, and
+   they were the last things on it still painting a fixed fill. Both sat on
+   `--fwm-surface-card-over`, which is a good colour and a dead one: a literal
+   rgba that answers to none of the four material axes, so a driver on `clear`
+   or on `glass=off` got the tinted, blurred version anyway. `map.css` draws the
+   same object - a label floating over live tiles - on `--fwm-surface-glass`
+   with the filter and the rim, and that is the shape copied here.
+
+   THE HAIRLINE IS `--fwm-glass-border` RATHER THAN `--fwm-card-edge`. The
+   brighter edge exists for the DRIVE card, which is the biggest surface on its
+   screen and lost its whole outline when flat became the default. These are
+   two small chips sitting on a canvas already knocked back to 0.4, so the 0.14
+   hairline still separates them - and unlike `--fwm-card-edge` it is redeclared
+   as INK by the three paper skins, where a white line would be nothing at all.
+ */
+.fwm-alertv1-north {
+  position: absolute;
+  top: var(--fwm-space-2);
+  left: var(--fwm-space-2);
+  padding: 0 var(--fwm-space-1);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  color: var(--fwm-text-2);
+}
+
+/* THE VEHICLE, IN THE SAME BOX THE MARK IS DRAWN IN. `MiniMap`'s own SVG uses
+   a -50..50 viewBox centred on the camera, so this one stacks on it exactly and
+   0,0 is the camera in both. */
+.fwm-alertv1-overlay {
+  position: absolute;
+  inset: 0;
+  /* A PICTURE, LIKE THE MAP UNDER IT. Without this the overlay would sit over
+     the whole panel and eat the swipe the surface is listening for. */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-alertv1-sightline {
+  fill: none; /* keyword */
+  stroke: var(--fwm-alertv1-hue);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.fwm-alertv1-vehicle {
+  fill: var(--fwm-text);
+  stroke: var(--fwm-bg);
+  stroke-width: 1.6;
+}
+
+/* AND IT NEEDS AN EDGE, which it has never had. The compass badge beside it
+   always carried a border and this one carried none, on the strength of a .78
+   fill doing the separating on its own. At the transparencies the material
+   actually ships - `--fwm-glass-a` runs down to 0.3 - a fill is not an edge,
+   and with flat the default there is no rim underneath to stand in for one, so
+   the chip's boundary was the first thing to disappear. Same hairline as the
+   badge, for the same reason it is not `--fwm-card-edge`. */
+.fwm-alertv1-you {
+  position: absolute;
+  bottom: var(--fwm-space-2);
+  left: var(--fwm-space-2);
+  padding: 0 var(--fwm-space-2);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+/* --- the two disclosure panels -------------------------------------------- */
+
+/* WRAP RATHER THAN A BREAKPOINT. Each panel asks for half a --fwm-panel-w, so
+   two of them fit side by side only once the card is a whole one wide. A phone
+   in portrait never is, which makes the stacked layout the shipped one. */
+.fwm-alertv1-panels {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+/* THE SAME MATERIAL AS EVERY OTHER v1 LIST - MORE's rows, MESH's leaves, LOOK
+   UP's street groups, TRIAGE's owners. These were `--fwm-surface-control`, the
+   flat borderless-control fill, which is the right token for a key inside a
+   panel and the wrong one for the panel itself: it made the two blocks the only
+   thing in the card that a change of material could not touch.
+
+   THE HAIRLINE IS NEW. `--fwm-surface-control` is opaque and needed no edge to
+   sit off the card; glass is not, and at the transparency end of the axis these
+   two blocks would otherwise have dissolved into the card behind them. */
+.fwm-alertv1-panel {
+  flex: 1 1 var(--fwm-alertv1-split);
+  min-width: 0;
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}
+
+.fwm-alertv1-panel-head {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-space-2);
+  /* A summary is a 44px target because it is one: this is the control that
+     opens the block, and it is pressed by a thumb, not a mouse. */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-3);
+  cursor: pointer; /* keyword */
+  /* The default disclosure triangle is the browser's, in the browser's colour,
+     at the browser's size. The chevron replaces it. */
+  list-style: none; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-alertv1-panel-head::-webkit-details-marker {
+  display: none; /* keyword */
+}
+
+.fwm-alertv1-panel-title {
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text-2);
+}
+
+.fwm-alertv1-chev {
+  flex: none; /* keyword */
+  width: var(--fwm-alertv1-glyph-w);
+  height: var(--fwm-alertv1-glyph-w);
+  fill: none; /* keyword */
+  stroke: var(--fwm-text-muted);
+  stroke-width: 1.6;
+  stroke-linecap: round; /* keyword */
+  stroke-linejoin: round; /* keyword */
+  transition: transform var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+/* The mark follows the state, so an open panel cannot show a closed chevron. */
+.fwm-alertv1-panel[open] .fwm-alertv1-chev {
+  transform: rotate(180deg);
+}
+
+/* Somebody who asked the platform for less movement gets the state without the
+   turn: the chevron still points the right way, it just gets there at once. */
+@media (prefers-reduced-motion: reduce) {
+  .fwm-alertv1-chev {
+    transition: none; /* keyword */
+  }
+}
+
+.fwm-alertv1-panel-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin: 0;
+  padding: 0 var(--fwm-space-3) var(--fwm-space-3);
+}
+
+.fwm-alertv1-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-alertv1-row-label {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-alertv1-row-value {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  text-align: right; /* keyword */
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* --- the two keys --------------------------------------------------------- */
+
+/* SIDE BY SIDE AND EQUAL. Silencing and rerouting are the two things a driver
+   can do about the thing on the screen, and neither is the safe default: one
+   accepts the camera and one avoids it. */
+.fwm-alertv1-keys {
+  display: flex;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+.fwm-alertv1-key {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  flex: 1;
+  min-width: 0;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-rule-w) solid transparent; /* keyword */
+  border-radius: var(--fwm-radius-5);
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-alertv1-key[data-fwm-alert-key='filled'] {
+  background: var(--fwm-alertv1-hue);
+  color: var(--fwm-alertv1-ink);
+}
+
+.fwm-alertv1-key[data-fwm-alert-key='outline'] {
+  border-color: var(--fwm-line-strong);
+  color: var(--fwm-text);
+}
+
+.fwm-alertv1-key-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fwm-alertv1-key-label {
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+}
+
+/* The sub-line is guidance, not a second label - see the accessible name in
+   `AlertV1.tsx`. Quieter than the word above it, and inheriting the key's
+   colour on the filled key so it stays legible on a saturated fill. */
+.fwm-alertv1-key-sub {
+  font-size: var(--fwm-text-micro);
+  opacity: 0.72;
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-alertv1-key[data-fwm-alert-key='outline'] .fwm-alertv1-key-sub {
+  color: var(--fwm-text-2);
+}
+
+.fwm-alertv1-hint {
+  flex: none; /* keyword */
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * THE SHORT SCREEN.
+ *
+ * See the note at the top for the order things give way in. This is step one
+ * and step two: the picture halves and the figure steps down from the hero size
+ * to the readout size.
+ *
+ * 40rem = 640px of viewport, and it is measured rather than chosen. The
+ * takeover lives inside `main`, above the dock (--fwm-dock-h, 84px), so the
+ * height it actually gets is the viewport less the dock and the safe areas. A
+ * 375x667 phone in a browser reports about 553px of dvh, which leaves ~469px
+ * here against the 368px the head and the chrome cost above - about 100px, and
+ * a 176px picture does not go into it. Halving the picture and stepping the
+ * figure down to the readout size buys back another ~40px, which is a junction
+ * a driver can still read with a fact column under it. The 390x844 reference
+ * phone reports about 780px and clears the query, so the full design is what a
+ * modern phone gets.
+ * ------------------------------------------------------------------------- */
+@media (max-height: 40rem) {
+  .fwm-alertv1 {
+    --fwm-alertv1-map-h: calc(var(--fwm-touch-min) * 2);
+    --fwm-alertv1-figure: var(--fwm-text-readout);
+  }
+}

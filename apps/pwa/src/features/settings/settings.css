@@ -1,0 +1,1015 @@
+/* SETTINGS -- the threshold / mode / privacy surface.
+ *
+ * SOURCE: no panel draws this screen (`DESIGN-GAPS.md#no-settings-screen-exists`).
+ * Every rule below is composed from components the design system DOES draw:
+ *
+ *   `Flockys Design System.dc.html` section 04
+ *     BUTTONS · h48 · radius 2      the removal button + its disabled state
+ *     TOGGLE · SLIDER · CHIPS       the 56x30 pill, the 8px track, the 36px knob
+ *     CARD · LIST ROW               the 3px left rule on a selected row
+ *   `Flockys Design System.dc.html` section 05
+ *     Theme modes                   the six rows and their mono badges
+ *   `Flockys Screens II.dc.html` A1 / B4 / B5
+ *     the 52px header, the 56px switch row, the amber-ruled caveat block
+ *   `Flockys Watch.dc.html` W12
+ *     STAYS ON THE PHONE -- the privacy list, arrow-led, mono, one line each
+ *
+ * Every colour, length, radius, duration and easing is `var(--fwm-*)` or a
+ * `calc()` over one. Where the design renders a value the token set does not
+ * carry, the line is marked `GAP:` and filed in `docs/gaps-inbox/settings.md`.
+ * Nothing here is a literal.
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * Section 04 states the press affordance instead: "press: scale .98 +
+ * brightness .88 @ 90ms. no hover states." -- 90ms is `--fwm-dur-instant`.
+ * ========================================================================== */
+
+.fwm-settings {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design draws everywhere,
+   * /2 is the 2px ring on the slider knob, and *3/4 is the 3px left rule the
+   * CARD · LIST ROW panel puts down the side of a selected card. Derived, so a
+   * mode that rescales space rescales the strokes with it. Component-scoped
+   * locals, NOT new tokens. */
+  --fwm-settings-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-settings-ring-w: calc(var(--fwm-space-1) / 2);
+  --fwm-settings-mark-w: calc(var(--fwm-space-1) * 3 / 4);
+
+  /* Section 04's toggle: a 56x30 track with a 24px knob inset 3px on every
+   * edge. Same derivation as `triage.css`, from the same tokens, so the two
+   * switches cannot drift in size -- only in hue, which is the point. */
+  --fwm-settings-switch-w: calc(var(--fwm-space-6) + var(--fwm-space-8));
+  --fwm-settings-track-h: calc(var(--fwm-space-8) - var(--fwm-space-1) / 2);
+  --fwm-settings-knob-sm: var(--fwm-space-6);
+  --fwm-settings-knob-inset: calc((var(--fwm-settings-track-h) - var(--fwm-settings-knob-sm)) / 2);
+
+  /* Section 04's slider knob: 36px. GAP: no token expresses 36. */
+  --fwm-settings-knob: calc(var(--fwm-space-8) + var(--fwm-space-1));
+
+  /* The 56px row height section 04 and B5 both draw. */
+  --fwm-settings-row-h: calc(var(--fwm-space-6) + var(--fwm-space-8));
+
+  /* Where the slider fill ends and the knob sits. Overridden once per detent
+   * at the bottom of this file; 0 is the value at 100 ft, which is the floor. */
+  --fwm-settings-threshold-at: 0;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, title left, strapline right. Screens II's shared header.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none; /* keyword */
+  gap: var(--fwm-space-3);
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-settings-rule-w) solid var(--fwm-line);
+}
+
+.fwm-settings-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) / 10);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-settings-strapline {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Body + sections
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-6);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+  overflow-y: auto; /* keyword */
+  /* A single wide child -- a slider track, a long promise line -- must not be
+   * able to slide the whole screen sideways under a thumb. */
+  overflow-x: hidden; /* keyword */
+}
+
+.fwm-settings-section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The mono eyebrow every panel in Screens II puts above a group. */
+.fwm-settings-eyebrow {
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  font-weight: 400;
+  /* Rendered .2em. */
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-text-muted);
+  text-transform: uppercase; /* keyword */
+}
+
+.fwm-settings-caption {
+  margin: var(--fwm-space-2) 0 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-text-muted);
+}
+
+/* An honest state, not a decoration: the amber left rule Screens II uses for
+ * every caveat block (`03` and `B5` both draw it). */
+.fwm-settings-notice {
+  margin: 0;
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-settings-ring-w) solid var(--fwm-alert-approaching);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-text-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * ALERT AT -- section 04's slider.
+ *
+ * The track, the fill and the knob are drawn; the native range input sits over
+ * them, transparent, and is inset by half a knob on each side so that its
+ * thumb centre and the drawn knob centre travel the same path.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-threshold {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fwm-settings-threshold-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  font-size: var(--fwm-text-micro);
+  /* Rendered .2em. */
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+}
+
+.fwm-settings-threshold-label {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settings-threshold-value {
+  color: var(--fwm-alert-in-range);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-settings-threshold-bar {
+  position: relative;
+  height: var(--fwm-settings-knob);
+  margin-top: var(--fwm-space-3);
+  min-width: 0;
+}
+
+.fwm-settings-threshold-track,
+.fwm-settings-threshold-fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: var(--fwm-space-2);
+  margin-top: calc(var(--fwm-space-2) / -2);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-settings-threshold-track {
+  right: 0;
+  background: var(--fwm-surface-2);
+}
+
+.fwm-settings-threshold-fill {
+  width: var(--fwm-settings-threshold-at);
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-settings-threshold-knob {
+  position: absolute;
+  top: 0;
+  left: var(--fwm-settings-threshold-at);
+  width: var(--fwm-settings-knob);
+  height: var(--fwm-settings-knob);
+  margin-left: calc(var(--fwm-settings-knob) / -2);
+  background: var(--fwm-bg);
+  border: var(--fwm-settings-ring-w) solid var(--fwm-alert-in-range);
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-settings-threshold-input {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--fwm-settings-knob) / -2);
+  right: calc(var(--fwm-settings-knob) / -2);
+  width: auto; /* keyword */
+  margin: 0;
+  padding: 0;
+  background: transparent; /* keyword */
+  -webkit-appearance: none;
+  appearance: none; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settings-threshold-input::-webkit-slider-runnable-track {
+  height: var(--fwm-settings-knob);
+  background: transparent; /* keyword */
+}
+
+.fwm-settings-threshold-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none; /* keyword */
+  width: var(--fwm-settings-knob);
+  height: var(--fwm-settings-knob);
+  background: transparent; /* keyword */
+  border: none; /* keyword */
+}
+
+.fwm-settings-threshold-input::-moz-range-track {
+  height: var(--fwm-settings-knob);
+  background: transparent; /* keyword */
+}
+
+.fwm-settings-threshold-input::-moz-range-thumb {
+  width: var(--fwm-settings-knob);
+  height: var(--fwm-settings-knob);
+  background: transparent; /* keyword */
+  border: none; /* keyword */
+}
+
+/* Not wired in this build, or not hydrated yet: the drawn control desaturates
+ * so it cannot be mistaken for a live one. Colour only -- an inert control must
+ * not change the geometry, or the panel would reflow depending on which
+ * handlers a build happens to pass. */
+.fwm-settings-threshold[data-fwm-settings-wired="false"] .fwm-settings-threshold-fill {
+  background: var(--fwm-surface-2);
+}
+
+.fwm-settings-threshold[data-fwm-settings-wired="false"] .fwm-settings-threshold-knob {
+  border-color: var(--fwm-line-strong);
+}
+
+/* No detent rule for this value, so `--fwm-settings-threshold-at` would fall
+ * back to the `0` on `.fwm-settings` and draw a knob at the floor under a
+ * readout that says something else. Withhold the drawn position entirely: the
+ * empty track plus the real number is honest, a knob in the wrong place is not.
+ * `threshold.ts#hasDetentRule` decides; `threshold.test.tsx` asserts the
+ * transcription this depends on. */
+.fwm-settings-threshold[data-fwm-threshold-covered="false"] .fwm-settings-threshold-fill,
+.fwm-settings-threshold[data-fwm-threshold-covered="false"] .fwm-settings-threshold-knob {
+  display: none; /* keyword */
+}
+
+.fwm-settings-threshold-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--fwm-space-3);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * Toggle rows -- section 04. 56px, 1px rule under, label dims when off.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-settings-row-h);
+  border-bottom: var(--fwm-settings-rule-w) solid var(--fwm-line);
+}
+
+.fwm-settings-row-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  /* Rendered .04em. */
+  letter-spacing: calc(var(--fwm-text-body) * 0.04);
+  min-width: 0;
+}
+
+/* Section 04 draws the off row's label in the muted grey. The row states its
+ * value twice -- pill and label -- which is what makes it readable at a glance. */
+.fwm-settings-row[data-fwm-settings-row="off"] .fwm-settings-row-label {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settings-switch {
+  display: flex;
+  align-items: center;
+  flex: none; /* keyword */
+  width: var(--fwm-settings-switch-w);
+  height: var(--fwm-touch-min);
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-0);
+  background: transparent; /* keyword */
+  -webkit-appearance: none;
+  appearance: none; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settings-switch-track {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: var(--fwm-settings-track-h);
+  padding: 0 var(--fwm-settings-knob-inset);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+  transition: background-color var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+/* Section 04's component toggle is the CLEAR GREEN, not B4's crimson: these
+ * switches decide how the app behaves, not whether a camera alerts you. */
+.fwm-settings-switch[aria-checked="true"] .fwm-settings-switch-track {
+  justify-content: flex-end;
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-settings-switch-knob {
+  flex: none; /* keyword */
+  width: var(--fwm-settings-knob-sm);
+  height: var(--fwm-settings-knob-sm);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+.fwm-settings-switch[aria-checked="true"] .fwm-settings-switch-knob {
+  background: var(--fwm-bg);
+}
+
+.fwm-settings-switch[disabled] .fwm-settings-switch-track,
+.fwm-settings-switch[disabled][aria-checked="true"] .fwm-settings-switch-track {
+  background: var(--fwm-surface-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * THEME MODES -- section 05, as rows. The selected row takes the 3px left rule
+ * CARD · LIST ROW gives a selected card, in the mesh accent so it cannot be
+ * mistaken for an alert hue.
+ * ------------------------------------------------------------------------ */
+
+/* "press: scale .98 + brightness .88 @ 90ms. no hover states." -- section 04 */
+.fwm-settings-removal-button:active:not([disabled]),
+.fwm-settings-removal-cancel:active:not([disabled]) {
+  transform: scale(0.98);
+  filter: brightness(0.88);
+}
+
+/* THE MODE PICKER IS A NATIVE SELECT.
+ *
+ * It was a column of one tappable card per mode -- right at six, wrong at
+ * nine, where it became the tallest thing in SETTINGS and pushed the map
+ * toggles, the typeface, the privacy copy and the removal control behind a
+ * scroll. A picker's height should not grow with the number of themes.
+ *
+ * The element is the platform's, restyled rather than replaced: the whole
+ * point of a native select is the picker the OS opens, which already handles
+ * screen readers, hardware keyboards, switch control and the driver's own text
+ * size. `appearance: none` removes only the CONTROL's chrome, never that. */
+
+.fwm-settings-mode-field {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  margin-top: var(--fwm-space-3);
+}
+
+.fwm-settings-mode-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-4);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  /* The 3px left rule CARD - LIST ROW gives a selected card. There is only
+     ever one selection now, so the rule is permanent rather than conditional,
+     and in the mesh accent so it cannot be mistaken for an alert hue. */
+  border-left: var(--fwm-settings-mark-w) solid var(--fwm-accent-mesh);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-2);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  /* Rendered .08em, matching the row label it replaces. */
+  letter-spacing: calc(var(--fwm-text-body) * 0.08);
+  text-transform: uppercase; /* keyword */
+  color: var(--fwm-text);
+  touch-action: manipulation;
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+}
+
+/* The option list is drawn by the OS, not by this stylesheet -- but the text
+   colour is inherited on some engines and would otherwise be the control's
+   uppercase white against a system-white sheet. Named explicitly. */
+.fwm-settings-mode-select option {
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text);
+  text-transform: none; /* keyword */
+  letter-spacing: normal; /* keyword */
+}
+
+.fwm-settings-mode-select[disabled] {
+  border-left-color: var(--fwm-line);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}
+
+/* The badge for the current selection. Beside the control because an
+   `<option>` renders text and nothing else on every platform. */
+.fwm-settings-mode-badge {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  /* Rendered .16em. */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-accent-mesh);
+  text-align: right; /* keyword */
+  min-width: 0;
+}
+
+.fwm-settings-mode-notice {
+  margin: var(--fwm-space-3) 0 0;
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-settings-ring-w) solid var(--fwm-alert-approaching);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-text-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * STAYS ON THE PHONE -- W12's list, plus the disposition tag each row needs.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-stored {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  margin: var(--fwm-space-3) 0 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-settings-stored-item {
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-settings-mark-w) solid var(--fwm-line-strong);
+  min-width: 0;
+}
+
+.fwm-settings-stored-item[data-fwm-settings-disposition="removed"] {
+  border-left-color: var(--fwm-destructive);
+}
+
+.fwm-settings-stored-item[data-fwm-settings-disposition="kept"] {
+  border-left-color: var(--fwm-alert-clear);
+}
+
+.fwm-settings-stored-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-settings-stored-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  /* Rendered .04em. */
+  letter-spacing: calc(var(--fwm-text-body) * 0.04);
+  min-width: 0;
+}
+
+.fwm-settings-stored-tag {
+  font-size: var(--fwm-text-micro);
+  /* Rendered .16em. */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-settings-stored-item[data-fwm-settings-disposition="removed"] .fwm-settings-stored-tag {
+  color: var(--fwm-destructive);
+}
+
+.fwm-settings-stored-item[data-fwm-settings-disposition="kept"] .fwm-settings-stored-tag {
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-settings-stored-detail {
+  margin: var(--fwm-space-2) 0 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settings-promises {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-4);
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-settings-ring-w) solid var(--fwm-alert-approaching);
+}
+
+.fwm-settings-promise {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-2);
+}
+
+/* The live mute countdown. Amber, like the one in RADAR's header, because it
+ * is the same fact in two places and a driver should recognise it as such. It
+ * is a timer, not an alert -- so it takes the approaching hue, never the
+ * in-range one. */
+.fwm-settings-mute-countdown {
+  margin: var(--fwm-space-2) 0 0;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  line-height: 1.7;
+  color: var(--fwm-alert-approaching);
+}
+
+/* ---------------------------------------------------------------------------
+ * The removal control -- section 04's outline-destructive button.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-removal {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--fwm-space-6);
+  min-width: 0;
+}
+
+.fwm-settings-removal-warning {
+  margin: 0 0 var(--fwm-space-3);
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-settings-ring-w) solid var(--fwm-destructive);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-destructive);
+}
+
+.fwm-settings-removal-report {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  margin: 0 0 var(--fwm-space-3);
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-2);
+  list-style: none; /* keyword */
+}
+
+.fwm-settings-removal-reason {
+  margin: 0 0 var(--fwm-space-3);
+  padding-left: var(--fwm-space-3);
+  border-left: var(--fwm-settings-ring-w) solid var(--fwm-alert-approaching);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-text-2);
+}
+
+.fwm-settings-removal-actions {
+  display: flex;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-settings-removal-button,
+.fwm-settings-removal-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-space-12);
+  padding: 0 var(--fwm-space-3);
+  border-radius: var(--fwm-radius-1);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  /* Rendered .12em. */
+  letter-spacing: calc(var(--fwm-text-body) * 0.12);
+  text-transform: uppercase; /* keyword */
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+  transition:
+    transform var(--fwm-dur-instant) var(--fwm-ease-out),
+    filter var(--fwm-dur-instant) var(--fwm-ease-out);
+}
+
+.fwm-settings-removal-button {
+  border: var(--fwm-settings-rule-w) solid var(--fwm-destructive);
+  color: var(--fwm-destructive);
+}
+
+.fwm-settings-removal-cancel {
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line-strong);
+  color: var(--fwm-text-2);
+}
+
+/* Section 04's fourth button, `Syncing…`: sunken surface, line border, the
+ * disabled text colour. An unwired or in-flight control looks inert. */
+.fwm-settings-removal-button[disabled],
+.fwm-settings-removal-cancel[disabled] {
+  border-color: var(--fwm-line);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * The nineteen detents.
+ *
+ * `ALERT_THRESHOLD_MIN_FT` 100 to `ALERT_THRESHOLD_MAX_FT` 1000 in
+ * `ALERT_THRESHOLD_STEP_FT` 50, which is what `W10 · THRESHOLD - ROTARY BEZEL`
+ * means by "TURN BEZEL · 50 FT STEPS". One rule each, because the alternative
+ * is an inline style and inline styles are how raw values get past
+ * `scripts/check-design-values.mjs`. The percentage is a position along the
+ * track, not a design value: it is `(ft - 100) / 900`.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-threshold[data-fwm-threshold-ft="100"] {
+  --fwm-settings-threshold-at: 0;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="150"] {
+  --fwm-settings-threshold-at: 5.5556%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="200"] {
+  --fwm-settings-threshold-at: 11.1111%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="250"] {
+  --fwm-settings-threshold-at: 16.6667%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="300"] {
+  --fwm-settings-threshold-at: 22.2222%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="350"] {
+  --fwm-settings-threshold-at: 27.7778%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="400"] {
+  --fwm-settings-threshold-at: 33.3333%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="450"] {
+  --fwm-settings-threshold-at: 38.8889%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="500"] {
+  --fwm-settings-threshold-at: 44.4444%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="550"] {
+  --fwm-settings-threshold-at: 50%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="600"] {
+  --fwm-settings-threshold-at: 55.5556%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="650"] {
+  --fwm-settings-threshold-at: 61.1111%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="700"] {
+  --fwm-settings-threshold-at: 66.6667%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="750"] {
+  --fwm-settings-threshold-at: 72.2222%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="800"] {
+  --fwm-settings-threshold-at: 77.7778%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="850"] {
+  --fwm-settings-threshold-at: 83.3333%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="900"] {
+  --fwm-settings-threshold-at: 88.8889%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="950"] {
+  --fwm-settings-threshold-at: 94.4444%;
+}
+.fwm-settings-threshold[data-fwm-threshold-ft="1000"] {
+  --fwm-settings-threshold-at: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * TEXT SIZE
+ *
+ * A row of steps rather than the stacked cards THEME MODES uses: the choices
+ * are one short token each, and six full-width rows for "88%".."150%" would
+ * push the theme picker below the fold for a control most drivers set once.
+ *
+ * Every step is a full touch target. The type inside does NOT scale with the
+ * setting -- the labels are percentages, and a 150% step rendering its own
+ * label at 150% would make the row the widest thing on the screen while
+ * saying nothing extra.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-textsize-list {
+  display: flex;
+  flex-wrap: wrap; /* keyword */
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-3);
+}
+
+.fwm-settings-textsize-step {
+  flex: 1 1 auto;
+  min-width: var(--fwm-touch-min);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  touch-action: manipulation;
+  transition:
+    transform var(--fwm-dur-instant) var(--fwm-ease-out),
+    filter var(--fwm-dur-instant) var(--fwm-ease-out);
+}
+
+/* "press: scale .98 + brightness .88 @ 90ms. no hover states." -- section 04 */
+.fwm-settings-textsize-step:active:not([disabled]) {
+  transform: scale(0.98);
+  filter: brightness(0.88);
+}
+
+.fwm-settings-textsize-step[aria-checked="true"] {
+  border-color: var(--fwm-accent-mesh);
+  background: var(--fwm-surface-2);
+  color: var(--fwm-accent-mesh);
+  font-weight: 700;
+}
+
+.fwm-settings-textsize-step[disabled] {
+  color: var(--fwm-text-disabled);
+}
+
+/*
+ * The sample is pinned to --fwm-text-micro, the SMALLEST size the product
+ * uses, so the step being chosen is judged against the hardest case rather
+ * than against body text that was always readable.
+ */
+.fwm-settings-textsize-sample {
+  margin: var(--fwm-space-3) 0 0;
+  font-size: var(--fwm-text-micro);
+  /* Rendered .18em, matching the RADAR stat tiles this sample stands in for. */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * PERMISSIONS
+ *
+ * The onboarding cards, reused verbatim, stacked with the section's own gap.
+ * Their own styling lives in onboarding.css - this only places them, because
+ * a second set of rules for the same component is how the two screens start
+ * disagreeing about what "granted" looks like.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-permissions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-3);
+}
+
+/* ---------------------------------------------------------------------------
+ * TYPEFACE - two options, each setting its own sample in its own face.
+ *
+ * Stacked rather than side by side: the sample is a sentence, and two sentences
+ * in a row are two columns of four words nobody can compare. The point of the
+ * control is the LOOK of the words, so the words get the width.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-typeface-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-settings-typeface-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  align-items: flex-start;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-muted);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settings-typeface-option[data-fwm-selected='true'] {
+  border-color: var(--fwm-accent-scan);
+  color: var(--fwm-text);
+}
+
+.fwm-settings-typeface-name {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+}
+
+/* The sample is set in the face the option NAMES, not in the current one --
+   otherwise both samples look identical and the control shows nothing. */
+.fwm-settings-typeface-option[data-fwm-settings-typeface='system']
+  .fwm-settings-typeface-sample {
+  font-family: system-ui, sans-serif;
+}
+
+.fwm-settings-typeface-option[data-fwm-settings-typeface='original']
+  .fwm-settings-typeface-sample {
+  font-family: 'Chakra Petch', system-ui, sans-serif;
+}
+
+.fwm-settings-typeface-sample {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+/* A row that goes somewhere, rather than a control that changes something.
+   Shaped like the pickers so it belongs, arrowed so it reads as a door. */
+.fwm-settings-link {
+  display: flex;
+  gap: var(--fwm-space-2);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settings-link-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+}
+
+.fwm-settings-link-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * THE BUILD LINE
+ *
+ * Quiet, monospaced, and SELECTABLE. It exists to be copied into a bug report,
+ * so `user-select` is turned back on here -- the rest of this screen is
+ * controls, where a text selection dragged out of a press is a nuisance.
+ *
+ * `overflow-wrap: anywhere` because the middle field is a git describe, which
+ * grows a `-dirty` suffix and a tag prefix without warning and must never run
+ * off the side of the phone.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-build {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  /* Rendered .1em. */
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  overflow-wrap: anywhere; /* keyword */
+  -webkit-user-select: text; /* keyword */
+  user-select: text; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * WHAT IS ON THIS DEVICE, FOLDED
+ *
+ * Seven rows sat directly above the one destructive control in the app and
+ * pushed it off the bottom of the phone. Shut by default; still findable by
+ * the browser's own in-page search, which a conditionally-rendered block would
+ * not be. See `StoredList.tsx`.
+ * ------------------------------------------------------------------------ */
+
+.fwm-settings-stored-fold {
+  margin-top: var(--fwm-space-2);
+}
+
+.fwm-settings-stored-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  /* Rendered .14em. */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-text);
+  cursor: pointer; /* keyword */
+  touch-action: manipulation;
+}
+
+/* The disclosure triangle is drawn by the engine and differs on every one of
+   them. Replaced with the same chevron the rest of the app uses, rotated by
+   the element's own open state so there is no JS in this at all. */
+.fwm-settings-stored-summary::-webkit-details-marker {
+  display: none; /* keyword */
+}
+
+.fwm-settings-stored-summary {
+  list-style: none; /* keyword */
+}
+
+.fwm-settings-stored-summary::after {
+  content: "+"; /* keyword-equivalent: a literal glyph, not a measurement */
+  margin-inline-start: auto;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-settings-stored-fold[open] .fwm-settings-stored-summary::after {
+  content: "\2212"; /* MINUS SIGN */
+}
+
+/* THE DESIGN PICKER.
+ *
+ * Deliberately the same shape as the typeface picker directly above it: two
+ * options, a name and a line saying what it is. They are the same KIND of
+ * choice - "which version of this do you want to look at" - so making them
+ * look like different kinds of control would be the lie.
+ *
+ * The note is the part that matters. "V0" and "V1" are version numbers, and a
+ * version number tells nobody what they are about to see. */
+.fwm-settings-design-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-settings-design-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  align-items: flex-start;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-settings-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-muted);
+  text-align: left; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-settings-design-option[data-fwm-selected='true'] {
+  border-color: var(--fwm-accent-scan);
+  color: var(--fwm-text);
+}
+
+.fwm-settings-design-name {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+}
+
+.fwm-settings-design-note {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}

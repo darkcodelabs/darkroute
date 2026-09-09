@@ -1,0 +1,694 @@
+/* INTEL CARD -- the modal a SWEEP dot raises.
+ *
+ * SOURCE: `Flockys Screens II.dc.html`, `A4 · INTEL CARD - MODAL FROM SWEEP`
+ * and `B9 · RECORD FLAGS - WHERE IT SURFACES` (panel 1, "ON THE INTEL CARD").
+ *
+ * Every colour, length, radius, duration and easing below is `var(--fwm-*)` or
+ * a `calc()` over one. Where the design renders a value the token set does not
+ * carry, the line is marked `GAP:` and the entry is filed in
+ * `docs/gaps-inbox/intel.md`. Nothing here is a literal.
+ *
+ * =============================================================================
+ * HUE MEANS STATE AND NOTHING ELSE -- THE SAME SIX AS RADAR
+ * =============================================================================
+ * One custom property, `--fwm-intel-hue`, is set once from the state RADAR
+ * resolved and read by the card's top edge and the distance readout. No element
+ * picks its own colour.
+ *
+ * THE PRIMARY KEY IS NOT ONE OF THEM. `CONFIRM STILL THERE` is drawn #FF2D5E
+ * with a black label, and it stays `--fwm-alert-in-range` in every state.
+ * GAP: see docs/gaps-inbox/intel.md#confirm-key-fill-is-fixed-not-hued
+ *
+ *   clear        --fwm-alert-clear        #3DE08A
+ *   approaching  --fwm-alert-approaching  #FFC02E
+ *   in_range     --fwm-alert-in-range     #FF2D5E
+ *   multiple     --fwm-alert-multiple     #FF3DBE
+ *   muted        --fwm-text-muted         #6B7381  desaturated on purpose
+ *   no_gps       --fwm-line-strong        #3A3F4B  grey, not a hue
+ *
+ * =============================================================================
+ * A FLAG COLOURS THE OPERATOR, NOT THE CAMERA
+ * =============================================================================
+ *   "The flag colors the operator, not the camera, so a flagged agency's cams
+ *    still alert normally."  -- B9
+ * `--fwm-destructive` appears in exactly two places in this file: the DISPUTE
+ * key and the operator banner. There is no selector below in which
+ * `[data-fwm-intel-flagged="true"]` changes `--fwm-intel-hue`, the card edge,
+ * the readout or any tile, and `IntelView.test.tsx` fails if one appears.
+ *
+ * =============================================================================
+ * MUTED CHANGES ONE HUE AND NOTHING ELSE
+ * =============================================================================
+ * No rule below hides, collapses or dims a fact, a tile or an action because
+ * the camera is muted. "Muting only removes the alert -- never the record."
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * `IntelView.test.tsx` reads this file off disk and fails if `:hover` appears.
+ * ========================================================================== */
+
+.fwm-intel {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design draws everywhere.
+   * Derived, so a mode that rescales space rescales the rules with it.
+   * Component-scoped local, NOT a new token. */
+  --fwm-intel-rule-w: calc(var(--fwm-space-1) / 4);
+
+  /**
+   * The panel's scrim. The token set exports no alpha ramp, so the wash is
+   * --fwm-bg (which IS #000000) carried at the drawn alpha by the layer's own
+   * opacity, keeping the colour a token.
+   * GAP: see DESIGN-GAPS.md#report-bar-tint-and-alert-tints
+   *
+   * DROPPED FROM .72, because what is behind it changed. The drawn value was
+   * chosen against a basemap whose ground was #141414 and whose own background
+   * layer was #2b2b2b -- a grey the scrim had to knock back. The ground is true
+   * black now, so .72 was subtracting almost nothing from almost nothing and
+   * the top third of the card read as dead space.
+   *
+   * It is not decoration up there. That is the map, centred on the camera the
+   * driver just tapped, with its roads and its neighbours on it -- the one
+   * piece of "where is this thing" the card cannot say in words. At .45 the
+   * roads and the camera dots read, and the card below still clearly sits on
+   * top rather than floating in a live map.
+   */
+  --fwm-intel-scrim-alpha: 0.45;
+
+  /* Fallback hue. Every render sets [data-fwm-intel-state] and the blocks below
+     override this; a state that somehow arrives unset draws the grey that means
+     "not an alert", never an alert colour on a card nobody vouched for. */
+  --fwm-intel-hue: var(--fwm-line-strong);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* keyword */
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg-sunken);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden; /* keyword */
+}
+
+.fwm-intel[data-fwm-intel-state="clear"] {
+  --fwm-intel-hue: var(--fwm-alert-clear);
+}
+.fwm-intel[data-fwm-intel-state="approaching"] {
+  --fwm-intel-hue: var(--fwm-alert-approaching);
+}
+.fwm-intel[data-fwm-intel-state="in_range"] {
+  --fwm-intel-hue: var(--fwm-alert-in-range);
+}
+.fwm-intel[data-fwm-intel-state="multiple"] {
+  --fwm-intel-hue: var(--fwm-alert-multiple);
+}
+/* Muted and no-fix are grey BECAUSE they are not alert states: a coloured edge
+   on this card always means a camera the engine is actually alerting on. */
+.fwm-intel[data-fwm-intel-state="muted"] {
+  --fwm-intel-hue: var(--fwm-text-muted);
+}
+.fwm-intel[data-fwm-intel-state="no_gps"] {
+  --fwm-intel-hue: var(--fwm-line-strong);
+}
+
+/* ---------------------------------------------------------------------------
+ * The scrim -- rendered `position:absolute; inset:0; background:rgba(0,0,0,.72)`
+ *
+ * It is a button, because the panel draws no close control and a scrim tap is
+ * one of the two dismiss affordances it does draw (the grabber is the other).
+ * GAP: see docs/gaps-inbox/intel.md#modal-has-no-drawn-dismiss
+ *
+ * It is also the LAST element inside the dialog, so a keyboard and a screen
+ * reader reach the camera before they reach "dismiss". Its drawn position --
+ * behind the card -- is held by the card's `z-index` below rather than by
+ * source order.
+ * GAP: see docs/gaps-inbox/intel.md#modal-focus-order-and-trap
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-scrim {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-0);
+  background: var(--fwm-bg);
+  opacity: var(--fwm-intel-scrim-alpha);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * The card -- `background:#000; border-top:1px solid <hue>;
+ * border-radius:6px 6px 0 0; padding:16px`
+ *
+ * `max-height` + `overflow-y` are this file's, not the panel's: the panel is a
+ * fixed 830px frame and a real phone in landscape, or a mode with a larger
+ * type scale, would otherwise push the four actions off the bottom of a modal
+ * that has no other way out.
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-card {
+  position: relative;
+  /* The scrim is painted from a later source position so it can be the last
+     tab stop; this puts the card back on top of it. Same one step radar.css
+     uses to lift the takeover layer. */
+  z-index: 1;
+  min-width: 0;
+  max-height: 100%;
+  padding: var(--fwm-space-4);
+  border-top: var(--fwm-intel-rule-w) solid var(--fwm-intel-hue);
+  border-radius: var(--fwm-radius-2) var(--fwm-radius-2) var(--fwm-radius-0) var(--fwm-radius-0);
+  background: var(--fwm-bg);
+  overflow-y: auto; /* keyword */
+  overscroll-behavior: contain; /* keyword */
+}
+
+/* The card takes focus when the dialog opens (`aria-modal` promises the rest
+   of the screen is inert, so focus has to start in here). It is a programmatic
+   target, not a tab stop, and it draws no ring of its own -- the driver moved
+   nothing to get here. Every real control keeps its own focus treatment. */
+.fwm-intel-card:focus {
+  outline: none; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * The grabber -- rendered 44x4, --fwm-line-strong, radius 999, 18px below.
+ *
+ * --fwm-touch-min is 44px and --fwm-space-1 is 4px, so the drawn pill is two
+ * tokens exactly. The 18px gap below it is --fwm-space-4 (16px), the nearest
+ * step. GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ *
+ * The `::after` is the tap target, not a decoration: a 4px-tall control is far
+ * under the product's 44px floor, and expanding the hit area with an absolutely
+ * positioned overlay is the only way to reach the floor without moving a single
+ * drawn pixel. Nothing under it is interactive.
+ * GAP: see docs/gaps-inbox/intel.md#grabber-is-below-the-touch-floor
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-grabber {
+  position: relative;
+  display: block;
+  width: var(--fwm-touch-min);
+  height: var(--fwm-space-1);
+  margin: 0 auto var(--fwm-space-4);
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line-strong);
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-intel-grabber[data-fwm-intel-grabber="dismiss"]::after {
+  content: ""; /* keyword-equivalent: an empty generated box */
+  position: absolute;
+  top: calc((var(--fwm-touch-min) - var(--fwm-space-1)) / -2);
+  right: 0;
+  left: 0;
+  height: var(--fwm-touch-min);
+}
+
+/* ---------------------------------------------------------------------------
+ * Title row -- `FALCON` beside `425 FT · SW`.
+ * Rendered: 22px/700/.06em title, 13px mono readout at the alert hue, baseline
+ * aligned, 10px apart.
+ *   22px -> --fwm-text-title (24px) and 13px -> --fwm-text-body (15px) are the
+ *   nearest steps; the scale has nothing between 15px and 11px.
+ * GAP: see DESIGN-GAPS.md#token-set-does-not-cover-rendered-hero-sizes
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-title-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+}
+
+.fwm-intel-title {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  /* Rendered .06em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-title) * 0.06);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis;
+}
+
+.fwm-intel-readout {
+  flex: none; /* keyword */
+  margin: 0;
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-intel-hue);
+}
+
+/* ---------------------------------------------------------------------------
+ * The id line -- `FWM-0442 · READING & TENNESSEE`, 11px mono at .12em.
+ *
+ * It is a button when a copy handler is wired, because `clipboard.ts` exists
+ * for exactly one thing -- "copying a camera id (FWM-0442)" -- and this is the
+ * only place that id is drawn. Same `::after` hit expansion as the grabber.
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-subline {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: var(--fwm-space-2) 0 0;
+  padding: 0;
+  border: none; /* keyword */
+  background: transparent; /* keyword */
+  font-size: var(--fwm-text-micro);
+  /* Rendered .12em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+  text-align: left; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* The title is the copy target when the id has been promoted into it -- which
+ * is every record in this build. A button inside the heading keeps the heading
+ * semantics and puts the affordance on the glyphs it copies. */
+.fwm-intel-title-copy {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 0;
+  border: none; /* keyword */
+  background: transparent; /* keyword */
+  font-family: inherit; /* keyword */
+  font-size: inherit; /* keyword */
+  font-weight: inherit; /* keyword */
+  letter-spacing: inherit; /* keyword */
+  color: inherit; /* keyword */
+  text-align: left; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-intel-title-copy::after,
+.fwm-intel-subline[data-fwm-intel-subline="copy"]::after {
+  content: ""; /* keyword-equivalent: an empty generated box */
+  position: absolute;
+  top: calc((var(--fwm-touch-min) - var(--fwm-text-micro)) / -2);
+  right: 0;
+  left: 0;
+  height: var(--fwm-touch-min);
+}
+
+/* ---------------------------------------------------------------------------
+ * The three tiles -- OWNER / MOUNT / FACING.
+ * Rendered: flex:1, 1px --fwm-line edge, --fwm-surface-1 fill, radius 2,
+ * 12px padding, 9px/.16em label, 15px/600 value 5px under it, 8px apart,
+ * 16px below the id line.
+ *   9px -> --fwm-text-micro (11px). GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor
+ *   5px -> --fwm-space-1 (4px), the nearest step.
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-tiles {
+  display: flex;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-4);
+}
+
+.fwm-intel-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--fwm-space-3);
+  border: var(--fwm-intel-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-intel-tile-label {
+  display: block;
+  font-size: var(--fwm-text-micro);
+  /* Rendered .16em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-intel-tile-value {
+  display: block;
+  margin-top: var(--fwm-space-1);
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis;
+  white-space: nowrap; /* keyword */
+}
+
+/* An em dash is an honest absence, and it is drawn as one: muted, not as a
+   value the driver might read as a fact. */
+.fwm-intel-tile[data-fwm-intel-known="false"] .fwm-intel-tile-value {
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * The five fact rows.
+ * Rendered: 1px --fwm-line edge, --fwm-surface-1 fill, radius 2,
+ * `padding:14px 16px`, 11.5px mono at line-height 2, --fwm-text-2, labels in
+ * --fwm-text-muted, 10px under the tiles.
+ *   11.5px -> --fwm-text-micro (11px); 14px -> --fwm-space-3 (12px);
+ *   10px -> --fwm-space-3 (12px), the nearest step in either direction.
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-facts {
+  margin: var(--fwm-space-3) 0 0;
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  border: var(--fwm-intel-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  font-size: var(--fwm-text-micro);
+  line-height: 2;
+  color: var(--fwm-text-2);
+}
+
+.fwm-intel-fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+}
+
+.fwm-intel-fact-label {
+  margin: 0;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-intel-fact-value {
+  margin: 0;
+  color: var(--fwm-text-2);
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-intel-fact-value[data-fwm-intel-tone="clear"] {
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-intel-fact-value[data-fwm-intel-tone="alert"] {
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-intel-fact[data-fwm-intel-known="false"] .fwm-intel-fact-value {
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * The photo drop -- 120px, hatched, one 10px/.18em label.
+ * Rendered `repeating-linear-gradient(115deg, #0E0F13 0 8px, #16181E 8px 16px)`
+ * -- 8px and 16px are --fwm-space-2 and --fwm-space-4 exactly, and 120px is
+ * 2.5 x --fwm-space-12.
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-photo-block {
+  margin-top: var(--fwm-space-3);
+}
+
+.fwm-intel-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: calc(var(--fwm-space-12) * 2.5);
+  border: var(--fwm-intel-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background-color: var(--fwm-surface-1);
+  background-image: repeating-linear-gradient(
+    115deg,
+    var(--fwm-surface-1) 0 var(--fwm-space-2),
+    var(--fwm-surface-2) var(--fwm-space-2) var(--fwm-space-4)
+  );
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-intel-photo-label {
+  font-size: var(--fwm-text-micro);
+  /* Rendered .18em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+}
+
+/* A control that is switched off says so by being switched off, not by looking
+   live. The note underneath carries the reason. */
+.fwm-intel-photo:disabled {
+  border-color: var(--fwm-line);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * The notes -- the photo refusal, the empty state, the action outcome.
+ * The product's existing micro-notice idiom: 11px mono, muted, under the thing
+ * it is about. The panel draws none of them.
+ * GAP: see docs/gaps-inbox/intel.md#no-action-feedback-is-drawn
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-note {
+  margin: var(--fwm-space-2) 0 0;
+  font-size: var(--fwm-text-micro);
+  /* Rendered .1em on every micro notice in the design. */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  line-height: 1.8;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-intel-note[data-fwm-intel-tone="alert"] {
+  color: var(--fwm-destructive);
+}
+
+.fwm-intel-note[data-fwm-intel-note="empty"] {
+  text-align: center; /* keyword */
+}
+
+/* `MUTED 9:41` -- the clock half of the mute line, in the amber the design
+ * draws the same glyph in on the status strip (`MUTED 8:12`, #FFC02E) and on
+ * W11. The sentence beside it stays in the note idiom's muted grey: the driver
+ * needs to see WHEN the silence ends, not to be alarmed by the whole line.
+ * GAP: see docs/gaps-inbox/intel.md#mute-this-one-is-a-ten-minute-timer */
+.fwm-intel-mute-clock {
+  color: var(--fwm-alert-approaching);
+}
+
+/* ---------------------------------------------------------------------------
+ * The operator record banner -- B9.
+ * Rendered: 1px --fwm-destructive edge, rgba(255,90,31,.07) fill, radius 2,
+ * `padding:14px 16px`; an 8px dot, a 10px/.14em label, a 14px/1.5 sentence and
+ * a scan-cyan `SEE THE 3 SOURCES`.
+ *
+ * The fill stands in as --fwm-surface-1 with the hue carried by the 1px border,
+ * which is the system's stated depth model ("Depth = 1px hairline + surface
+ * step"). GAP: see DESIGN-GAPS.md#report-bar-tint-and-alert-tints
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-record {
+  margin-top: var(--fwm-space-3);
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  border: var(--fwm-intel-rule-w) solid var(--fwm-destructive);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-intel-record-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-intel-record-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-destructive);
+}
+
+.fwm-intel-record-label {
+  font-size: var(--fwm-text-micro);
+  /* Rendered .14em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-destructive);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-intel-record-summary {
+  margin: var(--fwm-space-3) 0 0;
+  font-size: var(--fwm-text-body);
+  line-height: 1.5;
+  color: var(--fwm-text);
+}
+
+.fwm-intel-record-sources {
+  position: relative;
+  display: block;
+  margin: var(--fwm-space-3) 0 0;
+  padding: 0;
+  border: none; /* keyword */
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-accent-scan);
+  text-align: left; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-intel-record-sources::after {
+  content: ""; /* keyword-equivalent: an empty generated box */
+  position: absolute;
+  top: calc((var(--fwm-touch-min) - var(--fwm-text-micro)) / -2);
+  right: 0;
+  left: 0;
+  height: var(--fwm-touch-min);
+}
+
+/* ---------------------------------------------------------------------------
+ * The four actions.
+ * Rendered: 48px primaries (`CONFIRM STILL THERE` filled at the alert hue with
+ * a black label, `DISPUTE` outlined in --fwm-destructive), then 44px
+ * secondaries outlined in --fwm-line-strong; 8px apart, 14px and 8px below.
+ *   48px is --fwm-space-12 exactly; 44px is --fwm-touch-min exactly.
+ *   13px -> --fwm-text-body (15px); 12px -> --fwm-text-micro (11px).
+ * ------------------------------------------------------------------------ */
+
+.fwm-intel-actions {
+  margin-top: var(--fwm-space-3);
+}
+
+.fwm-intel-action-row {
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-intel-action-row[data-fwm-intel-action-row="secondary"] {
+  margin-top: var(--fwm-space-2);
+}
+
+.fwm-intel-action {
+  /**
+   * `1 1 auto`, NOT `1 1 0`.
+   *
+   * `flex-basis: 0` splits the row into equal halves regardless of what is
+   * written on the keys, so CONFIRM STILL THERE and DISPUTE each got 174px on a
+   * 390px phone -- and the first label needs 184. It painted straight out of
+   * both ends of its own fill, which is what a device screenshot showed. With
+   * `auto` the basis is the label, so the longer key takes the larger share and
+   * the row still fills the width.
+   *
+   * The failure is worse the further up the TEXT SIZE control a driver goes,
+   * because that setting scales type and deliberately leaves chrome in px: at
+   * 125% the same key was 33px over, and NAVIGATE HERE joined it.
+   */
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: var(--fwm-touch-min);
+  /* Room for the label to breathe once it sizes the key rather than the key
+   * clipping it. */
+  padding: 0 var(--fwm-space-1);
+  border-radius: var(--fwm-radius-1);
+  font-family: var(--fwm-font-ui);
+  /**
+   * IT WRAPS RATHER THAN CLIPS.
+   *
+   * `nowrap` on a key whose width is decided by the row is a promise the layout
+   * cannot keep: at the top of the text-size range the label is simply wider
+   * than any share of a 390px row. A clipped verdict on a control a driver taps
+   * to confirm a camera is worse than a two-line one, and `min-height` means
+   * the second line has somewhere to go.
+   */
+  text-align: center;
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* Drawn #FF2D5E with a black label, and FIXED rather than hue-driven.
+ * A4 draws this key in one state, so the fill is equally readable as "the alert
+ * hue" or as "alert red, always" -- and hue-driven loses twice. `clear` would
+ * ship a GREEN primary key in a system where green means "no camera near you",
+ * and `no_gps` would ship a black label on --fwm-line-strong, which is under
+ * 2:1. The panel's own value is the one that survives every state.
+ * GAP: see docs/gaps-inbox/intel.md#confirm-key-fill-is-fixed-not-hued */
+.fwm-intel-action[data-fwm-intel-action="confirm"] {
+  /* min-height, not height: the label may wrap at a large text size and a
+   * fixed height would cut the second line off. See `.fwm-intel-action`. */
+  min-height: var(--fwm-space-12);
+  border: none; /* keyword */
+  background: var(--fwm-alert-in-range);
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-body) * 0.1);
+  color: var(--fwm-bg);
+}
+
+.fwm-intel-action[data-fwm-intel-action="dispute"] {
+  /* min-height, not height: the label may wrap at a large text size and a
+   * fixed height would cut the second line off. See `.fwm-intel-action`. */
+  min-height: var(--fwm-space-12);
+  border: var(--fwm-intel-rule-w) solid var(--fwm-destructive);
+  background: transparent; /* keyword */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-body) * 0.1);
+  color: var(--fwm-destructive);
+}
+
+/**
+ * NAVIGATE HERE had NO RULE AT ALL, so it drew as bare text between two
+ * outlined keys -- it read as a caption rather than a control, and it was the
+ * only one of the six with no hit affordance. It is a secondary action like
+ * the two beside it and is drawn like them.
+ */
+.fwm-intel-action[data-fwm-intel-action="navigate"],
+.fwm-intel-action[data-fwm-intel-action="mute"],
+.fwm-intel-action[data-fwm-intel-action="share"] {
+  /* min-height, not height: the label may wrap at a large text size and a
+   * fixed height would cut the second line off. See `.fwm-intel-action`. */
+  min-height: var(--fwm-touch-min);
+  border: var(--fwm-intel-rule-w) solid var(--fwm-line-strong);
+  background: transparent; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  /* Rendered .08em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  color: var(--fwm-text-2);
+}
+
+/* The panel draws one mute state and a toggle has to say which one it is in.
+ * The treatment is the system's own "this key is on": a --fwm-surface-2 fill
+ * behind the same label, exactly as the dock's active word-key. It is NOT
+ * given an alert hue -- a lit-up mute key would read as an alarm.
+ * GAP: see docs/gaps-inbox/intel.md#mute-key-has-no-drawn-on-state */
+.fwm-intel-action[data-fwm-intel-muted="true"] {
+  background: var(--fwm-surface-2);
+  color: var(--fwm-text);
+}
+
+/* A key with nothing wired to it, or one held while a write is in flight, says
+   so instead of pretending. */
+.fwm-intel-action:disabled {
+  border-color: var(--fwm-line);
+  background: var(--fwm-surface-2);
+  color: var(--fwm-text-disabled);
+}

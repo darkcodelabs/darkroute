@@ -1,0 +1,330 @@
+/* REPORT - v1. `Add detail`, the sheet under the drop-a-camera modal.
+ *
+ * SOURCE: brief 4's screen language - a 56px title track that does not scroll,
+ * a band that does, tracked-caps group headers, 32px chips, and 150px reserved
+ * at the bottom for the dock.
+ *
+ * =============================================================================
+ * OPAQUE, AND NO `backdrop-filter` ANYWHERE IN THIS FILE
+ * =============================================================================
+ * "Glass is for chrome floating over the map. A full screen has nothing behind
+ * it, so blurring it costs a compositor pass and buys nothing." This covers the
+ * modal, the map and the dock.
+ *
+ * =============================================================================
+ * IT CARRIES THE DIAL'S OWN CLASS NAMES, AND THAT IS ON PURPOSE
+ * =============================================================================
+ * `FacingDialV1` was relocated, not rewritten: it moved from the modal into
+ * this sheet with its markup untouched, so its `.fwm-reportv1-dial*` and
+ * `.fwm-reportv1-facing*` rules moved with it rather than being renamed. A
+ * rename would have been a diff in a component nobody asked to change and a
+ * second name for one control.
+ */
+
+.fwm-reportdetailv1 {
+  /* --- geometry ----------------------------------------------------------- */
+  --fwm-reportdetailv1-track: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-reportdetailv1-pad: calc(var(--fwm-space-1) * 3.5); /* 14, side padding */
+  --fwm-reportdetailv1-gap: var(--fwm-space-2); /* 8 */
+  --fwm-reportdetailv1-group-gap: calc(var(--fwm-space-1) * 3); /* 12 */
+  --fwm-reportdetailv1-chip-h: var(--fwm-space-8); /* 32 */
+  --fwm-reportdetailv1-chip-pad: var(--fwm-space-3); /* 12 */
+  --fwm-reportdetailv1-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-reportdetailv1-row-radius: var(--fwm-space-3); /* 12 */
+  --fwm-reportdetailv1-thumb: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-reportdetailv1-track-caps: calc(var(--fwm-card-track-tight) * -14); /* 0.14em */
+
+  /* The 96px disc the dial draws itself into. Declared here because the dial
+     now stands in this sheet, and a component local is only readable inside the
+     subtree that declares it - reading another screen's is the "resolves to
+     nothing" bug `check-design-values.mjs` has a rule for. */
+  --fwm-reportv1-dial-size: calc(var(--fwm-space-12) * 2); /* 96 */
+
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--dr-screen);
+  font-family: var(--fwm-font-ui);
+  color: var(--dr-ink);
+}
+
+/* --- the title track ------------------------------------------------------ */
+
+/* 56px, fixed, exit at the HEAD - brief 4's rule for a screen. The modal
+   underneath draws its close key at the tail, which is what the spec's own
+   frame for it does. */
+.fwm-reportdetailv1-head {
+  display: flex;
+  flex: none; /* keyword */
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  min-height: var(--fwm-reportdetailv1-track); /* 56 */
+  padding: 0 var(--fwm-reportdetailv1-pad);
+}
+
+.fwm-reportdetailv1-title {
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+/* --- the band that scrolls ------------------------------------------------ */
+
+/* The reservation is INSIDE the scroller, never a margin on it: a margin only
+   moves the clipping outwards, which is the bug that put SUBMIT REPORT under
+   the dock bar on the sheet this replaces. `--fwm-dock-h` follows the dock's
+   own family, so the band clears the bar that is actually mounted rather than
+   the mock's flat 150. */
+.fwm-reportdetailv1-band {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-reportdetailv1-group-gap);
+  min-height: 0;
+  padding: 0 var(--fwm-reportdetailv1-pad)
+    calc(var(--fwm-dock-h) + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; /* keyword */
+  /* The content is the affordance. Hidden inside the frame, on every screen. */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-reportdetailv1-band::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Nothing in a scrolling column may be squashed below its content. */
+.fwm-reportdetailv1-band > * {
+  flex-shrink: 0;
+}
+
+.fwm-reportdetailv1-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-reportdetailv1-gap);
+}
+
+.fwm-reportdetailv1-section {
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-reportdetailv1-track-caps); /* 0.14em */
+  color: var(--dr-ink-muted);
+}
+
+/* --- the chips ------------------------------------------------------------ */
+
+/* 32px, radius 16 - brief 4's chip, and the same one the Lookup filters use.
+   They WRAP rather than scroll: there are four of them, the longest is
+   "ACROSS A DIVIDED ROAD", and a horizontal scroller with no more-to-the-right
+   would be chrome pretending there is something off-screen. */
+.fwm-reportdetailv1-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-reportdetailv1-chip {
+  min-height: var(--fwm-reportdetailv1-chip-h); /* 32 */
+  padding: 0 var(--fwm-reportdetailv1-chip-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-reportdetailv1-chip[data-fwm-selected='true'],
+.fwm-reportdetailv1-chip[aria-pressed='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+}
+
+.fwm-reportdetailv1-chip:disabled {
+  color: var(--dr-ink-faint);
+}
+
+/* THE STATE OF THE SUBJECT ANSWER. Never blank: an empty line reads as "fine",
+   and this is the only place the product says out loud that a report which
+   files perfectly well may still be unpublishable. */
+.fwm-reportdetailv1-where {
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-ink-muted);
+}
+
+.fwm-reportdetailv1-where[data-fwm-report-where='unset'] {
+  color: var(--dr-verdict-drop);
+}
+
+/* --- the dial, relocated from the modal ----------------------------------- */
+
+.fwm-reportv1-facing-block {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-reportv1-dial {
+  flex: none; /* keyword */
+  width: var(--fwm-reportv1-dial-size);
+  height: var(--fwm-reportv1-dial-size);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-row-fill);
+  touch-action: manipulation;
+}
+
+.fwm-reportv1-dial-ring {
+  fill: none; /* keyword */
+  stroke: var(--dr-hairline);
+  stroke-width: 1;
+}
+
+/* THE ARC, in the accent: this is a value the driver is SETTING, not an alert
+   state, and painting it in an alert hue would read as a warning. */
+.fwm-reportv1-dial-wedge {
+  fill: var(--dr-accent-fill);
+  stroke: none; /* keyword */
+}
+
+.fwm-reportv1-dial-centre {
+  fill: var(--dr-ink);
+  stroke: none; /* keyword */
+}
+
+.fwm-reportv1-facing-readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  min-width: 0;
+}
+
+.fwm-reportv1-facing-heading {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--dr-ink);
+}
+
+.fwm-reportv1-facing-label,
+.fwm-reportv1-facing-hint {
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-ink-muted);
+}
+
+/* --- one photograph -------------------------------------------------------- */
+
+/* THE STATE LIVES ON THE WRAPPER, not on the tile: `attached` replaces the tile
+   with a thumbnail row, so there is no one element present in all four states
+   to hang it on. See the component. */
+.fwm-reportdetailv1-photo-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+/* The full-width tile, drawn in the row idiom rather than as a second submit
+   key. Attaching a photo is optional; a control painted in the accent would
+   read as the next required step. */
+.fwm-reportdetailv1-photo {
+  min-height: var(--fwm-reportdetailv1-row-h); /* 44 */
+  padding: 0 var(--fwm-reportdetailv1-chip-pad);
+  border: var(--fwm-rule-w) dashed var(--dr-hairline-row); /* keyword */
+  border-radius: var(--fwm-reportdetailv1-row-radius);
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: var(--fwm-reportdetailv1-track-caps);
+  color: var(--dr-ink-muted);
+  touch-action: manipulation;
+}
+
+/* PREPARING is the only disabled state a driver reaches by pressing, so it must
+   not look identical to an inert control. It keeps the tile's own colour and
+   loses the dashed edge, which reads as "working" rather than "off". */
+.fwm-reportdetailv1-photo:disabled {
+  border-style: solid; /* keyword */
+  color: var(--dr-ink-faint);
+}
+
+.fwm-reportdetailv1-photo-attached {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-2);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-reportdetailv1-row-radius);
+  background: var(--dr-row-fill);
+}
+
+/* A fixed square, cropped. The prepared JPEG is up to 1600px on its long edge
+   and any aspect ratio the phone was held at; letting it set its own height
+   would move the make-and-model field under the driver's thumb between one
+   report and the next. */
+.fwm-reportdetailv1-photo-thumb {
+  flex: none; /* keyword */
+  width: var(--fwm-reportdetailv1-thumb);
+  height: var(--fwm-reportdetailv1-thumb);
+  border-radius: var(--fwm-radius-2);
+  object-fit: cover; /* keyword */
+}
+
+.fwm-reportdetailv1-photo-facts {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-ink-muted);
+}
+
+.fwm-reportdetailv1-photo-remove {
+  flex: none; /* keyword */
+  min-height: var(--fwm-reportdetailv1-chip-h);
+  padding: 0 var(--fwm-reportdetailv1-chip-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+/* --- make and model ------------------------------------------------------- */
+
+.fwm-reportdetailv1-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-reportdetailv1-gap);
+}
+
+.fwm-reportdetailv1-input {
+  min-height: var(--fwm-reportdetailv1-row-h);
+  padding: 0 var(--fwm-reportdetailv1-chip-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-reportdetailv1-row-radius);
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-body);
+  color: var(--dr-ink);
+}
+
+.fwm-reportdetailv1-input[data-fwm-report-make-model='plate-shaped'] {
+  border-color: var(--dr-verdict-drop-line);
+}
+
+.fwm-reportdetailv1-issue {
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-verdict-drop);
+}
+
+.fwm-reportdetailv1-promise {
+  font-size: var(--fwm-text-micro);
+  line-height: 1.45;
+  color: var(--dr-ink-faint);
+}

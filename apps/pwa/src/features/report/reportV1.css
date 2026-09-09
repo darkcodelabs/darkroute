@@ -1,0 +1,310 @@
+/* REPORT - v1. The drop-a-camera modal.
+ *
+ * SOURCE: `the_rest_of_the_app.dc.html`, section B, the right-hand frame. A
+ * transcription of that frame's own inline styles: every number below is
+ * written there, and every number that is not written there is not here.
+ *
+ * =============================================================================
+ * IT IS THE CAMERA MODAL'S SIBLING, AND THE TWO SHARE A MATERIAL
+ * =============================================================================
+ * Same 342px card, same 22px radius, same 14px padding, same 4px gap, same
+ * glass, anchored the same distance over the same dock reserve. `intelV1.css`
+ * carries the full argument for each of those numbers and for the ratio idiom
+ * that spells them; this file states them again rather than importing them,
+ * because a modal that silently followed another screen's local custom
+ * properties is the "resolves to nothing" bug `check-design-values.mjs` has a
+ * rule for.
+ *
+ * =============================================================================
+ * WHAT LEFT THIS FILE
+ * =============================================================================
+ * `.fwm-reportv1-modes` and `.fwm-reportv1-mode` went with the New camera /
+ * Confirm one switch, which brief 4 deletes outright. The dial, the mount
+ * chips, the photo block and the make-and-model field went to
+ * `reportDetailV1.css` with the controls they dress.
+ */
+
+.fwm-reportv1 {
+  /* --- geometry, all of it, in one place ---------------------------------- */
+  --fwm-reportv1-side: calc(var(--fwm-space-1) * 6); /* 24 */
+  /* The air between the card and the dock: the spec's `bottom: 172` inside a
+     frame whose last 150 is the reserve. `--fwm-dock-h` is the live reserve -
+     147 browsing, 168 driving, 288 expanded - so the mock's flat 150 is never
+     written down. */
+  --fwm-reportv1-lift: calc(var(--fwm-space-1) * 5.5); /* 22, over the reserve */
+  --fwm-reportv1-radius: calc(var(--fwm-space-1) * 5.5); /* 22 */
+  --fwm-reportv1-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-reportv1-gap: var(--fwm-space-1); /* 4 */
+
+  --fwm-reportv1-head-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-reportv1-head-inset: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-reportv1-head-pad: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-reportv1-dot: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-reportv1-dot-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-reportv1-sub-gap: calc(var(--fwm-space-1) * 0.75); /* 3 */
+
+  --fwm-reportv1-section-pad: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-reportv1-side-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-reportv1-side-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-reportv1-key-radius: var(--fwm-space-3); /* 12 */
+  --fwm-reportv1-submit-h: calc(var(--fwm-space-1) * 12); /* 48 */
+  --fwm-reportv1-submit-radius: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-reportv1-submit-gap: var(--fwm-space-2); /* 8, the spec's margin-top */
+  --fwm-reportv1-row-h: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-reportv1-row-pad: var(--fwm-space-3); /* 12 */
+  --fwm-reportv1-row-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-reportv1-row-glyph: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-reportv1-promise-pad: var(--fwm-space-1); /* 4 */
+
+  /* 0.12em, an exact multiple of the one tracking token, never a new one. */
+  --fwm-reportv1-track-caps: calc(var(--fwm-card-track-tight) * -12); /* 0.12em */
+
+  /* The layer is the viewport; the card is 282px of it, at the bottom. */
+  position: absolute;
+  inset: 0;
+  font-family: var(--fwm-font-ui);
+  color: var(--dr-ink);
+}
+
+.fwm-reportv1-card {
+  position: absolute;
+  right: var(--fwm-reportv1-side);
+  left: var(--fwm-reportv1-side);
+  bottom: calc(var(--fwm-dock-h) + var(--fwm-reportv1-lift));
+  display: grid;
+  gap: var(--fwm-reportv1-gap);
+  padding: var(--fwm-reportv1-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-reportv1-radius);
+  /* Brief 2's surface exactly: the thin 0.72 fill, the one-pixel grain, the
+     22px blur. One of the three surfaces in brief 4 allowed to blur, because it
+     is one of the two with a live map behind it. */
+  background-color: var(--dr-surface-thin);
+  background-image: var(--dr-grain);
+  backdrop-filter: var(--dr-blur);
+  box-shadow: var(--dr-lift), var(--dr-specular);
+}
+
+/* --- the head row --------------------------------------------------------- */
+
+.fwm-reportv1-head {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-reportv1-head-gap);
+  min-width: 0;
+  padding: 0 var(--fwm-reportv1-head-inset) var(--fwm-reportv1-head-pad);
+}
+
+.fwm-reportv1-ident {
+  flex: 1;
+  min-width: 0;
+}
+
+.fwm-reportv1-title {
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  color: var(--dr-ink);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-reportv1-position {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-reportv1-dot-gap); /* 6 */
+  min-width: 0;
+  margin-top: var(--fwm-reportv1-sub-gap); /* 3 */
+}
+
+/* GREEN ONLY WITH A FIX. The dot is the one glanceable answer to "does it know
+   where I am", and a green dot over a missing coordinate would be the sheet
+   claiming a position it does not have. The hue is the verdict green rather
+   than the alert scale's `--fwm-alert-clear`, for the reason `tokens.css`
+   gives: seventeen skins re-cut that one, two of them to a colour that does not
+   read as "good". */
+.fwm-reportv1-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-reportv1-dot);
+  height: var(--fwm-reportv1-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-ink-faint);
+}
+
+.fwm-reportv1-position[data-fwm-fix='true'] .fwm-reportv1-dot {
+  background: var(--dr-verdict-keep);
+}
+
+.fwm-reportv1-position-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-plate); /* 12 */
+  color: var(--dr-ink-muted);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* --- which side of the road ----------------------------------------------- */
+
+.fwm-reportv1-section {
+  padding: 0 var(--fwm-reportv1-head-inset) var(--fwm-reportv1-section-pad);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-reportv1-track-caps); /* 0.12em */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-reportv1-sides {
+  display: flex;
+  gap: var(--fwm-reportv1-side-gap); /* 6 */
+}
+
+/* THREE 44px KEYS AND NO SHELL. Brief 4's segmented control - "36px items in a
+   44px shell, radius 12 inside 16" - is the TAB screens' control, and the spec
+   draws this one as three plain keys in a row with a 6px gap. The markup wins
+   over the table where they disagree, which is the brief's own instruction. */
+.fwm-reportv1-side {
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-reportv1-side-h); /* 44 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-reportv1-key-radius); /* 12 */
+  background: var(--dr-row-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 500;
+  color: var(--dr-ink-3);
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation;
+}
+
+/* THE CHOSEN ONE, and it is the only thing on this card that fills with accent.
+   Cyan is `system positive / active selection` and this is the one active
+   selection on the sheet. */
+.fwm-reportv1-side[data-fwm-selected='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  font-weight: 700;
+  color: var(--dr-accent);
+}
+
+/* NO HEADING, NO SIDES - and visibly so. "Left" needs a bearing to mean
+   anything; OVERHEAD does not, and stays live. */
+.fwm-reportv1-side:disabled {
+  color: var(--dr-ink-faint);
+}
+
+/* --- why a submit is refused ---------------------------------------------- */
+
+.fwm-reportv1-status {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  padding: 0 var(--fwm-reportv1-head-inset);
+  font-size: var(--fwm-text-micro);
+  color: var(--dr-ink-muted);
+}
+
+.fwm-reportv1-status-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-ink-muted);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='blocked'] {
+  color: var(--dr-verdict-drop);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='blocked'] .fwm-reportv1-status-dot {
+  background: var(--dr-verdict-drop);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='queued'] {
+  color: var(--dr-owner-hoa);
+}
+
+.fwm-reportv1-status[data-fwm-report-status='queued'] .fwm-reportv1-status-dot {
+  background: var(--dr-owner-hoa);
+}
+
+/* --- the key -------------------------------------------------------------- */
+
+.fwm-reportv1-submit {
+  height: var(--fwm-reportv1-submit-h); /* 48 */
+  margin-top: var(--fwm-reportv1-submit-gap); /* 8 */
+  border: var(--fwm-rule-w) solid var(--dr-accent-line);
+  border-radius: var(--fwm-reportv1-submit-radius); /* 13 */
+  background: var(--dr-accent-fill);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-figure); /* 16 */
+  font-weight: 700;
+  color: var(--dr-accent);
+  touch-action: manipulation;
+}
+
+/* REFUSED, AND IT LOOKS REFUSED. The line above it says why. */
+.fwm-reportv1-submit:disabled {
+  border-color: var(--dr-hairline-row);
+  background: var(--dr-row-fill);
+  color: var(--dr-ink-faint);
+}
+
+/* --- the row into everything else ----------------------------------------- */
+
+/* No fill at rest: the spec gives this row a hover ground and nothing else, and
+   `check-design-values.mjs` rejects `:hover` outright on a touch-first product.
+   Dropped rather than translated into an `:active` the spec does not draw -
+   the same call `menu.css` made for the same six row types. */
+.fwm-reportv1-row {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-reportv1-row-gap); /* 10 */
+  min-width: 0;
+  height: var(--fwm-reportv1-row-h); /* 40 */
+  padding: 0 var(--fwm-reportv1-row-pad); /* 12 */
+  border: none; /* keyword */
+  border-radius: var(--fwm-reportv1-key-radius); /* 12 */
+  background: none; /* keyword */
+  font-family: inherit; /* keyword */
+  touch-action: manipulation;
+}
+
+.fwm-reportv1-row-label {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-forecast); /* 13 */
+  font-weight: 500;
+  color: var(--dr-ink-3);
+}
+
+.fwm-reportv1-row-value {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fwm-text-plate); /* 12 */
+  color: var(--dr-ink-faint);
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-reportv1-row-glyph {
+  flex: none; /* keyword */
+  width: var(--fwm-reportv1-row-glyph); /* 15 */
+  height: var(--fwm-reportv1-row-glyph);
+  color: var(--dr-ink-muted);
+}
+
+/* --- the promise ---------------------------------------------------------- */
+
+/* Quiet, and directly under the key that acts on it. See the component header
+   for why this sentence is load-bearing and why two of its clauses moved to the
+   sheet that holds the photograph. */
+.fwm-reportv1-promise {
+  padding: var(--fwm-reportv1-promise-pad) var(--fwm-reportv1-head-inset) 0;
+  font-size: var(--fwm-text-micro); /* 11 -- the spec's 11.5 */
+  line-height: 1.45;
+  color: var(--dr-ink-faint);
+}

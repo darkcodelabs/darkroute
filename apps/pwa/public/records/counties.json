@@ -1,0 +1,844 @@
+{
+  "generatedAt": "2026-09-03",
+  "note": "Documented ALPR misuse, one entry per published finding, each carrying a source a reader can open. ABSENCE IS NOT INNOCENCE: a county with no entry has had nothing documented and published, which is the case almost everywhere. California produces more entries than other states because SB 34 obliges audits, not because its police misuse cameras more.",
+  "counties": 84,
+  "records": [
+    {
+      "fips": "01115",
+      "agency": "Moody Police Department and Springville Police Department",
+      "summary": "Audits of the Flock systems at two St. Clair County departments found license plate reader policy violations at both. Springville Police Chief Jason Mize said an audit found checks had been conducted on a family member of a Springville officer, who resigned July 8, 2026, and Moody Police Chief Reece Smith said a Moody employee was immediately placed on leave and fired three days later. Neither chief would name the employees involved, and both cases were turned over to the Alabama Law Enforcement Agency for review.",
+      "incidents": 2,
+      "year": 2026,
+      "sourceUrl": "https://www.wbrc.com/2026/07/27/employees-2-police-departments-st-clair-county-violated-flock-camera-policy/",
+      "sourceName": "WBRC FOX6 Birmingham, July 27, 2026"
+    },
+    {
+      "fips": "04013",
+      "agency": "Chandler Police Department",
+      "summary": "An audit of the Chandler Police Department's Flock system flagged an anomaly in its activity logs in early August 2026, and the department cut off personnel access and traced the activity to a single officer's account. The officer, who had been placed on administrative leave, admitted using the license plate reader to locate a family member with prior health issues and resigned before the formal investigation concluded, which the department disclosed on Aug. 13. Investigators verified the searches involved the officer's relative rather than a member of the public, and the city said it would not renew its Flock contract.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.azfamily.com/2026/08/13/chandler-police-officer-resigns-admits-misusing-flock-cameras/",
+      "sourceName": "Arizona's Family (KTVK/KPHO), August 13, 2026"
+    },
+    {
+      "fips": "04021",
+      "agency": "Apache Junction Police Department",
+      "summary": "Officer Joshua McDaniel resigned ahead of termination after an internal investigation sustained findings that he knowingly logged into the department's Flock database, and contacted dispatchers who ran further searches, to track his wife's vehicle in April 2026.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.fox10phoenix.com/news/apache-junction-officer-accused-misusing-flock-license-plate-reader-resigned-prior-firing-docs",
+      "sourceName": "FOX 10 Phoenix, August 19, 2026"
+    },
+    {
+      "fips": "06007",
+      "agency": "Chico Police Department",
+      "summary": "Public records showed that 20 federal agencies and more than 80 out-of-state agencies had access to Chico Police Department ALPR data from February 2024 until the department shut the sharing off in July 2026, which Chief Billy Aldridge acknowledged should never have been set up.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://chicosol.org/2026/07/25/chico-pd-granted-ice-border-patrol-access-to-its-alpr-data/",
+      "sourceName": "ChicoSol News, July 25, 2026"
+    },
+    {
+      "fips": "06019",
+      "agency": "Fresno Police Department",
+      "summary": "The California State Auditor found that Fresno was sharing its ALPR images with the San Diego Sector Border Patrol of U.S. Customs and Border Protection at the start of the audit, without implementing agreements required by state Department of Justice guidance issued in October 2018.",
+      "incidents": 1,
+      "year": 2020,
+      "sourceUrl": "https://information.auditor.ca.gov/pdfs/reports/2019-118.pdf",
+      "sourceName": "California State Auditor Report 2019-118, February 2020"
+    },
+    {
+      "fips": "06041",
+      "agency": "Marin County Sheriff's Office",
+      "summary": "The Marin County Sheriff settled a lawsuit brought by community activists represented by EFF and ACLU affiliates over sharing automated license plate reader data with hundreds of federal and out-of-state agencies including ICE and CBP, agreeing to stop sharing outside California to comply with SB 34 and the California Values Act.",
+      "incidents": 1,
+      "year": 2022,
+      "sourceUrl": "https://www.eff.org/press/releases/community-activists-reach-settlement-marin-county-sheriff-unlawfully-sharing-drivers",
+      "sourceName": "Electronic Frontier Foundation, June 1, 2022"
+    },
+    {
+      "fips": "06041",
+      "agency": "Marin County Sheriff's Office",
+      "summary": "The California State Auditor found that a prior Marin ALPR administrator had in 2014 agreed to share images with three U.S. Immigration and Customs Enforcement agencies, and that Marin was still sharing with an entity listed as \"California Border Patrol\" at the time of the audit.",
+      "incidents": 2,
+      "year": 2020,
+      "sourceUrl": "https://information.auditor.ca.gov/pdfs/reports/2019-118.pdf",
+      "sourceName": "California State Auditor Report 2019-118, February 2020"
+    },
+    {
+      "fips": "06053",
+      "agency": "Monterey County Sheriff's Office",
+      "summary": "Network audit reports obtained by Monterey County NOW under the California Public Records Act showed the sheriff's office shared its Flock license plate reader data during 2025 with out-of-state law enforcement agencies in Colorado, Michigan, Tennessee, Massachusetts, Oregon, Texas, Utah and Rhode Island, sharing that SB 34 prohibits. Sheriff Tina Nieto said she was made aware of a statewide system configuration error by Flock that let agencies outside California query the office's database, that Flock changed the configuration in March 2025 to stop it, and that the office will continue to use the company.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.montereycountynow.com/news/cover/is-the-monitoring-of-license-plates-in-monterey-county-and-beyond-a-boon-for-policing/article_65caece9-ea4d-4850-a921-c08f99155540.html",
+      "sourceName": "Monterey County NOW, April 2, 2026"
+    },
+    {
+      "fips": "06059",
+      "agency": "Costa Mesa Police Department",
+      "summary": "Former Costa Mesa officer Robert Jay Josett pleaded guilty to three misdemeanors, including unauthorized computer access and fraud, after prosecutors said he used the department's Flock license plate readers to track a woman he was involved with and her romantic interests. A Costa Mesa PD report to City Council separately recorded that a 2023-2024 administrative investigation found Flock misuse by an employee who resigned and was charged by the Orange County District Attorney's Office.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.cbsnews.com/losangeles/news/ex-costa-mesa-police-officer-accused-of-using-flock-cameras-to-track-his-mistress/",
+      "sourceName": "CBS News Los Angeles, April 14, 2026"
+    },
+    {
+      "fips": "06065",
+      "agency": "Riverside County Sheriff's Department",
+      "summary": "Flock audit logs reviewed by The San Francisco Standard show the department was still running ALPR searches for FBI and U.S. Postal Inspection Service investigations less than two months after the California Attorney General warned agencies that sharing ALPR data with federal and out-of-state agencies violates SB 34.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://sfstandard.com/2025/07/23/california-police-sharing-flock-license-plate-data/",
+      "sourceName": "The San Francisco Standard, July 23, 2025"
+    },
+    {
+      "fips": "06067",
+      "agency": "Sacramento County Sheriff's Office",
+      "summary": "After being warned by the state Attorney General's office in June 2024, the department continued to make ALPR searches labeled \"DEA Assist\" and \"ATF\" between December 2024 and June 2025, according to audit logs reviewed by The San Francisco Standard.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://sfstandard.com/2025/07/23/california-police-sharing-flock-license-plate-data/",
+      "sourceName": "The San Francisco Standard, July 23, 2025"
+    },
+    {
+      "fips": "06067",
+      "agency": "Sacramento County Sheriff's Office",
+      "summary": "The Sacramento County Grand Jury found the Sheriff's Office violated California's SB 34 by sharing automated license plate reader data with out-of-state law enforcement, which it said unreasonably risked aiding prosecution of women who traveled to California to seek or receive healthcare services.",
+      "incidents": 1,
+      "year": 2024,
+      "sourceUrl": "https://www.eff.org/deeplinks/2024/06/victory-grand-jury-finds-sacramento-cops-illegally-shared-driver-data-putting",
+      "sourceName": "Electronic Frontier Foundation, June 27, 2024"
+    },
+    {
+      "fips": "06067",
+      "agency": "Sacramento County Sheriff's Office",
+      "summary": "The California State Auditor found that Sacramento had authorized sharing of its ALPR images with ICE agencies in the past and was sharing with the San Diego Sector Border Patrol of U.S. Customs and Border Protection when the audit began; both shares were removed during the audit.",
+      "incidents": 2,
+      "year": 2020,
+      "sourceUrl": "https://information.auditor.ca.gov/pdfs/reports/2019-118.pdf",
+      "sourceName": "California State Auditor Report 2019-118, February 2020"
+    },
+    {
+      "fips": "06073",
+      "agency": "El Cajon Police Department",
+      "summary": "California Attorney General Rob Bonta sued the City of El Cajon on October 3, 2025, alleging its police department continued to share ALPR data with out-of-state law enforcement agencies in 27 states after repeated warnings that SB 34 prohibits it.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.oag.ca.gov/news/press-releases/attorney-general-bonta-sues-el-cajon-illegally-sharing-license-plate-data-out",
+      "sourceName": "California Office of the Attorney General press release, October 3, 2025"
+    },
+    {
+      "fips": "06073",
+      "agency": "San Diego Police Department",
+      "summary": "The same City of San Diego memo disclosed a handful of instances in which the department shared ALPR data with federal and out-of-state law enforcement agencies before ceasing the practice in April 2025 upon further review of SB 34.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.sandiego.gov/sites/default/files/2025-06/pab-alpr-update-250613.pdf",
+      "sourceName": "City of San Diego Police Department memorandum to Privacy Advisory Board, June 13, 2025"
+    },
+    {
+      "fips": "06073",
+      "agency": "San Diego Police Department",
+      "summary": "A City of San Diego memo to the Privacy Advisory Board disclosed that an incorrectly implemented setting at system launch let other California law enforcement agencies run 12,914 searches against SDPD's Flock ALPR database between December 29, 2023 and January 17, 2024.",
+      "incidents": 1,
+      "year": 2024,
+      "sourceUrl": "https://www.sandiego.gov/sites/default/files/2025-06/pab-alpr-update-250613.pdf",
+      "sourceName": "City of San Diego Police Department memorandum to Privacy Advisory Board, June 13, 2025"
+    },
+    {
+      "fips": "06075",
+      "agency": "San Francisco Police Department",
+      "summary": "An SFPD compliance audit found that analysts at the Western States Information Network, given access via the Northern California Regional Intelligence Center, ran nearly 300 improper queries of SFPD's Flock network on behalf of federal and out-of-state agencies over about a year; the chief revoked NCRIC's access.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.cbsnews.com/sanfrancisco/news/san-francisco-police-flock-alpr-automated-license-plate-reader-data-access/",
+      "sourceName": "CBS News Bay Area, June 18, 2026"
+    },
+    {
+      "fips": "06075",
+      "agency": "San Francisco Police Department",
+      "summary": "Audit logs reviewed by The San Francisco Standard show SFPD accessed Oakland's ALPR data more than 100 times for cases marked as related to federal law enforcement, despite California's ban on sharing that data with federal agencies.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://sfstandard.com/2025/07/23/california-police-sharing-flock-license-plate-data/",
+      "sourceName": "The San Francisco Standard, July 23, 2025"
+    },
+    {
+      "fips": "06081",
+      "agency": "Menlo Park Police Department",
+      "summary": "The San Mateo County Civil Grand Jury reported that the Menlo Park Police Department acknowledged prior instances in which its ALPR data had been shared across state lines, a practice the report describes as inconsistent with California law.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://sanmateo.courts.ca.gov/system/files/grand-jury/auto-license-plate-readers-report.pdf",
+      "sourceName": "San Mateo County Civil Grand Jury, \"Is Our Flock of ALPR Cameras Properly Tended?\", released August 3, 2026"
+    },
+    {
+      "fips": "06085",
+      "agency": "Mountain View Police Department",
+      "summary": "A Mountain View Police Department staff report to City Council disclosed that a \"National Lookup\" setting gave agencies outside California access to one camera from August to November 2024 — expressly prohibited by city policy and state law — and a \"Statewide Lookup\" setting let California agencies search all cameras from August 2024 to January 2026 without the department's required approval process.",
+      "incidents": 2,
+      "year": 2026,
+      "sourceUrl": "https://mountainview.legistar.com/View.ashx?GUID=F6A5CD77-B3CC-44AA-A43D-307541338595&ID=15262079&M=F",
+      "sourceName": "City of Mountain View Police Department staff report, City Council meeting February 24, 2026"
+    },
+    {
+      "fips": "06087",
+      "agency": "Santa Cruz Police Department",
+      "summary": "A public records request in fall 2025 revealed that Santa Cruz PD's ALPR data had been accessed by out-of-state agencies that had no data-sharing agreements, a violation of California's ALPR Privacy Act; Santa Cruz went on to terminate its Flock contract.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://costamesa.legistar.com/View.ashx?GUID=4C34D79D-6D35-4157-B362-DCCCAE27901F&ID=15696589&M=F",
+      "sourceName": "City of Costa Mesa Agenda Report File #26-315, City Council meeting July 21, 2026"
+    },
+    {
+      "fips": "06095",
+      "agency": "Vallejo Police Department",
+      "summary": "At a Vallejo Surveillance Advisory Board meeting weighing a new Flock Safety contract, a board member and Oakland Privacy's director of research, Mike Katz-Lacabe, pointed to the department's own Flock transparency portal, which listed the Houston Police Department and the U.S. Postal Inspection Service as having access to its ALPR data, along with the U.S. Marshals Service shown as inactive. California's SB 34 bars sharing that data with out-of-state or federal agencies. Deputy Chief Drew Ramsay said the department had audited the system and taken those agencies out, that it should not be sharing outside California, and that he would sweep the system again; Katz-Lacabe said the sharing with Houston was happening automatically through the platform.",
+      "incidents": 1,
+      "year": 2024,
+      "sourceUrl": "https://www.vallejosun.com/vallejo-police-still-illegally-sharing-alpr-data-out-of-state-as-surveillance-board-mulls-contract-renewal/",
+      "sourceName": "Vallejo Sun, June 21, 2024"
+    },
+    {
+      "fips": "06111",
+      "agency": "Ventura County Sheriff's Office",
+      "summary": "An audit found out-of-state agencies accessed the Ventura County Sheriff's Office ALPR data more than 364,000 times between February and March 2025 without the department's approval or knowledge, after a \"National Lookup\" setting the office had disabled in June 2023 was reactivated; an internal investigation determined no one from the agency turned it back on.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.cbsnews.com/losangeles/news/flock-license-plate-readers-shared-data-with-out-of-state-federal-agencies/",
+      "sourceName": "CBS News Los Angeles, February 27, 2026"
+    },
+    {
+      "fips": "08013",
+      "agency": "Boulder Police Department",
+      "summary": "Boulder Reporting Lab reported the department kept Flock's national lookup feature switched on for more than three years, until June 2025; public records the outlet reviewed showed Boulder was included in more than 100 searches of the network by U.S. Border Patrol before the city ended national sharing. Police spokesperson Dionne Waugh confirmed any other agency with the feature enabled \"could have searched for a specific license plate within our database, assuming they could articulate a law enforcement purpose.\" Access is now limited to about 90 Colorado agencies.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://boulderreportinglab.org/2025/08/19/until-recently-boulder-shared-license-plate-data-on-a-national-network-accessed-by-ice/",
+      "sourceName": "Boulder Reporting Lab, August 19, 2025, updated August 21, 2025"
+    },
+    {
+      "fips": "08031",
+      "agency": "Denver Police Department",
+      "summary": "The Colorado Sun reported that data from Denver's Flock cameras was reachable by law enforcement across the country until April 8, 2025, when the police department pulled it from Flock's national directory after opposition from the city council; police elsewhere in the country had accessed the camera data nearly 1,400 times for ICE- or immigration-related searches in 2024 and 2025, though ICE itself had no direct access to the cameras. Colorado law bars state and local law enforcement from sharing personal information with federal immigration authorities, and Denver continues to share its Flock data with other Colorado departments.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://coloradosun.com/2026/02/06/have-denvers-flock-cameras-been-used-for-immigration-enforcement/",
+      "sourceName": "The Colorado Sun, February 6, 2026"
+    },
+    {
+      "fips": "08069",
+      "agency": "Loveland Police Department",
+      "summary": "The Colorado Sun reported, citing published reports, that the Loveland Police Department shared access to Denver's Flock license plate reader data with a federal agent who ran 26 ICE-related searches between April 3 and April 25, 2025. The same article notes that Colorado law prohibits law enforcement in the state from sharing personal information with, or detaining people on behalf of, federal immigration enforcement, but does not characterise the Loveland searches as unlawful.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://coloradosun.com/2026/02/06/have-denvers-flock-cameras-been-used-for-immigration-enforcement/",
+      "sourceName": "The Colorado Sun, February 6, 2026"
+    },
+    {
+      "fips": "09003",
+      "agency": "Avon Police Department",
+      "summary": "Records the WFSB I-Team obtained by request showed at least 1,688 immigration- or ICE-related hits in the Avon Police Department's Flock data for the January to October 2025 period covered, alongside 425,611 out-of-department hits. Avon told the station it turned off immigration searches in November 2025, and Chief Neil Dryfe said the most common use of the cameras is stolen vehicles. A Connecticut law signed in May 2026 bars sharing plate reader data for immigration enforcement.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wfsb.com/2026/05/28/where-are-police-flock-cameras-ct-i-team-dives-into-search-data/",
+      "sourceName": "WFSB Channel 3 I-Team, May 28, 2026"
+    },
+    {
+      "fips": "09009",
+      "agency": "Cheshire Police Department",
+      "summary": "A WFSB I-Team review of search logs obtained through records requests found around 1,727 immigration- or ICE-related searches of Cheshire Police Department Flock data run by outside agencies, in data covering May 2023 through November 2025. The station reported that Cheshire was one of five Connecticut departments on Flock's national network until recently, and that Houston, Texas police searched more than any other out-of-state agency, exceeding 46,000 queries across Cheshire's and Avon's systems in January 2025 alone. Cheshire police told the station they support continued use of the technology; a state law signed in May 2026 restricts sharing Connecticut plate data for immigration enforcement.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wfsb.com/2026/05/28/where-are-police-flock-cameras-ct-i-team-dives-into-search-data/",
+      "sourceName": "WFSB Channel 3 I-Team, May 28, 2026"
+    },
+    {
+      "fips": "12009",
+      "agency": "Brevard County Sheriff's Office",
+      "summary": "Deputy Michael Fultz resigned as the agency prepared to fire him after an internal investigation found he searched his ex-girlfriend's license plate in the agency's Flock system while off duty, with the search documented as \"investigation\"; he could not explain why he ran it.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.clickorlando.com/news/investigators/2026/08/20/brevard-deputy-of-the-year-quits-after-egregious-misconduct-exposed/",
+      "sourceName": "News 6 ClickOrlando, August 19, 2026"
+    },
+    {
+      "fips": "12105",
+      "agency": "Haines City Police Department",
+      "summary": "Officer Christopher Goodson was charged with one count of offenses against users of computers and one count of official misconduct after investigators said he entered his estranged ex-wife's license plate into Flock 717 times between Sept. 1, 2024 and June 30, 2026.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wbtv.com/2026/08/18/officer-accused-misusing-flock-cameras-track-estranged-ex-wife-more-than-700-times-police-say/",
+      "sourceName": "WBTV, August 18, 2026"
+    },
+    {
+      "fips": "12119",
+      "agency": "Sumter County Sheriff's Office",
+      "summary": "Detective Brandy Almany was arrested July 23, 2026 and fired the same day, charged with official misconduct and multiple counts of offenses against computer users. Sheriff Patrick Breeden said an internal audit found she accessed Flock, the state's DAVID driver database and the Comprehensive Case Information System for information about her husband's ex-wife; investigators say she used unrelated case numbers to make the searches look like legitimate investigations. Breeden suspended the office's use of Flock and ordered an audit of all its databases.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wftv.com/news/local/sumter-detective-fired-arrested-using-police-cameras-spy-husbands-ex-wife/O2ZIHFAP4FC7VINFSGNDGPU6DI/",
+      "sourceName": "WFTV Channel 9, July 24, 2026"
+    },
+    {
+      "fips": "13021",
+      "agency": "Bibb County Sheriff's Office",
+      "summary": "Three former deputies — Coznavian Stubbs, Joseph Callaway and Toni Lewis — were charged with violation of oath by a public officer, unauthorized use/retention of license plate data and stalking after an internal audit conducted with Flock's assistance found they used license plate data on individuals with whom they had personal relationships.",
+      "incidents": 3,
+      "year": 2026,
+      "sourceUrl": "https://www.wsbtv.com/news/georgia/3-georgia-deputies-charged-after-allegedly-using-flock-camera-system-personal-reasons/ADVPE32Z4NCZFK6I6QCBVSJWMQ/",
+      "sourceName": "WSB-TV Atlanta, August 11, 2026"
+    },
+    {
+      "fips": "13051",
+      "agency": "Savannah Police Department",
+      "summary": "Savannah Police terminated four sworn officers and two civilian employees after an internal investigation found they ran Flock searches on personal acquaintances and family members, and that one officer gave someone from an outside agency unauthorized access to the department's Flock system; all six cases are under GBI criminal investigation.",
+      "incidents": 6,
+      "year": 2026,
+      "sourceUrl": "https://www.wtoc.com/2026/08/07/savannah-police-department-fires-6-employees-over-flock-safety-system-misuse/",
+      "sourceName": "WTOC-TV, August 7, 2026"
+    },
+    {
+      "fips": "13057",
+      "agency": "Cherokee County Sheriff's Office",
+      "summary": "Lt. Chris Bryant, Sgt. Mike Creeden and Deputy Cynthia Jodesty were fired and arrested for unlawfully accessing the county's license plate reader database and violating their oath of office after a self-initiated audit; Jodesty's affidavit says she used the database multiple times over about a month to locate a vehicle \"without a legal or investigative\" purpose.",
+      "incidents": 3,
+      "year": 2026,
+      "sourceUrl": "https://www.atlantanewsfirst.com/2026/06/23/3-cherokee-county-deputies-fired-arrested-accused-misusing-license-plate-reader-database/",
+      "sourceName": "Atlanta News First, June 23, 2026"
+    },
+    {
+      "fips": "13063",
+      "agency": "Clayton County Sheriff's Office",
+      "summary": "Deputy Errol Farrell Jr., 40, turned himself in at the Clayton County Jail on a charge of Misuse of a License Plate Reader System after the Clayton County Sheriff's Office asked the Georgia Bureau of Investigation to investigate alleged misuse of its Flock Safety system; the GBI said preliminary information indicates Farrell used the system for non-law-enforcement purposes, that the investigation is active and ongoing, and that the case file will go to the Clayton County District Attorney's Office for prosecution.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2026-09-02/gbi-arrests-clayton-county-sheriffs-office-deputy-misuse-license-plate",
+      "sourceName": "Georgia Bureau of Investigation press release, September 2, 2026"
+    },
+    {
+      "fips": "13077",
+      "agency": "Coweta County Sheriff's Office",
+      "summary": "An internal audit of the Coweta County Sheriff's Office's Flock Safety license plate reader system flagged the accounts of three employees for additional review, and all three resigned before the audit concluded and an internal investigation began. The sheriff's office did not identify the employees or say what activity prompted the review; it asked the Georgia Bureau of Investigation to conduct an independent investigation and is providing additional training to authorized users of the system.",
+      "incidents": 3,
+      "year": 2026,
+      "sourceUrl": "https://www.atlantanewsfirst.com/2026/08/04/3-coweta-county-sheriffs-office-employees-resign-after-flock-audit/",
+      "sourceName": "Atlanta News First, August 4, 2026"
+    },
+    {
+      "fips": "13089",
+      "agency": "DeKalb County Sheriff's Office",
+      "summary": "Sgt. Kabiru Salawu, a nearly 17-year veteran, was fired, arrested and charged with felony and misdemeanor counts for allegedly misusing the agency's Flock license plate reader technology.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://reason.com/2026/07/24/georgia-cops-keep-getting-arrested-for-misusing-flock-surveillance-data/",
+      "sourceName": "Reason, July 24, 2026"
+    },
+    {
+      "fips": "13095",
+      "agency": "Albany Police Department",
+      "summary": "An internal audit of the Albany Police Department's Flock system led to a GBI investigation and the arrest of five former officers — Tytianna Davis, Jade Jackson, Nicholas Richardson, Brittney Smith and Issac Whitus — on Misuse of License Plate Data and Violation of Oath of Office charges for using retained license plate data for non-law-enforcement purposes.",
+      "incidents": 5,
+      "year": 2026,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2026-07-06/gbi-arrests-five-former-albany-police-department-officers-misuse-license",
+      "sourceName": "Georgia Bureau of Investigation press release, July 6, 2026"
+    },
+    {
+      "fips": "13103",
+      "agency": "Ogeechee Circuit District Attorney's Office",
+      "summary": "The Effingham County Sheriff's Office requested a GBI investigation that led to the arrest of Andrae Wright, a former Ogeechee Circuit District Attorney's Office investigator, who accessed the Flock Safety system more than 60 times between June 15 and July 5, 2026 for non-law-enforcement purposes; charges include Misuse of a License Plate Reader System, Stalking, Computer Invasion of Privacy and Violation of Oath of Office.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2026-07-27/gbi-arrests-former-ogeechee-circuit-district-attorneys-office",
+      "sourceName": "Georgia Bureau of Investigation press release, July 27, 2026"
+    },
+    {
+      "fips": "13113",
+      "agency": "Fayetteville Police Department",
+      "summary": "Three Fayetteville officers were fired after an internal auditing feature found they used the Flock license plate reader system to look up their own vehicles or plates belonging to family members and acquaintances without a legitimate law-enforcement purpose; the GBI was asked to conduct an independent investigation.",
+      "incidents": 3,
+      "year": 2026,
+      "sourceUrl": "https://www.fox5atlanta.com/news/3-fayetteville-officers-fired-misusing-license-plate-system",
+      "sourceName": "FOX 5 Atlanta, July 17, 2026"
+    },
+    {
+      "fips": "13133",
+      "agency": "Greene County Sheriff's Office",
+      "summary": "Deputy Quinsha Goss was fired and arrested on July 7, 2026 after the sheriff's office's own June 30 audit of its Flock license plate reader system found she had allegedly accessed the system with no authorized law enforcement justification, conducting multiple inquiries involving at least one license plate over a three-month period; she is charged with violation of oath of office and with the prohibition on law enforcement retaining license plate data obtained from automated license plate recognition systems.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.atlantanewsfirst.com/2026/07/08/greene-county-deputy-arrested-fired-after-allegedly-misusing-flock-cameras/",
+      "sourceName": "Atlanta News First, July 8, 2026"
+    },
+    {
+      "fips": "13137",
+      "agency": "Habersham County Sheriff's Office",
+      "summary": "Deputy Christian Brewer was fired and arrested on July 31, 2026 on one felony count of violation of oath of office and two misdemeanor counts of misuse of license plate data, after an internal Flock audit tied his searches to someone with whom he had a personal relationship.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.atlantanewsfirst.com/2026/07/31/habersham-county-deputy-fired-arrested-after-flock-license-plate-reader-audit/",
+      "sourceName": "Atlanta News First, July 31, 2026"
+    },
+    {
+      "fips": "13139",
+      "agency": "Hall County Sheriff's Office",
+      "summary": "An ongoing audit of the Hall County Sheriff's Office's Flock automated license plate reader system found that Melissa Wood used the system for non-law-enforcement purposes, the sheriff's office said in announcing her firing; it said she is accused of using the system to track a person \"known to her\" and referred the alleged violations to the Georgia Peace Officer Standards and Training Council while its internal investigation continues. Atlanta News First reported that three other Hall County deputies resigned after being accused of misusing the Flock system and that two sheriff's office investigators were fired the week before; the press release did not mention any criminal charges against Wood.",
+      "incidents": 6,
+      "year": 2026,
+      "sourceUrl": "https://www.atlantanewsfirst.com/2026/09/02/hall-county-deputy-fired-after-being-accused-misusing-flock-cameras/",
+      "sourceName": "Atlanta News First, September 2, 2026"
+    },
+    {
+      "fips": "13151",
+      "agency": "Henry County Police Department",
+      "summary": "Officer Patrick Isbell, 41, was fired and arrested on July 10, 2026 and charged with misuse of license plate data after accessing the department's system and using retained license plate data for non-law-enforcement purposes.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.ajc.com/news/2026/07/3-more-georgia-police-officers-fired-over-alleged-flock-camera-misuse/",
+      "sourceName": "The Atlanta Journal-Constitution, July 2026"
+    },
+    {
+      "fips": "13153",
+      "agency": "Houston County Sheriff's Office",
+      "summary": "School resource deputy Sierra Carroll was suspended without pay pending termination after an internal audit found she misused Flock Safety license plate reader data; the case was referred to the district attorney's office for possible criminal prosecution.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.41nbc.com/houston-county-sro-suspended-flock-data-misuse/",
+      "sourceName": "41NBC / WMGT, August 17, 2026"
+    },
+    {
+      "fips": "13157",
+      "agency": "Braselton Police Department",
+      "summary": "The Georgia Bureau of Investigation arrested Braselton Police Chief Michael Steffman on charges of Violation of Oath by Public Officer, Stalking, Harassing Communications and multiple counts of Misuse of Automated License Plate Recognition Systems, finding he misused the systems to harass and stalk multiple individuals.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2025-11-19/gbi-arrests-braselton-police-chief-harassment-and-stalking",
+      "sourceName": "Georgia Bureau of Investigation press release, November 19, 2025"
+    },
+    {
+      "fips": "13185",
+      "agency": "Hahira Police Department",
+      "summary": "Former officer Daniel Lindsay was arrested by the Lowndes County Sheriff's Office and charged with six counts of misuse of license plate data and six counts of violation of oath by a public officer over allegedly non-work-related searches of the Flock Safety camera system, conduct identified during an audit of the system; Chief Stryde Jones said any misuse of this information \"for personal or non-work-related purposes is unacceptable and represents a breach of the trust placed in us by the communities we serve.\"",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.walb.com/2026/09/01/flock-camera-misuse-allegations-lead-hahira-pd-officers-arrest/",
+      "sourceName": "WALB News 10, September 1, 2026"
+    },
+    {
+      "fips": "13217",
+      "agency": "Covington Police Department",
+      "summary": "Former officer Michael Canty was arrested and charged with Misuse of a License Plate Reader System and Violation of Oath of Office after the Georgia Bureau of Investigation, at the Covington Police Department's request, found that preliminary information indicated he accessed the department's Flock Safety system for non-law-enforcement purposes. The GBI investigation is active and ongoing; once complete it will be turned over to the Alcovy Judicial Circuit District Attorney's Office for prosecution.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2026-08-27/gbi-arrests-former-covington-police-department-officer-misuse-license",
+      "sourceName": "Georgia Bureau of Investigation press release, August 27, 2026"
+    },
+    {
+      "fips": "13223",
+      "agency": "Dallas Police Department (Georgia)",
+      "summary": "The Georgia Bureau of Investigation arrested Heidi Taylor, former 911 director for the Dallas Police Department in Paulding County, on two misdemeanor counts of Misuse of a License Plate Reader System after the department reported she accessed its Flock Safety system between 2024 and 2025 for non-law-enforcement purposes.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2026-08-12/gbi-arrests-former-911-director-paulding-county-misuse-license-plate",
+      "sourceName": "Georgia Bureau of Investigation press release, August 12, 2026"
+    },
+    {
+      "fips": "13233",
+      "agency": "Polk County Police Department",
+      "summary": "The Georgia Bureau of Investigation arrested former Polk County Police Department officer Tracey Royston on four misdemeanor counts of Misuse of a License Plate Reader System after finding she accessed the Cedartown Police Department's Flock system between 2024 and 2025 for non-law-enforcement purposes.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://gbi.georgia.gov/press-releases/2026-08-07/gbi-arrests-former-polk-county-police-officer-misuse-license-plate-reader",
+      "sourceName": "Georgia Bureau of Investigation press release, August 7, 2026"
+    },
+    {
+      "fips": "13245",
+      "agency": "Richmond County Sheriff's Office",
+      "summary": "Four Richmond County Sheriff's Office employees — Deputy Jaquarius Yarbrough in June 2026, then Lt. John McKenzie, Investigator Curtis Hoskins and Deputy Joshua Johnson in July — were fired and arrested on misuse of license plate reader and violation of oath charges; investigators determined they knowingly accessed the Flock Camera System to search license plate numbers for reasons unrelated to any official law enforcement purpose.",
+      "incidents": 4,
+      "year": 2026,
+      "sourceUrl": "https://www.wrdw.com/2026/07/20/3-more-local-deputies-arrested-fired-over-misusing-license-plate-readers/",
+      "sourceName": "WRDW News 12, July 20, 2026"
+    },
+    {
+      "fips": "13247",
+      "agency": "Conyers Police Department",
+      "summary": "Paige Forte, a supervisor in the department's Real-Time Crime Center, was arrested for allegedly misusing the Flock license plate reader system more than 30 times to search for her domestic partner's car between April and July 2026.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://reason.com/2026/07/24/georgia-cops-keep-getting-arrested-for-misusing-flock-surveillance-data/",
+      "sourceName": "Reason, July 24, 2026"
+    },
+    {
+      "fips": "17031",
+      "agency": "Elmwood Park Police Department",
+      "summary": "An Illinois Secretary of State audit found U.S. Border Patrol ran 698 searches in June, 1,516 in July and 862 in August 2025 against Elmwood Park's license plate reader data; the Secretary of State said the searches violated the Illinois law barring out-of-state agencies from accessing data for immigration and reproductive-health purposes.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.elmwoodparkadvocate.org/p/border-patrol-out-of-state-police",
+      "sourceName": "Elmwood Park Advocate, July 14, 2026"
+    },
+    {
+      "fips": "17031",
+      "agency": "Forest Park Police Department",
+      "summary": "An audit by the Illinois Secretary of State found that the Forest Park Police Department inadvertently shared license plate reader data for more than a year with federal immigration authorities in apparent violation of Illinois law.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://chicago.suntimes.com/immigration/2025/09/05/state-audit-forest-park-license-plate-data-ice-alexi-giannoulias",
+      "sourceName": "Chicago Sun-Times, September 5, 2025"
+    },
+    {
+      "fips": "17031",
+      "agency": "Mount Prospect Police Department",
+      "summary": "The Illinois Secretary of State's Office informed Mount Prospect that 262 immigration-related searches were run against its Flock ALPR data via Flock's National Lookup feature, including by the Johnson County (TX) Sheriff's Department; the police chief said the agencies \"conducted illegal searches violating the trust of our community.\"",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.fox32chicago.com/news/texas-sheriffs-office-accessed-mount-prospect-license-plate-data-in-immigration-searches-police-say",
+      "sourceName": "FOX 32 Chicago, June 12, 2025"
+    },
+    {
+      "fips": "17031",
+      "agency": "Palos Heights Police Department",
+      "summary": "Flock logs showed 24 searches run under a Palos Heights detective's account on January 27-28 with \"immigration violation\" given as the reason; Chief Mike Yott confirmed the officer had shared his Flock password with a federal agent, in violation of department security practices, and was disciplined.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://unraveledpress.com/a-dea-agent-used-an-illinois-police-officers-flock-license-plate-reader-password-for-unauthorized-immigration-enforcement-searches/",
+      "sourceName": "Unraveled Press, August 11, 2025"
+    },
+    {
+      "fips": "17043",
+      "agency": "West Chicago Police Department",
+      "summary": "West Chicago placed an officer on administrative leave and asked the DuPage County State's Attorney's Office to investigate independently whether any criminal conduct occurred, after an internal review of the police department's use of its Flock automated license plate reader system found the system may have been used for an unauthorized purpose between late 2024 and early 2025. The city said it immediately preserved relevant records, that the leave is a non-disciplinary measure and should not be interpreted as a finding of wrongdoing, and that it will conduct a separate internal review of whether policies were violated while continuing a broader audit of the department's use of Flock and other investigative technology.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.fox32chicago.com/news/west-chicago-officer-possible-flock-camera-misuse",
+      "sourceName": "FOX 32 Chicago, September 1, 2026"
+    },
+    {
+      "fips": "17111",
+      "agency": "Prairie Grove Police Department",
+      "summary": "Part-time Prairie Grove officer William Copp, who was also the Holiday Hills police chief, was indicted on 12 counts of official misconduct, a Class 3 felony, in McHenry County court after prosecutors said he made hundreds of unauthorized searches on Prairie Grove's Flock license plate readers and the Illinois State Police LEADS database to track people he knew, on duty and off; Prairie Grove placed him on administrative leave when the investigation began in November 2025 and fired him in May 2026, according to village documents obtained by Shaw Local under a Freedom of Information Act request.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.shawlocal.com/northwest-herald/2026/07/18/holiday-hills-police-department-could-be-disbanded-after-chief-charged-with-felony-misconduct/",
+      "sourceName": "Shaw Local Northwest Herald, July 18, 2026"
+    },
+    {
+      "fips": "17183",
+      "agency": "Danville Police Department",
+      "summary": "Flock network audit logs obtained by 404 Media through a public records request to the Danville Police Department show officers from across the U.S. entering \"immigration,\" \"ICE\" and \"ICE+ERO\" in the reason field when searching Danville's camera network.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.404media.co/ice-taps-into-nationwide-ai-enabled-camera-network-data-shows/",
+      "sourceName": "404 Media, May 27, 2025"
+    },
+    {
+      "fips": "17197",
+      "agency": "Channahon Police Department",
+      "summary": "The Channahon Police Department placed an officer on administrative leave and opened an internal investigation, with the Illinois State Police also reviewing the matter, after the officer was accused of using the Flock Safety license plate reader system for an \"unauthorized purpose.\" The department said its policy on the use of its integrated technologies is what surfaced the alleged violation, and that it has since put additional advanced audit tools in place.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.shawlocal.com/the-herald-news/2026/08/28/channahon-police-officer-accused-of-misusing-flock-safety-license-plate-reader-system/",
+      "sourceName": "Shaw Local News Network / The Herald-News, August 27, 2026"
+    },
+    {
+      "fips": "18071",
+      "agency": "Jackson County Sheriff's Office",
+      "summary": "A routine audit of the Jackson County Sheriff's Office's own Flock system found that former deputy Skylar Thompson ran 2,055 searches of the same license plate between December 31, 2025 and August 2, 2026, logging every one of them as \"City Planning/Traffic Analysis\" despite never having been assigned such duties. He is charged with official misconduct, a Level 6 felony, and fraud, a Class A misdemeanor, and is no longer employed by the office.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wthitv.com/2026/08/31/former-indiana-deputy-charged-after-2055-flock-searches-same-license-plate/",
+      "sourceName": "WTHI-TV, August 31, 2026"
+    },
+    {
+      "fips": "18097",
+      "agency": "Indianapolis Metropolitan Police Department",
+      "summary": "A Washington Post analysis of published Flock search logs found that an Indianapolis Metropolitan Police Department officer appeared to search for vehicles used by his wife and two close personal acquaintances 3,759 times over a ten-month period. After a Post reporter asked the department about the searches, IMPD suspended the officer without pay, opened administrative and criminal investigations and recommended his termination. Chief Tanya Terry acknowledged that until recently the department had no regular practice of auditing officers' searches. The Post did not name the officer because he has not been charged with a crime.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.spokesman.com/stories/2026/aug/19/police-departments-werent-looking-for-officers-abu/",
+      "sourceName": "The Washington Post, August 19, 2026 (via The Spokesman-Review)"
+    },
+    {
+      "fips": "20173",
+      "agency": "Kechi Police Department",
+      "summary": "Former Kechi police lieutenant Victor Heiar pleaded guilty to computer crime and stalking, both misdemeanors, after using the Flock license plate reader system to monitor his estranged wife's location; he was sentenced to a controlling 24-month jail term with 18 months' probation.",
+      "incidents": 1,
+      "year": 2023,
+      "sourceUrl": "https://sedgwickcounty.org/media/63863/heiar-sentenced-news-release.pdf",
+      "sourceName": "Sedgwick County District Attorney, 18th Judicial District of Kansas, April 5, 2023"
+    },
+    {
+      "fips": "21111",
+      "agency": "Shively Police Department",
+      "summary": "Officer Asad Zahir was arrested and suspended without pay on multiple counts of official misconduct and unlawful access to a computer after Flock Safety's AI-based monitoring system alerted the department that his searches were potentially improper; police said he ran more than 2,000 searches on license plates belonging to the woman he shares a child with between January and May 2026, more than 200 of them while an Indiana court-issued protective order against him was in effect. Chief Andre Bottoms said \"the value of this technology does not excuse its misuse.\"",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.lpm.org/investigate/2026-08-26/shively-police-officer-arrested-for-using-license-plate-readers-to-track-woman",
+      "sourceName": "Louisville Public Media, August 26, 2026"
+    },
+    {
+      "fips": "22051",
+      "agency": "Jefferson Parish Sheriff's Office",
+      "summary": "Deputy Nathan Rome was fired for misuse of records after the agency determined he used its Flock access to track his former fiancee's vehicle more than 3,200 times over the course of several years.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.fox8live.com/2026/08/19/jefferson-parish-deputy-fired-misusing-flock-camera-track-ex-fiancees-vehicle-lopinto-says/",
+      "sourceName": "FOX 8 WVUE New Orleans, August 19, 2026"
+    },
+    {
+      "fips": "25005",
+      "agency": "New Bedford Police Department",
+      "summary": "Officer Emily Pacheco is under internal investigation by the New Bedford Police Department after a former partner alleged, in an affidavit supporting an abuse prevention order, that Pacheco used the city's Flock license plate readers to track and follow her; data analyzed by The New Bedford Light showed Pacheco was one of the top users of the Flock system this year. A judge extended the abuse prevention order for six months, finding the plaintiff continues to suffer abuse, and barred Pacheco from possessing a firearm. Pacheco testified the searches were for professional use, and her attorney said a confidential informant's tip had led her to investigate the former partner's new partner as the target of a drug investigation.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://newbedfordlight.org/judge-extends-abuse-prevention-order-against-city-police-officer/",
+      "sourceName": "The New Bedford Light, August 13, 2026"
+    },
+    {
+      "fips": "25009",
+      "agency": "Lynn Police Department",
+      "summary": "Two Lynn police officers were placed on administrative leave and an internal affairs investigation was initiated after the department implemented Flock Safety's Audit Assist tool on August 12, 2026 and the audit identified anomalies in searches that required further review, which the department said revealed a concerning pattern in some searches. Access to the Flock system was restricted to personnel with the rank of lieutenant and higher, and the department said that based on its analysis none of the searches pertained to or involved immigration enforcement.",
+      "incidents": 2,
+      "year": 2026,
+      "sourceUrl": "https://whdh.com/news/2-lynn-police-officers-on-administrative-leave-as-use-of-flock-data-investigated/",
+      "sourceName": "WHDH 7NEWS Boston, August 20, 2026"
+    },
+    {
+      "fips": "25017",
+      "agency": "Stow Police Department",
+      "summary": "A four-week Stow Police Department internal affairs investigation sustained findings against Officer Jason Rogers including conduct unbecoming an officer, improper use of an official position, failure to comply with written orders, use of false and unsubstantiated search reasons, and violations of department policies on law enforcement databases, after he allegedly ran vehicle information through Flock Safety multiple times with no legitimate law enforcement reason and searched the state criminal records database at least five times for reasons unrelated to law enforcement, in 2024 and 2025, regarding a person known to him. The department filed a court complaint against Rogers seeking charges related to the alleged unauthorized criminal records queries; Rogers resigned before an employment status hearing scheduled for August 26, 2026, and the department ended its relationship with Flock Safety on August 18 as a direct result of his conduct.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.boston.com/news/local-news/2026/08/26/mass-officer-accused-of-misusing-flock-system-has-resigned/",
+      "sourceName": "Boston.com, August 26, 2026"
+    },
+    {
+      "fips": "25023",
+      "agency": "Abington Police Department",
+      "summary": "The Boston Globe reported that a Marshfield resident who entered her plate on the public HaveIBeenFlocked site found an Abington officer had used Flock in March 2025 to track her driving over a seven-day period, searching 88 networks on the company's system and categorizing the search reason as \"suspicious activity\"; the resident said she had not been in Abington in years. Following a Globe inquiry, Chief John Bonney said he was looking into the incident and that the department regularly audits its officers' use of Flock.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.bostonglobe.com/2026/08/21/business/flock-safety-police-misuse-massachusetts/",
+      "sourceName": "The Boston Globe, August 21, 2026"
+    },
+    {
+      "fips": "25025",
+      "agency": "Revere Police Department",
+      "summary": "Public records obtained by the Boston Globe showed that Officer Michael Tiso used the city's Flock license plate reader cameras more than a dozen times over four separate occasions to track the vehicle and movements of a former partner, against whom he had obtained a restraining order, and of her family. An independent internal affairs investigation, opened on a complaint the department received in December, found that Tiso violated department policies and use protocols; he served a three-day suspension without pay from August 24 to 26, 2026 and has since returned to duty, and the findings were submitted to the state Peace Officer Standards and Training Commission.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.bostonglobe.com/2026/09/02/metro/revere-police-flock-cameras-girlfriend/",
+      "sourceName": "The Boston Globe, September 2, 2026"
+    },
+    {
+      "fips": "27003",
+      "agency": "Fridley Police Department",
+      "summary": "Deputy Director of Public Safety Patrick Faber told the Fridley City Council that before February 2026 the city's Flock network was \"searched heavily\" by out-of-state law enforcement agencies and that some of that access was used for immigration-related searches, \"a purpose the program was never meant to serve.\" Fridley logged 494,812 searches in January 2026, 107 immigration-related, against 22,480 and none in February after access was limited to Minnesota agencies; Faber said agencies with a 287(g) agreement would lose access as of July.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.cbsnews.com/minnesota/news/fridley-police-flock-safety-camera-concerns/",
+      "sourceName": "CBS News Minnesota, July 28, 2026"
+    },
+    {
+      "fips": "29097",
+      "agency": "Joplin Police Department",
+      "summary": "An analysis of Flock audit logs by DeFlock Joplin, a resident group, found that one officer accounted for roughly a quarter of the department's Flock usage and had run a single license plate about 395 times over 14 months, giving only \"DWI\" or \"Warrants\" as the reason with no case number attached. The group believes its records requests prompted the department's own audit, which JPD said found the officer violated policy and found no other violations by other members. The officer no longer works for the department, and no criminal charges had been filed as of January 12, 2026.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.kctv5.com/2026/01/12/joplin-officer-no-longer-employed-after-alleged-misuse-license-plate-tracking-system/",
+      "sourceName": "KCTV5, January 12, 2026"
+    },
+    {
+      "fips": "37097",
+      "agency": "Mooresville Police Department",
+      "summary": "Officer Elizabeth Snowman was charged with a misdemeanor count of illegally accessing computers after routine monthly audits of the department's Flock license plate reader system found she had allegedly used it at least 31 times for personal reasons to track her boyfriend's ex-wife, including twice while off duty. Chief Ron Campurciani said she \"accessed these cameras while she was off duty.\"",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wccbcharlotte.com/2026/08/05/mooresville-officer-accused-of-using-flock-cameras-to-spy-on-boyfriends-ex-wife/",
+      "sourceName": "WCCB Charlotte, August 5, 2026"
+    },
+    {
+      "fips": "37119",
+      "agency": "Charlotte-Mecklenburg Police Department",
+      "summary": "Officer Seth Elliott was arrested after allegedly running an undercover officer's license plate through Flock and the state CJLEADS database at the request of an alleged drug dealer and relaying the result back to him; the CMPD chief called it \"a betrayal of the public's trust.\"",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.newsweek.com/flock-camera-police-arrests-12263782",
+      "sourceName": "Newsweek, July 30, 2026"
+    },
+    {
+      "fips": "39035",
+      "agency": "Highland Heights Police Department",
+      "summary": "The tracking site HaveIBeenFlocked recorded a single Highland Heights user running 20,292 Flock searches between October 24, 2024 and November 22, 2025 with no connection to cases in Highland Heights. Chief Dennis Matejcic, who said he had never audited the department's Flock use until that week though it has run the cameras since 2021, said the part-time dispatcher accused of the searches resigned on August 20, 2026, that his review of every other employee with Flock access found no misuse, and that the department was looking into potential charges; mandatory monthly audits took effect the following day.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.cleveland19.com/2026/08/21/northeast-ohio-dispatcher-accused-unauthorized-searches-flock-cameras/",
+      "sourceName": "Cleveland 19 News, August 21, 2026"
+    },
+    {
+      "fips": "39049",
+      "agency": "Reynoldsburg Division of Police",
+      "summary": "A proactive audit of the Reynoldsburg Division of Police's Flock Safety system flagged two officers who, according to internal affairs documents released under a records request, may have made as many as 100 personal searches between them. Investigators documented 46 searches by Officer Mark Nichols of a single plate between December 2025 and June 2026, which appeared to belong to a former domestic partner listed with him in a domestic disturbance report, plus a search of a second plate on June 10 while he was on medical leave; Officer Alissa Birkhimer allegedly searched one plate 53 times between January and June 2026, giving explanations investigators could not connect to any case. Nichols resigned July 13 before investigators could interview him and was not disciplined, with charges not recommended because of his health, and Birkhimer resigned July 16, one day before her scheduled misconduct interview. Chief Curtis Baker said use of any police database for non-law-enforcement purposes \"is serious and will not be tolerated.\"",
+      "incidents": 2,
+      "year": 2026,
+      "sourceUrl": "https://www.wosu.org/politics-government/2026-08-06/former-reynoldsburg-officers-made-dozens-of-personal-searches-on-surveillance-cameras",
+      "sourceName": "WOSU 89.7 NPR News, August 6, 2026"
+    },
+    {
+      "fips": "39113",
+      "agency": "Dayton Police Department",
+      "summary": "An internal Dayton Police Department review found that a former commander of the Support Services Division did not fully implement safeguards the city's Surveillance Impact Report required for its fixed automated license plate readers: approval for external data sharing, documentation that data would not be used for immigration enforcement, and notification of the Dayton City Commission. The review found the data had been made accessible more broadly than the commission authorized, and counted 7,100 search requests citing immigration-related purposes from various law enforcement agencies. The department indefinitely suspended the fixed readers pending an independent review, after disabling out-of-state data sharing in November 2025 and turning off all sharing with other law enforcement agencies in April 2026. City Manager Shelley Dickstein said the 'egregious violations of policy' deteriorate trust.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.wyso.org/news/2026-05-01/dayton-suspends-automated-license-plate-readers-after-egregious-data-sharing-violations",
+      "sourceName": "WYSO, May 1, 2026"
+    },
+    {
+      "fips": "45029",
+      "agency": "Colleton County Sheriff's Office",
+      "summary": "The Colleton County Sheriff's Office fired two lieutenants in August 2026 over unauthorized use of its Flock license plate reader system, both uncovered by internal audits. The sheriff's office said Lt. Ruben Carter was terminated August 20 after an audit found more than 2,700 instances of unauthorized use involving 14 people over approximately one year, among them himself, fellow deputies, friends and former associates, and that former Lt. Kevin Smalls was fired after an internal audit that began in early August found he conducted 62 unauthorized searches over a six-month period, including inquiries involving vehicles registered to his spouse and another acquaintance. The case is under active investigation.",
+      "incidents": 2,
+      "year": 2026,
+      "sourceUrl": "https://abcnews4.com/news/local/colleton-county-sheriff-fires-another-lieutenant-over-62-unauthorized-flock-searches-crime-flock-security",
+      "sourceName": "ABC News 4 Charleston, August 31, 2026"
+    },
+    {
+      "fips": "45045",
+      "agency": "Mauldin Police Department",
+      "summary": "Mauldin police officer Ellie Hammond was fired on August 3, 2026. Separation records filed with the South Carolina Criminal Justice Academy state that she used the department's Flock cameras 166 times between March and July 2026 to track a former significant other's vehicle, hiding the searches by categorizing them as warrant checks, traffic infractions and welfare checks. The Post and Courier reported she was the fifth Greenville County law enforcement employee fired for misusing Flock cameras in two months, after earlier firings at the Greenville County Sheriff's Office and the Greer Police Department.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.postandcourier.com/greenville/news/mauldin-police-officer-fired-flock-cameras/article_a112b3cc-9896-4d86-a912-8cafe344f460.html",
+      "sourceName": "The Post and Courier, August 14, 2026"
+    },
+    {
+      "fips": "48005",
+      "agency": "Lufkin Police Department",
+      "summary": "Officer Zachary Anthony Klein was arrested and indicted on charges of tampering with governmental records, abuse of official capacity and misuse of official information after an arrest affidavit said an ex-girlfriend's license plate had been searched in Flock more than 10,000 times between June 2024 and December 2025, at nearly all hours of the day and night though he was assigned to the day shift, from a mobile phone the department had not issued him. Prompted by a public information request on August 14, the department audited his searches, found them inconsistent with criminal investigations, referred the case to the Texas Rangers and suspended its use of Flock.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.kltv.com/2026/08/26/lufkin-officer-accused-searching-ex-girlfriends-plates-flock-cameras-more-than-10000-times/",
+      "sourceName": "KLTV, August 26, 2026"
+    },
+    {
+      "fips": "48027",
+      "agency": "Temple Police Department",
+      "summary": "An advanced internal audit on August 18, 2026 flagged a search in the department's Flock Safety system that appeared inconsistent with authorized use, and the Internal Affairs Unit determined it had been conducted without a legitimate law enforcement purpose. The officer, whom the department has not named, was placed on investigative leave and resigned, and the department asked the Texas Rangers to conduct an independent investigation; police did not say whether any criminal charges have been filed.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.kwtx.com/2026/08/21/temple-police-department-officer-resigns-after-unauthorized-use-flock-camera-discovered/",
+      "sourceName": "KWTX-TV, August 21, 2026"
+    },
+    {
+      "fips": "48157",
+      "agency": "Katy Police Department",
+      "summary": "Katy Police opened an internal investigation after a formal complaint in October 2025 and turned its findings over to the Fort Bend County District Attorney's Office; a Fort Bend County grand jury then indicted former officer Sergio Rodriguez on two third-degree felonies, stalking and misuse of official information. The indictments allege he used the department's Flock license plate reader system to follow his ex-wife's movements between November 2, 2024 and April 2, 2025, and that he placed a tracking device on her vehicle. Rodriguez was suspended and later fired, was arrested May 4, and has pleaded not guilty.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://coveringkaty.com/news/katy/former-katy-police-officer-indicted-after-allegedly-using-fl/",
+      "sourceName": "Covering Katy, August 27, 2026"
+    },
+    {
+      "fips": "48201",
+      "agency": "Baytown Police Department",
+      "summary": "An officer resigned days after Chief John Stringer announced parallel internal affairs and criminal investigations into allegations the officer misused the department's Flock license plate reader system; Stringer said the resignation \"does not conclude either one of the investigations,\" whose results will be reported to the Texas Commission on Law Enforcement and to the Harris County District Attorney's Office, and the department has not detailed the alleged conduct or identified the officer, citing the active inquiries.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.click2houston.com/news/local/2026/07/30/baytown-officer-resigns-as-investigations-continue-into-alleged-misuse-of-flock-license-plate-reader-system/",
+      "sourceName": "KPRC 2 Click2Houston, July 30, 2026"
+    },
+    {
+      "fips": "48251",
+      "agency": "Johnson County Sheriff's Office",
+      "summary": "A Johnson County Sheriff's Office deputy queried Flock's national network — expanded to a month of data across 6,809 networks and 83,345 cameras — logging the reason \"had an abortion, search for female\"; records obtained by EFF show the investigator's sworn account described a death investigation of a non-viable fetus, not the missing-person welfare check the sheriff publicly described.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.eff.org/deeplinks/2025/10/flock-safety-and-texas-sheriff-claimed-license-plate-search-was-missing-person-it",
+      "sourceName": "Electronic Frontier Foundation, October 7, 2025"
+    },
+    {
+      "fips": "53005",
+      "agency": "Benton County Sheriff's Office",
+      "summary": "Flock Network Sharing reports and audits obtained under public records law by the University of Washington Center for Human Rights show the Benton County Sheriff's Office — along with the Richland Police Department in the same county — among at least eight Washington agencies that \"appear to have enabled 1:1 sharing of their Flock Network with Border Patrol at some point during 2025.\" The report also lists Benton County's sheriff's office among at least 17 Washington agencies whose ALPR data Border Patrol searched, and frames such searches as raising questions about compliance with Washington's Keep Washington Working law, which bars law enforcement agencies from dedicating local resources to civil immigration enforcement.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://jsis.washington.edu/humanrights/2025/10/21/leaving-the-door-wide-open/",
+      "sourceName": "University of Washington Center for Human Rights, \"Leaving the Door Wide Open,\" October 21, 2025"
+    },
+    {
+      "fips": "53007",
+      "agency": "Wenatchee Police Department",
+      "summary": "Public records requests filed with 48 Washington law enforcement agencies by the University of Washington Center for Human Rights produced Flock audit records showing the Wenatchee Police Department among at least eight local agencies that \"appear to have enabled 1:1 sharing of their Flock Network with Border Patrol at some point during 2025.\" The report also recorded that a Yakima County Sheriff's Office user ran two searches on May 23, 2025 with the reason listed as \"ICE\"; an organization audit showed the search applied to 89 networks, and it appears in the network audit records of at least ten other agencies, including Wenatchee's. The report said the fact that the searches occurred raises important questions about compliance with Washington's Keep Washington Working law, which bars local agencies from dedicating resources to civil immigration enforcement.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://jsis.washington.edu/humanrights/2025/10/21/leaving-the-door-wide-open/",
+      "sourceName": "University of Washington Center for Human Rights, \"Leaving the Door Wide Open,\" October 21, 2025"
+    },
+    {
+      "fips": "53033",
+      "agency": "Auburn Police Department",
+      "summary": "The University of Washington Center for Human Rights, working from public records requests, found that federal immigration agencies had accessed Washington police departments' license plate readers, and the city said in an October 20 press release that Auburn had enabled one-to-one sharing of its Flock network with Border Patrol at some point during 2025. The city said it did not intentionally grant any immigration enforcement agency access and that Flock's \"National Lookup\" feature may have inadvertently allowed it; the department turned the feature off and now reviews usage data exported from the Flock system every month.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.auburn-reporter.com/2025/11/01/auburn-addresses-immigration-enforcements-use-of-flock-cameras/",
+      "sourceName": "Auburn Reporter, November 1, 2025"
+    },
+    {
+      "fips": "53053",
+      "agency": "Lakewood Police Department",
+      "summary": "Flock network sharing reports and network audits obtained through public records requests by the University of Washington Center for Human Rights show the Lakewood Police Department among at least eight Washington law enforcement agencies that \"appear to have enabled 1:1 sharing of their Flock Network with Border Patrol at some point during 2025.\" The report documented Border Patrol searches of Washington Flock networks from at least May 9 through Aug. 24, 2025, and said the fact that the searches occurred \"raises important questions about compliance\" with Washington's Keep Washington Working Act, which bars law enforcement agencies from dedicating local resources to civil immigration enforcement.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://jsis.washington.edu/humanrights/2025/10/21/leaving-the-door-wide-open/",
+      "sourceName": "University of Washington Center for Human Rights, \"Leaving the Door Wide Open,\" October 21, 2025"
+    },
+    {
+      "fips": "53061",
+      "agency": "Mukilteo Police Department",
+      "summary": "Records reviewed by The Everett Herald show federal agencies searched Mukilteo's Flock data more than 1,000 times without the department's knowledge, with search reasons including \"immigration,\" \"ICE ERO\" and \"HSI assist\"; Washington's Keep Washington Working Act bars local agencies from providing nonpublic information for civil immigration purposes. Mukilteo disabled nationwide lookup after learning of the access.",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.heraldnet.com/2025/11/01/records-feds-accessed-flock-camera-info-thousands-of-times-in-snohomish-county/",
+      "sourceName": "The Everett Herald, November 1, 2025"
+    },
+    {
+      "fips": "53063",
+      "agency": "Spokane County Sheriff's Office",
+      "summary": "Flock audit logs for Jan. 1–June 23, 2025 show 186 U.S. Border Patrol searches and 182 Homeland Security Investigations searches of the Spokane County Sheriff's Office network, plus more than 1,000 immigration-related searches by at least 45 out-of-state agencies, with reason strings including \"alien,\" \"ice pick-up\" and \"immigration violation.\"",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://www.rangemedia.co/spokane-county-flock-cameras-immigration/",
+      "sourceName": "RANGE Media, December 10, 2025"
+    },
+    {
+      "fips": "53077",
+      "agency": "Yakima County Sheriff's Office",
+      "summary": "The University of Washington Center for Human Rights, working from Flock audit records obtained through public records requests to Washington law enforcement agencies, reported that on May 23, 2025 a user with the Yakima County Sheriff's Office ran two Flock searches covering just over the preceding 24 hours with the reason listed as \"ICE,\" which the report took as presumably referring to U.S. Immigration and Customs Enforcement. An Organization Audit recorded the search as applied to 89 networks, and it appears in the network audit records of at least ten other local Washington agencies. The report concluded that \"Washington law enforcement officers' active assistance of ICE in this case almost certainly constitutes a violation of Keep Washington Working.\"",
+      "incidents": 1,
+      "year": 2025,
+      "sourceUrl": "https://jsis.washington.edu/humanrights/2025/10/21/leaving-the-door-wide-open/",
+      "sourceName": "University of Washington Center for Human Rights, \"Leaving the Door Wide Open,\" October 21, 2025"
+    },
+    {
+      "fips": "55059",
+      "agency": "Kenosha County Sheriff's Office",
+      "summary": "The Kenosha County District Attorney's Office charged former deputy Frank McGrath on August 19, 2026 with two counts of felony misconduct in office, alleging he ran 16 to 17 Flock license plate reader searches on the personal vehicle of a coworker while off duty, entering 'suspicious' as the reason for each search, and separately monitored that coworker's live squad car GPS and body camera location on 40 occasions. A routine sheriff's office audit of Flock activity in the fall of 2025 identified the potential misuse; McGrath resigned following the ensuing internal investigation.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.fox6now.com/news/flock-misuse-former-kenosha-county-sheriffs-deputy-charged",
+      "sourceName": "FOX6 News Milwaukee, August 19, 2026"
+    },
+    {
+      "fips": "55079",
+      "agency": "Milwaukee Police Department",
+      "summary": "Officer Josue Ayala, an eight-year Milwaukee Police Department veteran assigned to District 2, pleaded guilty in June 2026 to misdemeanor attempted misconduct in public office and was sentenced on July 15, 2026 to one year of probation and a $500 fine, with an ordered term at the county Community Reintegration Center stayed, after prosecutors said he ran 179 unauthorized searches of the department's Flock Safety license plate database for personal reasons, searching an ex-partner's plate more than 50 times and that person's former partner's plate more than 100 times while entering only the word \"investigation\" as his documented justification. He resigned in March 2026 as part of the negotiated plea. The misuse surfaced after one of the people searched looked up their own plate on HaveIBeenFlocked.com and alerted police.",
+      "incidents": 1,
+      "year": 2026,
+      "sourceUrl": "https://www.fox6now.com/news/milwaukee-police-flock-camera-misuse-ayala-sentence",
+      "sourceName": "FOX6 News Milwaukee, July 15, 2026"
+    }
+  ]
+}

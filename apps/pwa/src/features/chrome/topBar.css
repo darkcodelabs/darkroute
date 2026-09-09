@@ -1,0 +1,550 @@
+/* THE TOP BAR -- section A of `searchbar_and_buttons.dc.html`.
+ *
+ * 56px of translucent glass on a 999px pill, with the mark hanging off its
+ * left cap. This file is a transcription of the spec's own bar markup, not an
+ * interpretation: every number below is written in the spec and every one that
+ * is not written there is not here either.
+ *
+ * =============================================================================
+ * THE ONE RULE
+ * =============================================================================
+ * Every surface is translucent near-black (or near-white) glass with a 1px
+ * hairline. No solid fills, and no drop shadow doing work a hairline does
+ * better. The surface is `--dr-surface`, the edge is `--dr-hairline`, the
+ * material is `--dr-blur` + `--dr-lift` + `--dr-specular`, and there is nothing
+ * else painting an edge anywhere in this file.
+ *
+ * =============================================================================
+ * COLOUR IS `var(--dr-*)`, AND THOSE TOKENS ARE LITERAL
+ * =============================================================================
+ * The chrome brief withdraws the dock brief's instruction to resolve colour
+ * onto the app's skins and publishes the values it wants in production. They
+ * are transcribed into `tokens.css` under `--dr-*`; this file only reads them.
+ * The one exception is the read count's dot, which is an OPERATOR hue and so
+ * still resolves to the palette through `--dr-owner-flock`.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE SCALE
+ * =============================================================================
+ * `scripts/check-design-values.mjs` fails the build on a raw length as hard as
+ * on a raw hex, so `height: 56px` cannot be written even though 56 is the
+ * spec's number. Geometry is `calc(var(--fwm-space-1) * n)` -- the 4px step,
+ * the idiom `dock.css` and `radar.css` already use -- and type is read off the
+ * type scale. The spec's own pixel value is written beside every one of them,
+ * because the ratio is the compliant spelling and the pixel is the design.
+ *
+ * `--fwm-space-1` (4px), `--fwm-space-2` (8), `--fwm-space-6` (24),
+ * `--fwm-rule-w` (1) and `--fwm-radius-full` (999) are declared once at `:root`
+ * and re-cut by no skin, so the geometry below is exact on all seventeen. The
+ * two TYPE tokens are not: `--fwm-text-body` is 16 rather than 15 under
+ * `dash-cast` and the `dash` surface, and `--fwm-text-micro` is 13 rather than
+ * 11 on both watch surfaces. That is the reading floor those raise, and
+ * `dock.css` already lets it through for the same eleven- and fifteen-pixel
+ * readings; it is not this component's to override.
+ *
+ * =============================================================================
+ * WHAT IS DELIBERATELY ABSENT
+ * =============================================================================
+ * HOVER. The spec carries `style-hover` on the chevron. This is a touch-first
+ * product, the gate rejects `:hover` outright, and inventing an `:active` in
+ * its place would be adding a state the spec does not draw. Dropped, not
+ * translated -- the same call `dock.css` made for its nine.
+ *
+ * THE MARK'S DROP SHADOW. The spec's dark bar writes
+ * `filter: drop-shadow(...)` on the logo. The brief's own prose for this
+ * section does not mention it, and the gate rejects `drop-shadow(` anywhere
+ * outside `tokens.css` -- a shadow is exactly what the one rule says must not
+ * be doing a hairline's work. The bloom behind the mark is the glow the spec
+ * describes in prose, and it is here.
+ *
+ * THE THEME TOGGLE AND THE GEAR. Not an omission: the brief moves both to the
+ * rail. A search field holds search controls.
+ * ========================================================================== */
+
+/* =========================================================================
+ * 1. THE BAR
+ *
+ * 56 tall, radius 999, `padding: 0 8px 0 64px` -- the 64 is the room the mark
+ * needs, so the wordmark starts clear of it. Flex row, `gap: 10`.
+ * ====================================================================== */
+
+.fwm-topbar {
+  /* --- geometry, all of it, in one place ------------------------------- */
+  --fwm-tb-h: calc(var(--fwm-space-1) * 14); /* 56 */
+  --fwm-tb-pad-l: calc(var(--fwm-space-1) * 16); /* 64 */
+  --fwm-tb-pad-r: var(--fwm-space-2); /* 8 */
+  --fwm-tb-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+
+  /* the mark, and the bloom behind it. Both hang off the top-left cap. */
+  --fwm-tb-mark: calc(var(--fwm-space-1) * 18); /* 72 */
+  --fwm-tb-mark-l: calc(var(--fwm-space-1) * -1.5); /* -6 */
+  --fwm-tb-mark-t: calc(var(--fwm-space-2) * -1); /* -8 */
+  --fwm-tb-bloom: calc(var(--fwm-space-1) * 28); /* 112 */
+  --fwm-tb-bloom-l: calc(var(--fwm-space-1) * -5); /* -20 */
+  --fwm-tb-bloom-t: calc(var(--fwm-space-1) * -7); /* -28 */
+
+  /* the wordmark's box, which is the wordmark's size and nothing more */
+  --fwm-tb-word-w: calc(var(--fwm-space-1) * 21.5); /* 86 */
+  --fwm-tb-word-h: calc(var(--fwm-space-1) * 3.75); /* 15 */
+
+  /* the read count, hung under that box and out of its flow */
+  --fwm-tb-count-t: calc(var(--fwm-space-1) * 4.25); /* 17 */
+  --fwm-tb-count-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-tb-dot: calc(var(--fwm-space-1) * 1.25); /* 5 */
+
+  --fwm-tb-rule-h: var(--fwm-space-6); /* 24 */
+  --fwm-tb-key: calc(var(--fwm-space-1) * 9); /* 36 */
+  --fwm-tb-key-gap: calc(var(--fwm-space-1) / 2); /* 2 */
+
+  position: relative;
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-tb-gap);
+  height: var(--fwm-tb-h);
+  padding: 0 var(--fwm-tb-pad-r) 0 var(--fwm-tb-pad-l);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-grain), var(--dr-surface-thin);
+  /* THE MATERIAL. A read-back, not a paint -- see the note in `drive.css`
+     about where blur is affordable. One element, once, at the top of the map. */
+  backdrop-filter: var(--dr-blur);
+  /* The lift and the specular edge, in ONE declaration: `box-shadow` does not
+     accumulate, so the two cannot be set by two rules. */
+  box-shadow: var(--dr-lift), var(--dr-specular);
+  /* NOT `hidden`, AND THE BRIEF SAYS SO TWICE.
+     The mark is 72px in a 56px bar at `top: -8px`, so it crosses the hairline
+     on three sides. `overflow: hidden` here clips all three and the mark
+     becomes a rectangle sitting inside the pill, which is the opposite of the
+     drawing. Written out rather than left to the initial value, because the
+     next person to want a rounded clip will look for it here. */
+  overflow: visible; /* keyword */
+  font-family: var(--fwm-font-ui);
+  /* A count that ticks must not reflow the letters above it. */
+  font-variant-numeric: tabular-nums; /* keyword */
+  color: var(--dr-ink);
+}
+
+/* =========================================================================
+ * 2. THE LAYER THE SWEEP NEEDS
+ *
+ * NOT THIS COMPONENT'S ANIMATION, BUT THIS COMPONENT'S LAYERING. Section D of
+ * the brief mounts a pixel grid as the FIRST child of this bar:
+ *
+ *   position: absolute; inset: 0; z-index: 0; border-radius: 999px;
+ *   overflow: hidden; pointer-events: none; mix-blend-mode: screen;
+ *
+ * `mix-blend-mode: screen` brightens everything UNDER it in the same stacking
+ * context. With the content at `z-index: auto` the grid paints over the
+ * wordmark and the read count and both wash out mid-sweep -- the brief calls
+ * that out as the thing to get right. So every content child of the bar is
+ * `position: relative; z-index: 1` and the mark, which sits above both, is 2.
+ *
+ * The grid itself belongs to the sweep. This rule is the floor it lands on.
+ * ====================================================================== */
+
+.fwm-topbar-word,
+.fwm-topbar-rule,
+.fwm-topbar-field,
+.fwm-topbar-keys {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================================================================
+ * 3. THE MARK, WHICH BREAKS THE EDGE
+ *
+ * 72x72 at -6,-8 in a 56px bar: 6px past the left edge, 8px past the top and
+ * 8px past the bottom. The glyph holds the bar's centreline -- its own centre
+ * lands at y 28, which is the bar's -- and only its pixel spray crosses the
+ * hairline. It is decoration and it is not a target: section E of the brief
+ * makes the mark a button, and that is the easter egg's to build, not this
+ * file's. `pointer-events: none` so it never eats a press meant for the field.
+ * ====================================================================== */
+
+.fwm-topbar-mark {
+  position: absolute;
+  top: var(--fwm-tb-mark-t);
+  left: var(--fwm-tb-mark-l);
+  z-index: 2;
+  display: block; /* keyword */
+  width: var(--fwm-tb-mark);
+  height: var(--fwm-tb-mark);
+  pointer-events: none; /* keyword */
+}
+
+/* THE BLOOM. 112px of radial glow behind the mark, off the top-left corner.
+   It is the mark's own colour spilling onto the glass, so it is a gradient
+   token rather than a shadow -- `--dr-bloom` carries the three stops.
+
+   NO `z-index`, WHICH IS THE POINT. A positioned element with `z-index: auto`
+   paints in document order alongside `z-index: 0`, so this lands above the
+   sweep grid it follows in the DOM and below the content at 1 and the mark at
+   2. The spec's own bar orders it exactly this way. */
+.fwm-topbar-bloom {
+  position: absolute;
+  top: var(--fwm-tb-bloom-t);
+  left: var(--fwm-tb-bloom-l);
+  width: var(--fwm-tb-bloom);
+  height: var(--fwm-tb-bloom);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-bloom);
+  pointer-events: none; /* keyword */
+}
+
+/* =========================================================================
+ * 4. THE WORDMARK, AND THE COUNT HUNG UNDER IT
+ *
+ * The box is EXACTLY 86x15 -- the wordmark's own size -- so `align-items:
+ * center` on the bar puts the logotype's centreline on the bar's centreline,
+ * which is where the placeholder's is. Give the box any other height and the
+ * two stop agreeing.
+ *
+ * THE READ COUNT IS OUT OF FLOW, and this is the failure the brief names: in
+ * flow it makes the box two rows tall, the box re-centres around both lines,
+ * and the wordmark rides up off the centreline. Absolutely positioned at
+ * `top: 17px` it draws in the air under the letters and contributes no height
+ * at all. `searchBar.css` has the same note about the same arrangement, which
+ * had already failed once there.
+ * ====================================================================== */
+
+.fwm-topbar-word {
+  flex: none; /* keyword */
+  width: var(--fwm-tb-word-w);
+  height: var(--fwm-tb-word-h);
+  /* A GRID, SO THE RELOAD CONTROL CAN BE BIGGER THAN THE BOX IT CENTRES ON.
+     The wordmark is the only way to reload a PWA with no browser chrome, so it
+     is wrapped in `ReloadTitle`, and `nav.css` grows that button to
+     `--fwm-touch-min` on both axes -- a real 44px target, which is that file's
+     whole argument and is not being undone here. A grid item taller than its
+     track overflows the track SYMMETRICALLY, so the button's centreline and
+     this box's centreline are the same line and the artwork lands exactly
+     where the drawing puts it. In normal flow the 44 would lay out from the
+     top of a 15px box and take the logotype ~14px below the placeholder's
+     centreline -- the failure this whole section exists to prevent. 44 inside
+     a 56 bar clears both caps, and the bar does not clip. */
+  display: grid;
+  /* `align-content`, NOT `align-items` ALONE, and the difference is the whole
+     bug. The row TRACK is auto-sized, so it is 44 tall -- the button's own
+     minimum -- inside a box fixed at 15. `align-items` centres the item in
+     that track and the track still starts at the top of the box, which put the
+     logotype 14.5px below the placeholder's centreline. `align-content`
+     centres the TRACK in the box; then the item is centred in the track, and
+     the two centrelines are the same line. Measured in Chromium at 412x915:
+     wordmark centre 60.00, field centre 60.00. */
+  align-content: center; /* keyword */
+  align-items: center; /* keyword */
+  justify-items: start; /* keyword */
+}
+
+/* The heading is a BOX, not a row of type: the artwork carries the name, and
+   the `<h1>` exists so a heading-navigation user can find the top of DRIVE. */
+.fwm-topbar-title {
+  margin: 0;
+  min-width: 0;
+  line-height: 1;
+}
+
+/* THE COUNT, WHEN IT IS A CONTROL.
+   A claim about how much of the country is under a camera has to be able to
+   hand over the page that says where the claim came from, so on the mounted
+   bar the count opens HOW THIS WORKS. Same two spans in the same absolute box;
+   only the element changes, so a reset is all it needs. */
+button.fwm-topbar-count {
+  padding: 0;
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font: inherit; /* keyword */
+  color: inherit; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+/* THE DOT SAYS WHETHER TO BELIEVE THE NUMBER, AND ONLY WHEN THE ANSWER IS NO.
+ *
+ * The spec draws ONE dot in one colour -- the Flock pink above -- and that is
+ * what a LIVE archive keeps: the drawing is right about the ordinary case, and
+ * repainting it green would be this file overruling the brief for a state that
+ * is true almost all of the time.
+ *
+ * The other three are not the ordinary case. The app once served a six-day-old
+ * archive under a confident number, and "the dot is the wrong colour on a stale
+ * archive" is the bug the whole reading exists to prevent -- so BEHIND, STALE
+ * and the honest UNKNOWN take the archive ramp `searchBar.css` used, and a
+ * number that should not be trusted cannot look like one that should.
+ *
+ * `unknown` is its own state and not a quiet kind of stale: a phone that has
+ * never reached the network does not know how old its archive is.
+ */
+.fwm-topbar-count[data-fwm-archive='behind'] .fwm-topbar-dot {
+  background: var(--fwm-archive-behind);
+}
+
+.fwm-topbar-count[data-fwm-archive='stale'] .fwm-topbar-dot {
+  background: var(--fwm-archive-stale);
+}
+
+.fwm-topbar-count[data-fwm-archive='unknown'] .fwm-topbar-dot {
+  background: var(--fwm-archive-unknown);
+}
+
+.fwm-topbar-wordmark {
+  display: block; /* keyword */
+  width: var(--fwm-tb-word-w);
+  height: var(--fwm-tb-word-h);
+}
+
+.fwm-topbar-count {
+  position: absolute;
+  top: var(--fwm-tb-count-t);
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  gap: var(--fwm-tb-count-gap);
+}
+
+/* THE DOT. The one hue in this file that is not `--dr-*` literal: the brief
+   keeps operator and marker colours resolving to the palette, and this is the
+   Flock pink -- `--dr-owner-flock`, which is `--fwm-alert-multiple` and
+   measures #FF3DBE on the default skin, the spec's own value. */
+.fwm-topbar-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-tb-dot);
+  height: var(--fwm-tb-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-owner-flock);
+}
+
+.fwm-topbar-n {
+  font-size: var(--fwm-text-micro); /* 11 */
+  line-height: 1;
+  color: var(--dr-ink-muted);
+}
+
+/* =========================================================================
+ * 5. THE DIVIDER AND THE FIELD
+ * ====================================================================== */
+
+/* 1 x 24, in the same hairline colour as the bar's own edge. A rule and not a
+   border, because it separates two children rather than bounding one. */
+.fwm-topbar-rule {
+  flex: none; /* keyword */
+  width: var(--fwm-rule-w);
+  height: var(--fwm-tb-rule-h);
+  background: var(--dr-hairline);
+}
+
+/* THE FOCUS RING IS THE BAR'S, NOT THE BROWSER'S.
+ *
+ * Chrome draws a white rectangle around a focused input. On a 999px glass pill
+ * with a hairline that is a hard-edged box floating inside a round surface, and
+ * it is the first thing anyone sees when they tap to search.
+ *
+ * It is not deleted, it is MOVED: the UA outline goes and the bar itself takes
+ * an accent edge, so keyboard focus is still obvious and lands on the object
+ * that actually has focus rather than on a rectangle inside it. A field with no
+ * focus indication at all would be the wrong fix -- this bar is reachable by
+ * keyboard and by switch control.
+ */
+.fwm-topbar-field:focus,
+.fwm-topbar-field:focus-visible {
+  outline: none; /* keyword */
+}
+
+.fwm-topbar:has(.fwm-topbar-field:focus-visible) {
+  border-color: var(--dr-accent-line);
+}
+
+.fwm-topbar-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  border: none; /* keyword */
+  background: transparent; /* keyword */
+  color: var(--dr-ink);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-body); /* 15 */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-topbar-field::placeholder {
+  color: var(--dr-placeholder);
+  /* Safari drops a placeholder to 0.54 alpha unless told not to. */
+  opacity: 1;
+}
+
+/* THE BROWSER'S OWN CLEAR KEY, REMOVED. WebKit draws an "x" inside a
+   `type="search"` field as soon as it has a value. It is a text-character
+   glyph, which the brief bans outright, and it is a second control in a row
+   the brief says holds only the chevron. `searchBar.css` removes it for the
+   same reason. */
+.fwm-topbar-field::-webkit-search-cancel-button {
+  display: none; /* keyword */
+}
+
+/* =========================================================================
+ * 6. THE RIGHT SIDE, WHICH IS ONE KEY
+ *
+ * The theme toggle and the gear moved to the rail. What is left is the
+ * chevron: 36px round target, a 19px glyph, no fill and no edge until it is
+ * pressed -- and the spec draws no pressed state, so it has none here.
+ * ====================================================================== */
+
+.fwm-topbar-keys {
+  flex: none; /* keyword */
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-tb-key-gap);
+}
+
+.fwm-topbar-chevron {
+  display: grid;
+  place-items: center; /* keyword */
+  width: var(--fwm-tb-key);
+  height: var(--fwm-tb-key);
+  padding: 0;
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-full);
+  background: transparent; /* keyword */
+  color: var(--dr-ink-3);
+  cursor: pointer; /* keyword */
+}
+
+/* =========================================================================
+ * 7. THE LIGHT SKINS
+ *
+ * The three `tokens.css` already groups as light. Every colour in this file
+ * follows them on its own -- `--dr-surface`, `--dr-hairline` and the four ink
+ * tiers are re-cut inside those blocks -- so the only things left here are the
+ * two the tokens cannot carry: an image, and a missing one.
+ * ====================================================================== */
+
+/* THE WORDMARK IS WHITE ARTWORK. Inverted rather than swapped for a second
+   file: it is a STENCIL -- flat white lettering on transparent, no colour of
+   its own to lose -- so `invert(1)` is exact and one file stays one file.
+   `searchBar.css` argues the opposite case for the app icon, which is a
+   PICTURE and could not survive this. */
+[data-fwm-mode='refinement'] .fwm-topbar-wordmark,
+[data-fwm-mode='paper'] .fwm-topbar-wordmark,
+[data-fwm-mode='e-ink'] .fwm-topbar-wordmark {
+  filter: invert(1);
+}
+
+/* GAP -- THE MARK'S LIGHT DISC IS NOT BUILT, AND IT IS NOT AN OVERSIGHT.
+ *
+ * The mark is white strokes on transparent. On the light skins the bar is
+ * `rgba(255,255,255,0.86)` and the glyph vanishes into it, so the spec puts a
+ * near-black disc behind it: 34px at `left: 13px; top: 11px`, filled `#0b0f14`,
+ * under the mark and over the bloom.
+ *
+ * THAT COLOUR HAS NO TOKEN. It is not in the brief's token block, it is not in
+ * `tokens.css`, and it is not any existing `--fwm-*` value: every near-black on
+ * the ramp follows the skin, and on these three skins they are all pale, which
+ * is the entire problem. `check-design-values.mjs` forbids a hex here, and
+ * writing `var(--dr-mark-disc)` against a name nothing declares would resolve
+ * to no declaration at all -- an element that paints nothing, silently, which
+ * is the exact failure the gate's `unresolved-var` rule exists to stop.
+ *
+ * So it is reported rather than guessed. One line in `tokens.css`, beside the
+ * `--dr-bloom` it belongs with, unblocks it:
+ *
+ *   --dr-mark-disc: #0b0f14;
+ *
+ * and this file then gains, with `.fwm-topbar-disc` rendered before the mark:
+ *
+ *   [data-fwm-mode='refinement'] .fwm-topbar-disc,
+ *   [data-fwm-mode='paper'] .fwm-topbar-disc,
+ *   [data-fwm-mode='e-ink'] .fwm-topbar-disc {
+ *     position: absolute;
+ *     top: calc(var(--fwm-space-1) * 2.75);  / * 11 * /
+ *     left: calc(var(--fwm-space-1) * 3.25); / * 13 * /
+ *     width: calc(var(--fwm-space-1) * 8.5); / * 34 * /
+ *     height: calc(var(--fwm-space-1) * 8.5);
+ *     border-radius: var(--fwm-radius-full);
+ *     background: var(--dr-mark-disc);
+ *     pointer-events: none;
+ *   }
+ *
+ * UNTIL THEN THE MARK IS ILLEGIBLE ON THE THREE LIGHT SKINS. Said here so
+ * whoever meets it reads a known gap and not a bug.
+ * ------------------------------------------------------------------------ */
+
+/* =========================================================================
+ * 8. WHAT THE MOUNTED BAR ADDS TO THE DRAWING
+ *
+ * The spec page is a PICTURE: nothing to type into, nowhere to go, no state to
+ * be in. Three of its elements become controls the moment the bar is on the
+ * road, and this is where that costs geometry. Every one of them reads the
+ * SAME `--fwm-tb-*` locals section 1 declares, so the clear key is the
+ * chevron's 36 and the mark's target is the mark's 72 by reference rather than
+ * by a second number that can drift.
+ *
+ * The rest of what the mounted bar draws -- the shell, the results sheet and
+ * its rows -- is in `topBarLive.css`, because none of it reads this section's
+ * geometry and none of it is section A.
+ * ====================================================================== */
+
+/* FOLDED, and it is the mark and the way back and nothing else. Width by
+   content, so the capsule shrinks to what remains rather than staying a
+   full-width pill with a hole in it -- the old bar's own rule, and the same
+   two declarations. The right inset drops to 4: 8 is the room the chevron
+   needs beside a field, and a stub of two controls does not. */
+.fwm-topbar[data-fwm-folded='true'] {
+  width: fit-content; /* keyword */
+  padding-right: var(--fwm-space-1);
+}
+
+/* Points DOWN to put the bar away and UP to bring it back, so the glyph says
+   which way the thing it controls is about to move. Selected off the state the
+   key already publishes rather than off a second class. */
+.fwm-topbar-chevron[aria-expanded='false'] svg {
+  transform: rotate(180deg);
+}
+
+/* SECTION E'S TARGET. 72x72 on the mark's own geometry, and a SIBLING of the
+   artwork rather than a wrapper: `.fwm-topbar-mark` keeps `pointer-events:
+   none` and `aria-hidden` exactly as section A draws it, and this takes the
+   press. `z-index: 3` is the number `pixelSweep.css` section 10 already names
+   for it -- above the artwork at 2, below the toast at 4. It draws nothing: no
+   fill, no edge, no ring of its own. The mark is the picture. */
+.fwm-topbar-mark-key {
+  position: absolute;
+  top: var(--fwm-tb-mark-t);
+  left: var(--fwm-tb-mark-l);
+  z-index: 3;
+  width: var(--fwm-tb-mark);
+  height: var(--fwm-tb-mark);
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  cursor: pointer; /* keyword */
+  /* No 300ms tap delay: seven taps is the gesture, and a delay per tap is a
+     second and a half of nothing happening. */
+  touch-action: manipulation; /* keyword */
+}
+
+/* CLEAR. The chevron's own 36, and deliberately NOT inside `.fwm-topbar-keys`:
+   the brief's "only the chevron" is about that group, and a key that empties
+   the field belongs against the field. A tier quieter than the chevron,
+   because it is the second thing on the row and not the last.
+
+   `position: relative; z-index: 1` for the reason section 2 gives every other
+   content child: the sweep is `z-index: 0` in `mix-blend-mode: screen`, and
+   anything left at `auto` is brightened by it rather than painted over it. */
+.fwm-topbar-clear {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none; /* keyword */
+  place-items: center; /* keyword */
+  width: var(--fwm-tb-key);
+  height: var(--fwm-tb-key);
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: none; /* keyword */
+  color: var(--dr-ink-3);
+  cursor: pointer; /* keyword */
+}

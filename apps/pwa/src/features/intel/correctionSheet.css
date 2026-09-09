@@ -1,0 +1,150 @@
+/* The correction sheet. Used at the roadside, often one-handed, sometimes in
+   the dark - so every choice is a full-width target and the only free text is
+   optional. */
+/* THE MATERIAL. This is a SHEET, and it was the only one in the app that was
+   not made of glass.
+ *
+ * `--fwm-surface-card` is opaque, so the one surface a driver raises over the
+ * camera record they are correcting looked the same through every material
+ * setting while the close key in its corner and the sheet it opens over both
+ * moved. The four declarations are the app's, not this file's - see
+ * `styles/tokens.css`.
+ *
+ * THE CHOICE ROWS BELOW ARE NOT ON THIS LIST. They sit inside this panel, and
+ * glass inside glass stacks two backdrop read-backs to show a surface that is
+ * itself translucent: it costs double and reads as mud. */
+.fwm-correct {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-4);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}
+
+.fwm-correct-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-correct-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-correct-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fwm-space-1);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-hairline) solid transparent; /* keyword */
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-2);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-text-body);
+  text-align: left; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-correct-choice[aria-pressed="true"] {
+  border-color: var(--fwm-accent-scan);
+  background: var(--fwm-tint-scan);
+  color: var(--fwm-text);
+}
+
+.fwm-correct-choice-label { font-weight: 600; }
+
+.fwm-correct-choice-hint {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-correct-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+}
+
+.fwm-correct-field-label {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-correct-input {
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-3);
+  border: var(--fwm-hairline) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-sunk);
+  color: var(--fwm-text);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-text-body);
+}
+
+.fwm-correct-note { resize: none; /* keyword */ }
+
+/* Said before the send key, not after it. */
+.fwm-correct-public {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-correct-failed {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-correct-keys {
+  display: flex;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-correct-send {
+  flex: 1;
+  min-height: var(--fwm-touch-min);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-accent-scan);
+  color: var(--fwm-text-on-alert);
+  font: inherit; /* keyword */
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  cursor: pointer; /* keyword */
+}
+
+.fwm-correct-send:disabled { opacity: 0.45; cursor: default; /* keyword */ }
+
+.fwm-correct-close {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-4);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-full);
+  background: transparent; /* keyword */
+  color: var(--fwm-text-2);
+  font: inherit; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+.fwm-correct-done {
+  margin: 0;
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text);
+}
+
+.fwm-correct-link {
+  color: var(--fwm-accent-scan);
+  font-size: var(--fwm-text-body);
+  text-decoration: none; /* keyword */
+}

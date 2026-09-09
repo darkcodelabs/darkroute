@@ -1,0 +1,481 @@
+/* MISUSE -- who has abused this, and where.
+ *
+ * SOURCE: `the_rest_of_the_app.dc.html`, section D, the MISUSE frame.
+ *
+ * =============================================================================
+ * THE HERO IS RED NOW, AND THAT REPLACES AN ARGUMENT RATHER THAN OVERRULING IT
+ * =============================================================================
+ * This file used to open by arguing for AMBER: "the product's amber means
+ * somebody is doing something you should know about, and that is exactly what a
+ * record is." That reading was about the READER's attention. Brief 4's hue
+ * table is about the SUBJECT, and it assigns red one meaning across the whole
+ * product -- "police / agency, and reported abuse". Every card on this screen
+ * names an agency and every one of them is a reported abuse, so red is the hue
+ * this screen's own content resolves to, and amber goes back to meaning an
+ * alert state on the road.
+ *
+ * The old argument was not wrong about the feeling. It was choosing a hue by
+ * how loud the screen should be rather than by what the screen is about, and
+ * one-hue-one-meaning is the rule that outranks it: with amber here, an amber
+ * pane on the map would have meant "a camera is approaching" and "somebody
+ * abused this system", and the second one is the one that would have gone
+ * unread.
+ *
+ * =============================================================================
+ * THE CARD BODY CLAMPS TO THREE LINES
+ * =============================================================================
+ * `.fwm-misuse-summary` had no clamp, and the summaries in
+ * `public/records/counties.json` run from 187 to 1,042 characters with a median
+ * of 435 -- a fourteen-line card, one per screen, which is a list nobody can
+ * scan. `-webkit-line-clamp: 3` is brief 4's own instruction, with the incident
+ * count and year on top and the source at the bottom, so what a reader compares
+ * across cards is agency, county and scale.
+ *
+ * =============================================================================
+ * SURFACE AND TOKENS
+ * =============================================================================
+ * Opaque, like every section C and D screen: `--dr-screen` with flat alphas
+ * over it, no `backdrop-filter`. The RED family has no `--dr-*` name, so it
+ * resolves to the published `--fwm-alert-in-range` tints and every substitution
+ * is written up beside the rule that makes it -- the idiom
+ * `features/chrome/menu.css` established. Lengths are ratios off
+ * `--fwm-space-1`, because `scripts/check-design-values.mjs` rejects a raw
+ * length as hard as a raw hex.
+ * ========================================================================== */
+
+.fwm-misuse {
+  /* --- the frame ------------------------------------------------------- */
+  --fwm-mis-track: calc(var(--fwm-space-1) * 14); /* 56 -- the title track */
+  --fwm-mis-pad: calc(var(--fwm-space-1) * 3.5); /* 14 -- side padding */
+  --fwm-mis-track-gap: calc(var(--fwm-space-1) * 2.75); /* 11 */
+
+  /* THE DOCK RESERVE, 150. See `settingsV1.css` for why this is not
+     `--fwm-dock-h`: that token is 84, the shipping dock is 150, and correcting
+     it moves fifteen screens plus two absolutely-positioned map surfaces. */
+  --fwm-mis-dock: calc(var(--fwm-space-1) * 37.5); /* 150 */
+
+  /* --- the cards ------------------------------------------------------- */
+  --fwm-mis-card-radius: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-mis-card-pad-y: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-mis-card-pad-x: calc(var(--fwm-space-1) * 3.75); /* 15 */
+  --fwm-mis-card-gap: var(--fwm-space-2); /* 8 -- between cards */
+
+  /* --- the chips ------------------------------------------------------- */
+  --fwm-mis-chip-h: var(--fwm-space-8); /* 32 */
+  --fwm-mis-chip-radius: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-mis-chip-pad: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-mis-chip-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  /* THE TRAILING SPACER. 8px of nothing after the last chip so a partial chip
+     reads as more-to-the-right rather than as a cut glyph. Brief 4 asks for it
+     by name on both of its horizontal scrollers. */
+  --fwm-mis-chip-tail: var(--fwm-space-2); /* 8 */
+
+  /* --- the incident pill ----------------------------------------------- */
+  --fwm-mis-pill-h: calc(var(--fwm-space-1) * 5.5); /* 22 */
+  --fwm-mis-pill-radius: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-mis-pill-pad: calc(var(--fwm-space-1) * 2.25); /* 9 */
+
+  --fwm-mis-track-caps: calc(var(--fwm-card-track-tight) * -10); /* 0.10em */
+  --fwm-mis-line-gap: calc(var(--fwm-space-1) * 0.75); /* 3 */
+
+  display: grid;
+  /* THE SPEC'S OWN ROW SET: title, hero, chips, list, dock reserve. The hero
+     and the filters do NOT scroll -- a filter you have to scroll back up to
+     reach is a filter that gets used once. Only the list moves. */
+  grid-template-rows: var(--fwm-mis-track) auto auto 1fr;
+  min-height: 0;
+  background: var(--dr-screen);
+  color: var(--dr-ink);
+  font-family: var(--fwm-font-ui);
+  font-variant-numeric: tabular-nums; /* keyword */
+}
+
+/* =========================================================================
+ * 1. THE TITLE TRACK
+ *
+ * The exit is `components/nav/BackKey.tsx`, which is 44px and glass where the
+ * spec draws a 40px opaque circle. Not re-drawn here: this control is shared by
+ * eleven screens, `backAffordance.source.test.ts` exists to catch a second copy
+ * of it, and `nav.css` argues that the target has to be the token so it is
+ * never under minimum on the dash or the watch. Reported, not overridden.
+ * ====================================================================== */
+
+.fwm-misuse-header {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-mis-track-gap); /* 11 */
+  padding: 0 var(--fwm-mis-pad); /* 14 */
+}
+
+.fwm-misuse-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-title); /* 24 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight);
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* =========================================================================
+ * 2. THE HERO -- three lines in red, and the third one is measured
+ *
+ * A headline, a paragraph, and a count line the component derives from the
+ * record file rather than from a constant. It does not scroll: it is the
+ * screen's claim, and a claim you have to scroll back for is a claim the reader
+ * has already forgotten by the time they meet the evidence.
+ * ====================================================================== */
+
+.fwm-misuse-hero {
+  display: grid;
+  margin: 0 var(--fwm-mis-pad);
+  padding: var(--fwm-mis-card-pad-y) var(--fwm-mis-card-pad-x); /* 14 / 15 */
+  border: var(--fwm-rule-w) solid var(--fwm-tint-in-range-arc);
+  border-radius: var(--fwm-mis-card-radius); /* 16 */
+  background: var(--fwm-tint-in-range-weak);
+}
+
+/* GAP -- RED HAS NO `--dr-*` NAME, so the hero's three values resolve to the
+ * published in-range tints and the deltas are recorded:
+ *
+ *   edge  spec `rgba(255,122,138,0.28)` -> `--fwm-tint-in-range-arc` (35%).
+ *   fill  spec `rgba(255,90,110,0.07)`  -> `--fwm-tint-in-range-weak` (13%).
+ *         Denser than drawn, which is the direction that helps: 7% of a red
+ *         over `--dr-screen` is very nearly invisible.
+ *   ink   spec `#ff9aa6` -> `--fwm-alert-in-range-text`, `#FF8DA5`. Four points
+ *         off in green and blue.
+ *
+ * The spec's BODY (`#cf8f97`) and META (`#a67c83`) inks are desaturated reds
+ * with no token in either family. They resolve to the neutral body and muted
+ * tiers -- `--dr-ink-3` and `--dr-ink-muted` -- which drops the red cast from
+ * two of the three lines and keeps it on the headline, where the claim is.
+ * Both clear 4.5:1 on this ground; `#a67c83` on `--dr-screen` measures 6.0:1
+ * and `--dr-ink-muted` 8.4:1, so the substitution costs legibility nothing.
+ *
+ * Five lines in `tokens.css` would make the whole family exact:
+ *
+ *   --dr-red-line: rgba(255,122,138,0.28);  / * light: 163,22,44,0.30 * /
+ *   --dr-red-fill: rgba(255,90,110,0.07);   / * light: 163,22,44,0.08 * /
+ *   --dr-red-ink:  #ff9aa6;                 / * light: #8f1226 * /
+ *   --dr-red-body: #cf8f97;
+ *   --dr-red-meta: #a67c83;
+ */
+
+.fwm-misuse-headline {
+  margin: 0;
+  color: var(--fwm-alert-in-range-text);
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em */
+  line-height: 1.3;
+}
+
+.fwm-misuse-body {
+  margin: var(--fwm-space-1) 0 0; /* 4; spec draws 6 */
+  color: var(--dr-ink-3);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  line-height: 1.5;
+}
+
+.fwm-misuse-count {
+  margin: var(--fwm-space-2) 0 0; /* 8 */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro); /* 11; spec draws 11.5 */
+}
+
+/* =========================================================================
+ * 3. THE FILTER CHIPS -- 32 tall, radius 16, scrolling sideways
+ *
+ * `All` carries the red; every other chip is neutral until it is chosen. The
+ * scroller hides its bar and ends in an 8px spacer.
+ * ====================================================================== */
+
+.fwm-misuse-filters {
+  display: flex;
+  gap: var(--fwm-mis-chip-gap); /* 6 */
+  padding: var(--fwm-space-2) var(--fwm-mis-pad) 0;
+  overflow-x: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-misuse-filters::-webkit-scrollbar {
+  height: 0;
+}
+
+/* THE TRAILING GUTTER, as an `::after` rather than an empty span: the spec
+   draws a `<span style="width: 8px">` and a spacer element that exists only to
+   be 8px wide is markup carrying a layout value. Same rendered result, and a
+   screen reader never meets it. */
+.fwm-misuse-filters::after {
+  content: ''; /* keyword */
+  flex: none; /* keyword */
+  width: var(--fwm-mis-chip-tail); /* 8 */
+}
+
+.fwm-misuse-chip {
+  display: flex;
+  align-items: center; /* keyword */
+  flex: none; /* keyword */
+  height: var(--fwm-mis-chip-h); /* 32 */
+  padding: 0 var(--fwm-mis-chip-pad); /* 13 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-mis-chip-radius); /* 16 */
+  background: var(--dr-row-fill);
+  color: var(--dr-ink-3);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-plate); /* 12; spec draws 12.5 */
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* ONE SELECTION READS AS CHOSEN, and on this screen the hue that says so is the
+   screen's own red rather than the app's accent -- a cyan chip over a red hero
+   would be the only cyan on the page and would read as a different system. */
+.fwm-misuse-chip[data-fwm-selected='true'] {
+  border-color: var(--fwm-tint-in-range-arc);
+  background: var(--fwm-tint-in-range-weak);
+  color: var(--fwm-alert-in-range-text);
+  font-weight: 700;
+}
+
+/* INERT WITHOUT A COUNTY. `disabled`, not `aria-disabled`: there is nothing to
+   compare against, so the control genuinely cannot act, and
+   `MisuseScreen.nearMe.test.tsx` pins the distinction. */
+.fwm-misuse-chip:disabled {
+  color: var(--dr-ink-4);
+}
+
+/* =========================================================================
+ * 4. THE SCROLLING BAND -- the list, the atlas, the footer
+ * ====================================================================== */
+
+.fwm-misuse-band {
+  display: grid;
+  align-content: start; /* keyword */
+  gap: var(--fwm-space-3); /* 12 */
+  min-height: 0;
+  padding: var(--fwm-space-3) var(--fwm-mis-pad) var(--fwm-mis-dock);
+  overflow-y: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-misuse-band::-webkit-scrollbar {
+  width: 0;
+}
+
+.fwm-misuse-note {
+  margin: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate); /* 12 */
+  line-height: 1.45;
+}
+
+/* =========================================================================
+ * 5. THE CASE CARD -- the whole card is the tap target
+ *
+ * It was an `<li>` with an `<a class="fwm-misuse-source">` buried at the bottom
+ * of it, so the only reachable thing on a card was one line of 12px text. Brief
+ * 4 makes the WHOLE CARD the target, which resolves that by making the card
+ * itself the anchor: one interactive element per card, the source line reads as
+ * its own destination, and there is no anchor inside a target to nest.
+ * ====================================================================== */
+
+.fwm-misuse-list {
+  display: grid;
+  gap: var(--fwm-mis-card-gap); /* 8 */
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-misuse-card {
+  display: grid;
+  padding: var(--fwm-mis-card-pad-y) var(--fwm-mis-card-pad-x); /* 14 / 15 */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-mis-card-radius); /* 16 */
+  background: var(--dr-card-fill);
+  color: inherit; /* keyword */
+  text-decoration: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-misuse-card-head {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: calc(var(--fwm-space-1) * 2.25); /* 9 */
+  min-width: 0;
+}
+
+/* THE INCIDENT COUNT, as an outlined pill. Outlined rather than filled: the
+   hero is the only filled red on this screen, and a filled pill on every card
+   would make the list read as fourteen alerts rather than as a record. */
+.fwm-misuse-tag {
+  display: flex;
+  align-items: center; /* keyword */
+  flex: none; /* keyword */
+  height: var(--fwm-mis-pill-h); /* 22 */
+  padding: 0 var(--fwm-mis-pill-pad); /* 9 */
+  border: var(--fwm-rule-w) solid var(--fwm-tint-in-range-arc);
+  border-radius: var(--fwm-mis-pill-radius); /* 11 */
+  color: var(--fwm-alert-in-range-text);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-misuse-year {
+  flex: none; /* keyword */
+  margin-left: auto;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate); /* 12 */
+}
+
+.fwm-misuse-agency {
+  margin: calc(var(--fwm-space-1) * 2.25) 0 0; /* 9 */
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-subtitle); /* 17 */
+  font-weight: 700;
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-misuse-where {
+  margin: var(--fwm-mis-line-gap) 0 0; /* 3 */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-mis-track-caps); /* 0.10em */
+}
+
+/* The county string arrives pre-formatted as `JOHNSON CO, KS` from
+   `services/cameras/gazetteer.ts`, so there is no `text-transform` here: the
+   caps are the gazetteer's and this only tracks them. */
+
+/* THE CLAMP. Three lines, and it is the whole point of the card. */
+.fwm-misuse-summary {
+  display: -webkit-box; /* keyword */
+  margin: var(--fwm-space-2) 0 0; /* 8 */
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink-3);
+  font-size: var(--fwm-text-forecast); /* 13; spec draws 13.5 */
+  line-height: 1.5;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical; /* keyword */
+}
+
+.fwm-misuse-foot {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2); /* 8 */
+  margin-top: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  min-width: 0;
+}
+
+.fwm-misuse-source {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink-4);
+  font-size: var(--fwm-text-plate); /* 12 */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* SPEC `#6e7881`, TOKEN `--dr-ink-4` = `#a7b0b9`. The brief's own table calls
+   the faint tier "never carries meaning" and its conformance list asks for
+   4.5:1 on every text node in both themes; `#6e7881` on `--dr-screen` measures
+   4.1:1 and fails that. The token is lighter and clears it at 8.6:1, and the
+   source line DOES carry meaning here -- it is the citation the whole screen
+   rests on. Read up, deliberately. */
+
+.fwm-misuse-chevron {
+  flex: none; /* keyword */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-label);
+}
+
+/* =========================================================================
+ * 6. THE EFF ATLAS BLOCK
+ *
+ * Its own surface, deliberately not a record card: an atlas row says an agency
+ * OPERATES this technology, and a record says a named agency did a specific
+ * thing. Folding the two together would publish thousands of accusations this
+ * product cannot support. A quieter card and its own header is how the eye is
+ * told they are different kinds of claim.
+ * ====================================================================== */
+
+.fwm-misuse-atlas {
+  display: grid;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-mis-card-pad-y) var(--fwm-mis-card-pad-x);
+  border: var(--fwm-rule-w) solid var(--dr-group-line);
+  border-radius: var(--fwm-mis-card-radius);
+  background: var(--dr-card-fill);
+}
+
+.fwm-misuse-atlas-title {
+  margin: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-card-track-tight) * -14); /* 0.14em */
+  text-transform: uppercase; /* keyword */
+}
+
+.fwm-misuse-atlas-lede {
+  margin: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate);
+  line-height: 1.5;
+}
+
+.fwm-misuse-atlas-count {
+  margin: 0;
+  color: var(--dr-ink-2);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+}
+
+.fwm-misuse-atlas-agencies {
+  display: grid;
+  gap: var(--fwm-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-misuse-atlas-agency {
+  color: var(--dr-ink-3);
+  font-size: var(--fwm-text-forecast); /* 13 */
+}
+
+.fwm-misuse-atlas-credit {
+  margin: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.5;
+}
+
+.fwm-misuse-atlas-licence {
+  color: var(--dr-accent);
+}
+
+/* =========================================================================
+ * 7. THE FOOTER -- the most important sentence on the screen
+ *
+ * A county with nothing on file is UNDOCUMENTED, which is not the same as
+ * clean. It is not styled as a note among notes: it is the last thing read and
+ * it sits on the screen's own ground with nothing around it.
+ * ====================================================================== */
+
+.fwm-misuse-footer {
+  margin: 0;
+  padding: 0 var(--fwm-space-1);
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate); /* 12 */
+  line-height: 1.5;
+}

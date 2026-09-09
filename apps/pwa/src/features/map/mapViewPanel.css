@@ -1,0 +1,72 @@
+/* MAP VIEW'S SHELL - where it sits over the map, and nothing else.
+ *
+ * =============================================================================
+ * ONE DECLARATION, AND THE REST IS SHARED
+ * =============================================================================
+ * The panel IS `.fwm-drive-panel`: the material, the width, the ceiling, the
+ * scroll and the arrival all come from `mapControlPanel.css`, so there is one
+ * definition of what a panel over this map does. The only thing that differs is
+ * which edge it is anchored to, and that is the rule below.
+ *
+ * =============================================================================
+ * THE INSIDE OF THE PANEL IS NOT HERE ANY MORE
+ * =============================================================================
+ * It was: a `.fwm-mapview-done` close key, a `.fwm-mapview-warn` block that
+ * turned a shared row on its side to hold a label, a reading and a track, and
+ * five rules styling the native range's own pseudo-elements. All of it drew
+ * controls that existed nowhere else in the product, which is why three chips
+ * side by side over one map opened three panels that looked like three
+ * products.
+ *
+ * The rows are `features/chrome/Menu.tsx`'s types now and the look comes from
+ * `menu.css` - including the SLIDER, which is a row type in that language as of
+ * this change rather than a control this panel keeps to itself. See the
+ * deletion note at the foot for what went and what took each piece over.
+ *
+ * A SURFACE WAS NEVER PART OF THIS FILE and is not part of the shell either:
+ * the `.fwm-menu` inside draws the glass, the hairline, the radius and the
+ * padding. `mapControlPanel.css` states that division at its own head.
+ * ========================================================================== */
+
+.fwm-mapview {
+  /* Under its own pill rather than under the layers pill. The row is centred,
+     so this is anchored to the panel's own edge inset instead of to the rail. */
+  right: var(--fwm-space-4);
+}
+
+/* =============================================================================
+   WHAT WAS DELETED HERE, AND WHAT DRAWS IT NOW
+   =============================================================================
+   Every one of these selected markup this panel no longer writes. Left in
+   place they would read as live rules, which is the only thing worse than a
+   missing one.
+
+     `.fwm-mapview-done`            -> `MenuAction`, last in the panel. It is
+                                        tinted rather than centred and muted -
+                                        the language has one action hue and it
+                                        is the report pink; `MapViewPanel.tsx`
+                                        reports that rather than minting a
+                                        second one
+     `.fwm-mapview-warn`            -> `MenuSlider`'s own row, which is the same
+                                        idea - a row turned on its side to carry
+                                        a head line over a track - written once
+                                        in the language instead of once here
+     `.fwm-mapview-warn-head`       -> `.fwm-menu-slider-head`
+     `.fwm-mapview-warn-slider`     -> `.fwm-menu-slider`, and its four
+       and its four engine rules       `::-webkit-slider-runnable-track`,
+                                        `::-moz-range-track`,
+                                        `::-webkit-slider-thumb` and
+                                        `::-moz-range-thumb` twins
+
+   THE THUMB SHRANK, 44 TO 23, AND THE BAND DID NOT. The deleted rules drew the
+   disc at `--fwm-touch-min` on the argument that a driver in a mount cannot aim
+   at anything smaller. That argument is kept and moved: `menu.css` section 10
+   gives the INPUT a whole row of height, so the whole band still drags, and
+   sizes the visible disc at the switch's own 23 so the two controls a menu can
+   carry present the same size of thing. On a 240px panel the old disc ate about
+   a fifth of the track.
+
+   `--fwm-touch-min` IS ALSO NOT A TOKEN `menu.css` MAY READ - two watch skins
+   cut it to 48 and 68 - which is the second reason the language derives the
+   band from its own 44px row instead.
+   ========================================================================== */

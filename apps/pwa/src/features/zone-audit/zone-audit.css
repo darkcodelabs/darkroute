@@ -1,0 +1,529 @@
+/* ZONE AUDIT + HEAT MAP -- how much of a place is watched, stated so it can be
+ * handed to somebody else.
+ *
+ * SOURCE: `Flockys Screens II.dc.html`, panel `B6 · ZONE AUDIT - SHAREABLE CARD
+ * + HEAT LAYER` (lines 593-635); `Flockys App Screens.dc.html`
+ * `05 · LOG - EXPOSURE` for the two footer keys that navigate here;
+ * `Flockys Design System.dc.html` section 08 for the token set.
+ *
+ * Every colour, length, radius and duration below is `var(--fwm-*)` or a
+ * `calc()` over one. Lines the token set cannot express exactly are marked
+ * `GAP:` and filed in `docs/gaps-inbox/zone-audit.md`. Nothing here is a
+ * literal.
+ *
+ * =============================================================================
+ * NO INLINE STYLE, WHICH IS WHY THE HEAT LAYER IS A GRID
+ * =============================================================================
+ * B6 floats three blobs at percentage positions. A position is data, and an
+ * inline `style` is the one way a raw length reaches the DOM without passing
+ * the token checker -- so the layer is a fixed 8x6 grid and a cell's band is an
+ * attribute with a rule per band. Each blob bleeds 50% past its cell on every
+ * side so neighbours merge into soft shapes instead of reading as tiles.
+ * GAP: see docs/gaps-inbox/zone-audit.md#heat-grid-resolution-is-chosen-not-drawn
+ *
+ * =============================================================================
+ * NO POINTER-STATE RULE, EVER
+ * =============================================================================
+ * Touch-first product; a pointer state never fires on a phone in a car mount.
+ * `ZoneAuditView.test.tsx` reads this file off disk and fails if the selector
+ * appears in it.
+ *
+ * =============================================================================
+ * A MUTED CAMERA IS NOT DIMMED AND IS NOT HIDDEN
+ * =============================================================================
+ * There is no rule in this file that keys off a mute, and no selector that can
+ * hide a cell, a count or a row. "Muting only removes the alert - never the
+ * record." (Screens II, B4)
+ * ========================================================================== */
+
+.fwm-zone {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design rules every panel
+   * with. Derived, so a mode that rescales space rescales the rules with it.
+   * A component-scoped local, NOT a new token. */
+  --fwm-zone-rule-w: calc(var(--fwm-space-1) / 4);
+  /* The card's brand mark is a 26px ring with a 2px edge: 24 + 4/2, exact. */
+  --fwm-zone-mark: calc(var(--fwm-space-6) + var(--fwm-space-1) / 2);
+  --fwm-zone-mark-edge: calc(var(--fwm-space-1) / 2);
+  /* B6's heat panel is 210px. 32*6 + 16 = 208 is the closest exact combination
+   * the 4/8/12/16/24/32/48 scale can express.
+   * GAP: see docs/gaps-inbox/zone-audit.md#heat-panel-height-210 */
+  --fwm-zone-heat-h: calc(var(--fwm-space-8) * 6 + var(--fwm-space-4));
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, the title at 17px/700/.1em, the radius readout right.
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-zone-rule-w) solid var(--fwm-line);
+}
+
+.fwm-zone-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) / 10);
+  color: var(--fwm-text);
+  white-space: nowrap;
+}
+
+/* The readout IS the radius selector: B6 draws no picker.
+ * GAP: see docs/gaps-inbox/zone-audit.md#radius-selector-is-named-but-never-drawn
+ * Rendered 10px mono in --fwm-text-muted.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-zone-radius {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  min-height: var(--fwm-touch-min);
+  padding: 0;
+  border: none;
+  border-radius: var(--fwm-radius-0);
+  background: transparent;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+.fwm-zone-radius:disabled {
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack.
+ * GAP: see docs/gaps-inbox/log.md#spacing-scale-misses-5-14-and-18
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * The heat layer.
+ *
+ * Ground and hatch are the nearest tokens to B6's #04060A / #0A0D12 / #070A0E.
+ * GAP: see docs/gaps-inbox/zone-audit.md#heat-panel-ground-and-hatch-are-nearest-tokens
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-heat {
+  position: relative;
+  flex: none;
+  height: var(--fwm-zone-heat-h);
+  min-width: 0;
+  border: var(--fwm-zone-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-bg-sunken);
+  overflow: hidden;
+}
+
+/* HEAT MAP is the same layer with the screen to itself. */
+.fwm-zone[data-fwm-zone-screen="heat-map"] .fwm-zone-heat {
+  flex: 1;
+  height: auto;
+  min-height: var(--fwm-zone-heat-h);
+}
+
+.fwm-zone-heat-hatch {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    115deg,
+    var(--fwm-surface-1) 0 var(--fwm-space-3),
+    var(--fwm-bg-sunken) var(--fwm-space-3) var(--fwm-space-6)
+  );
+}
+
+.fwm-zone-heat-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+}
+
+.fwm-zone-heat-cell {
+  position: relative;
+  min-width: 0;
+}
+
+/* The blob bleeds half a cell past every edge so adjacent bands merge. */
+.fwm-zone-heat-blob {
+  position: absolute;
+  inset: -50%;
+  border-radius: var(--fwm-radius-full);
+  pointer-events: none;
+}
+
+/* B6's three blob alphas -- .3 / .42 / .55 -- carried as opacity, which is a
+ * ratio and so needs no colour token of its own. */
+.fwm-zone-heat-cell[data-fwm-zone-heat-rank="low"] .fwm-zone-heat-blob {
+  background: radial-gradient(circle, var(--fwm-alert-clear), transparent 70%);
+  opacity: 0.3;
+}
+
+.fwm-zone-heat-cell[data-fwm-zone-heat-rank="medium"] .fwm-zone-heat-blob {
+  background: radial-gradient(circle, var(--fwm-alert-approaching), transparent 70%);
+  opacity: 0.42;
+}
+
+.fwm-zone-heat-cell[data-fwm-zone-heat-rank="heavy"] .fwm-zone-heat-blob {
+  background: radial-gradient(circle, var(--fwm-alert-in-range), transparent 70%);
+  opacity: 0.55;
+}
+
+/* The trip overlay marks the cells the open drive actually reached. It cannot
+ * draw a route: no trip path exists on this device, on purpose.
+ * GAP: see docs/gaps-inbox/zone-audit.md#trip-overlay-cannot-draw-a-route */
+.fwm-zone-heat[data-fwm-zone-trip-overlay="on"]
+  .fwm-zone-heat-cell[data-fwm-zone-heat-trip="true"] {
+  outline: var(--fwm-zone-rule-w) solid var(--fwm-line-strong);
+  outline-offset: calc(var(--fwm-space-1) * -1);
+}
+
+/* Rendered 9px mono, .16em, in --fwm-text-2.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-zone-heat-caption {
+  position: absolute;
+  left: var(--fwm-space-3);
+  bottom: var(--fwm-space-2);
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* B6 draws no empty state. This one says which of the three things is missing.
+ * GAP: see docs/gaps-inbox/zone-audit.md#heat-layer-has-no-drawn-empty-state */
+.fwm-zone-heat-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: var(--fwm-space-4);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * The legend row -- three swatches and the trip overlay toggle.
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-legend {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-zone-legend-item {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--fwm-space-1);
+  white-space: nowrap;
+}
+
+.fwm-zone-legend-swatch[data-fwm-zone-heat-rank="low"] {
+  color: var(--fwm-alert-clear);
+}
+.fwm-zone-legend-swatch[data-fwm-zone-heat-rank="medium"] {
+  color: var(--fwm-alert-approaching);
+}
+.fwm-zone-legend-swatch[data-fwm-zone-heat-rank="heavy"] {
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-zone-trip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  min-height: var(--fwm-touch-min);
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: var(--fwm-radius-0);
+  background: transparent;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+.fwm-zone-trip[aria-pressed="true"] {
+  color: var(--fwm-text-2);
+}
+
+.fwm-zone-trip:disabled {
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * `SHARE CARD - RENDERS AS AN IMAGE`
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-section-label {
+  flex: none;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * The card. Edged in the in-range hue, which is the only surface on the screen
+ * that is -- it is the thing being handed to somebody else.
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-card {
+  flex: none;
+  min-width: 0;
+  border: var(--fwm-zone-rule-w) solid var(--fwm-alert-in-range);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  /* Rendered 18px. GAP: see docs/gaps-inbox/log.md#spacing-scale-misses-5-14-and-18 */
+  padding: var(--fwm-space-4);
+}
+
+.fwm-zone-card-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-zone-card-mark {
+  flex: none;
+  width: var(--fwm-zone-mark);
+  height: var(--fwm-zone-mark);
+  border: var(--fwm-zone-mark-edge) solid var(--fwm-text);
+  border-radius: var(--fwm-radius-full);
+}
+
+/* Rendered 13px/700/.1em uppercase.
+ * GAP: see docs/gaps-inbox/log.md#type-scale-misses-12-13-and-16 */
+.fwm-zone-card-word {
+  min-width: 0;
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-body) / 10);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fwm-zone-card-word-accent {
+  color: var(--fwm-alert-in-range);
+}
+
+/* GAP: see DESIGN-GAPS.md#token-set-does-not-cover-rendered-hero-sizes
+ * Rendered 70px; --fwm-text-hero is 80px. The drawn line-height (.95) and
+ * tracking (-.03em) are carried as ratios of the token.
+ *
+ * THE NUMERAL DOES NOT ANIMATE. There is no transition and no animation on this
+ * rule and there never may be: a count that rolls is a count nobody can read. */
+.fwm-zone-card-hero {
+  margin: var(--fwm-space-4) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-hero);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: calc(var(--fwm-text-hero) * -0.03);
+  color: var(--fwm-alert-in-range);
+}
+
+/* Rendered 21px/600/1.35. --fwm-text-title is 24px, the nearest step.
+ * GAP: see DESIGN-GAPS.md#token-set-does-not-cover-rendered-hero-sizes */
+.fwm-zone-card-line {
+  margin: var(--fwm-space-2) 0 0;
+  font-size: var(--fwm-text-title);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--fwm-text);
+}
+
+.fwm-zone-card-rows {
+  margin: var(--fwm-space-4) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 2;
+  color: var(--fwm-text-2);
+}
+
+.fwm-zone-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-zone-card-row-label {
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fwm-zone-card-row-value {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* B6 draws one row's value in the in-range hue: the one that says the footage
+ * left the agency that collected it. */
+.fwm-zone-card-row[data-fwm-zone-card-row="SHARED TO OUTSIDE AGENCIES"] .fwm-zone-card-row-value {
+  color: var(--fwm-alert-in-range);
+}
+
+/* Rendered 9px, .14em, line-height 1.7.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-zone-card-foot {
+  margin: var(--fwm-space-4) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  line-height: 1.7;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-zone-card-origin {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * SHARE CARD / EXPORT CSV -- 48px, pinned to the bottom of the body.
+ * ------------------------------------------------------------------------ */
+
+.fwm-zone-actions {
+  display: flex;
+  gap: var(--fwm-space-2);
+  flex: none;
+  margin-top: auto;
+}
+
+.fwm-zone-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-space-12);
+  border: var(--fwm-zone-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-1);
+  background: transparent;
+  font-family: var(--fwm-font-ui);
+  /* Rendered 13px/700/.1em and 13px/600/.08em.
+   * GAP: see docs/gaps-inbox/log.md#type-scale-misses-12-13-and-16 */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-body) * 0.08);
+  color: var(--fwm-text-2);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+.fwm-zone-action[data-fwm-zone-action-tone="primary"] {
+  background: var(--fwm-alert-in-range);
+  border-color: var(--fwm-alert-in-range);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-body) / 10);
+  color: var(--fwm-bg);
+}
+
+.fwm-zone-action[data-fwm-zone-action-tone="secondary"] {
+  border-color: var(--fwm-line-strong);
+}
+
+/* Unwired or nothing to act on. B6 draws the primary key FILLED, and
+ * `background: transparent` here used to erase that fill entirely -- so a zone
+ * that could not be stated drew no SHARE CARD key at all, only two words on the
+ * page ground. The key keeps its block, in the neutral surface `B2 · DEAD DROP`
+ * uses for the same state (`dead-drop.css` `.fwm-dead-drop-action:disabled`),
+ * so the panel keeps the shape it was drawn with and the key still reads as
+ * inert. */
+.fwm-zone-action:disabled {
+  background: var(--fwm-surface-2);
+  border-color: var(--fwm-line);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * What the last press did. Undrawn by B6, so it says what it is in words.
+ * GAP: see DESIGN-GAPS.md#empty-and-loading-states-mostly-undrawn
+ * ------------------------------------------------------------------------ */
+
+/* IT HOLDS ITS LINE WHILE IT IS EMPTY. B6 draws no notice, so this row is an
+ * addition; a row that appears on the first press would push the two footer
+ * keys down the moment the driver touched one, which changes the drawn vertical
+ * rhythm of the panel more than a reserved line does. `min-height` is the line
+ * box the text will occupy, derived from the type token rather than measured.
+ * GAP: see docs/gaps-inbox/zone-audit.md#the-press-notice-is-an-element-b6-does-not-draw */
+.fwm-zone-notice {
+  flex: none;
+  min-height: calc(var(--fwm-text-micro) * 1.6);
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.6;
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

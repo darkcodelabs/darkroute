@@ -1,0 +1,929 @@
+/* SETTINGS -- v1, rebuilt on brief 4's row/group idiom.
+ *
+ * SOURCE: `the_rest_of_the_app.dc.html`, section D, the two SETTINGS frames
+ * (dark and light). Transcribed the way `features/chrome/menu.css` transcribes
+ * its own section: every number below is written on the spec page, and every
+ * number that is not written there is not here either.
+ *
+ * =============================================================================
+ * WHAT CHANGED, AND WHY IT IS A REFACTOR RATHER THAN A REDESIGN
+ * =============================================================================
+ * This screen was nine cards down a page: each one a heading, a value, a
+ * paragraph of prose and a segmented control, on `--fwm-surface-1`, with a
+ * coloured LEFT-BORDER STRIPE on every permission row. The stripe is deleted
+ * outright -- nothing else in the product has one, the row hairline plus a hue
+ * on the group header already carries the same fact, and a second encoding of
+ * one fact is the encoding that goes stale. `.fwm-settingsv1-perm-rule` and its
+ * five `[data-fwm-state=...]` blocks are gone with it.
+ *
+ * What replaces them is the language the LAYERS and ABUSE menus already ship: a
+ * tracked-caps group header over a stack of 44px hairlined rows, each row
+ * stating its current state IN WORDS beside the switch. The controls, their
+ * data and their copy intent are unchanged -- only structure, density and
+ * surface.
+ *
+ * =============================================================================
+ * SURFACE: OPAQUE. NO `backdrop-filter` ON THE SCREEN ITSELF.
+ * =============================================================================
+ * Brief 4's rule, and it is an argument rather than a preference: glass is for
+ * chrome floating over the map. A full screen has nothing behind it, so blurring
+ * it costs a compositor pass and buys nothing -- "blur everywhere is blur
+ * nowhere". The ground is `--dr-screen`, opaque, and every surface on it is a
+ * flat alpha over that ground.
+ *
+ * TWO EXCEPTIONS, both written up where they stand: the shared BackKey
+ * (section 1) and the material fold's live preview (section 9).
+ *
+ * =============================================================================
+ * COLOUR IS `var(--dr-*)` AND `var(--fwm-*)`, AND NOT ONE RAW VALUE
+ * =============================================================================
+ * The screen surfaces are the `--dr-*` set brief 4 publishes -- `--dr-screen`,
+ * `--dr-row-fill`, `--dr-hairline-row`, `--dr-card-fill`, `--dr-card-line`, the
+ * four ink tiers and `--dr-accent`. The two HUES this screen needs -- amber for
+ * TEST THE ALERT, red for the wipe -- have no `--dr-*` name, so they resolve to
+ * the nearest published token and the delta is written up beside the rule, the
+ * way `menu.css` resolves its five. Minting a colour is the one thing a
+ * stylesheet may not do; `scripts/check-design-values.mjs` fails the build on
+ * it.
+ *
+ * =============================================================================
+ * EVERY LENGTH IS A RATIO OFF THE 4px STEP
+ * =============================================================================
+ * The gate rejects a raw length as hard as a raw hex, so `height: 44px` cannot
+ * be written even though 44 is the spec's number. Geometry is
+ * `calc(var(--fwm-space-1) * n)` -- `menu.css`, `dock.css` and `topBar.css`
+ * already run on this -- and the spec's pixel value is written beside every one
+ * of them. `--fwm-space-4` is never read: two skins re-cut it to 12.
+ * ========================================================================== */
+
+.fwm-settingsv1 {
+  /* --- the frame ------------------------------------------------------- */
+  /* 56 -- the title track, which does not scroll. */
+  --fwm-sv1-track: calc(var(--fwm-space-1) * 14);
+  /* 14 -- the screen's side padding, both edges, every band. */
+  --fwm-sv1-pad: calc(var(--fwm-space-1) * 3.5);
+  /* 11 -- the gap between the exit control and the title. */
+  --fwm-sv1-track-gap: calc(var(--fwm-space-1) * 2.75);
+
+  /* THE DOCK RESERVE. 150, and brief 4 calls it non-negotiable: the dock is
+     always mounted, and anything drawn in that band is under it.
+
+     NOT `--fwm-dock-h`. That token is 84 -- "v2's stated dock total" -- and the
+     dock that actually ships is v3, whose `--fwm-dk-h-collapsed` composes to
+     150 and whose `dockConformance.test.ts` asserts {150, 170, 302} border-box.
+     Fifteen screens currently reserve `84 + 16 = 100` under a 150px dock, so
+     the bottom 50px of every one of them is already under it. Correcting
+     `--fwm-dock-h` is the real fix and it is repo-wide -- `drive.css` and
+     `mapControlPanel.css` both position absolutely off it, so it moves the map
+     and not just padding. Out of section D's scope, and reported. This is the
+     spec's number, spelled as a ratio, for this screen. */
+  --fwm-sv1-dock: calc(var(--fwm-space-1) * 37.5); /* 150 */
+
+  /* --- the rows -------------------------------------------------------- */
+  --fwm-sv1-row-h: calc(var(--fwm-space-1) * 11); /* 44 */
+  --fwm-sv1-row-radius: var(--fwm-space-3); /* 12 */
+  --fwm-sv1-row-pad: var(--fwm-space-3); /* 12 */
+  --fwm-sv1-row-gap: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-sv1-gap: var(--fwm-space-1); /* 4 -- between rows in a group */
+
+  /* --- the group header ------------------------------------------------ */
+  /* `padding: 10px 4px 6px` on the first group, 14 on the top for every one
+     after it -- the spec draws both, and the difference is the air a group
+     needs from the group above it rather than from the title track. */
+  --fwm-sv1-head-pad-t: calc(var(--fwm-space-1) * 2.5); /* 10 */
+  --fwm-sv1-head-pad-t-next: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-sv1-head-pad-x: var(--fwm-space-1); /* 4 */
+  --fwm-sv1-head-pad-b: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-sv1-head-gap: calc(var(--fwm-space-1) * 0.75); /* 3 */
+  /* 0.14em, derived. There are three letter-spacing tokens in the product and
+     0.14em is not one of them, so it is `--fwm-card-track-tight * -14` -- the
+     same arithmetic `menu.css` and `dock.css` use. Exact, not near. */
+  --fwm-sv1-track-caps: calc(var(--fwm-card-track-tight) * -14);
+
+  /* --- the switch. 40 x 23, 1px edge, 2px inset, 17px knob -------------- */
+  /* Those four numbers are one number: 23 - 2 - 4 = 17 is the knob exactly, and
+     40 - 2 - 4 = 34 = 17 x 2 is its travel exactly. Same set as `menu.css`,
+     because it is the same switch. */
+  --fwm-sv1-switch-w: calc(var(--fwm-space-1) * 10); /* 40 */
+  --fwm-sv1-switch-h: calc(var(--fwm-space-1) * 5.75); /* 23 */
+  --fwm-sv1-switch-pad: calc(var(--fwm-space-1) / 2); /* 2 */
+  --fwm-sv1-knob: calc(var(--fwm-space-1) * 4.25); /* 17 */
+
+  /* --- the note box, and the cards the spec has no row for -------------- */
+  --fwm-sv1-note-pad-y: calc(var(--fwm-space-1) * 2.75); /* 11 */
+  --fwm-sv1-note-pad-x: calc(var(--fwm-space-1) * 3.25); /* 13 */
+  --fwm-sv1-note-gap: calc(var(--fwm-space-1) * 1.5); /* 6 */
+  --fwm-sv1-card-radius: calc(var(--fwm-space-1) * 4); /* 16 */
+  --fwm-sv1-card-pad: calc(var(--fwm-space-1) * 3.5); /* 14 */
+  --fwm-sv1-seg-h: calc(var(--fwm-space-1) * 9); /* 36, inside the 44 shell */
+
+  display: grid;
+  /* THE SCROLL CONTRACT. Title track fixed, content band between it and the
+     dock reserve. `1fr` with a `min-height: 0` band is what lets the band
+     actually scroll inside `global.css`'s `.fwm-shell-screen > *` slot -- a
+     screen root that grows past that slot has its bottom clipped with no way to
+     reach it, which is how SETTINGS lost everything below Permissions once. */
+  grid-template-rows: var(--fwm-sv1-track) 1fr;
+  min-height: 0;
+  background: var(--dr-screen);
+  color: var(--dr-ink);
+  font-family: var(--fwm-font-ui);
+  /* Values sit in a right-hand column and must not shuffle as they change. */
+  font-variant-numeric: tabular-nums; /* keyword */
+}
+
+/* =========================================================================
+ * 1. THE TITLE TRACK -- 56, fixed, exit control at its head
+ *
+ * THE EXIT IS `components/nav/BackKey.tsx` AND IS NOT RE-DRAWN HERE. The spec
+ * draws a 40px opaque circle with an SVG chevron; the shipped control is 44px
+ * (`--fwm-touch-min`, which nav.css raises to 48 and 68 on the dash and watch
+ * surfaces so the target is never under minimum) and is made of glass. Both
+ * differences are deliberate departures from the spec and are reported rather
+ * than fixed here: this control is shared by eleven screens and pinned by
+ * `components/nav/backAffordance.source.test.ts`, so restyling it for three of
+ * them is a repo-wide nav change and out of section D's scope. Drawing a second
+ * 40px circle beside it is the exact thing that test exists to catch.
+ * ====================================================================== */
+
+.fwm-settingsv1-header {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-sv1-track-gap); /* 11 */
+  padding: 0 var(--fwm-sv1-pad); /* 14 */
+}
+
+.fwm-settingsv1-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-title); /* 24 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-card-track-tight); /* -0.01em; spec draws -0.02em */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* SPEC -0.02em, TOKEN -0.01em. `--fwm-card-track-tight` is the tightest
+   published tracking and there is no -0.02em token; `dock.css` derives its own
+   where it needs the exact value. Here the difference is a quarter of a pixel
+   on one 24px word, so the token is read straight. */
+
+/* =========================================================================
+ * 2. THE CONTENT BAND -- everything that scrolls
+ *
+ * `overflow-y: auto` with the scrollbar hidden. The content IS the affordance:
+ * a bar drawn over a 390px phone screen takes width from the rows and tells a
+ * driver nothing they cannot see by dragging.
+ * ====================================================================== */
+
+.fwm-settingsv1-band {
+  display: grid;
+  align-content: start; /* keyword */
+  gap: var(--fwm-sv1-gap); /* 4 */
+  min-height: 0;
+  padding: var(--fwm-space-1) var(--fwm-sv1-pad) var(--fwm-sv1-dock);
+  overflow-y: auto; /* keyword */
+  /* Firefox. */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-settingsv1-band::-webkit-scrollbar {
+  /* Chromium and WebKit. A zero here is not a design value -- it is the
+     absence of a scrollbar, which is what the brief asks for. */
+  width: 0;
+}
+
+/* =========================================================================
+ * 3. THE GROUP HEADER -- 11 / 700 / 0.14em caps over a 12.5 sub-line
+ *
+ * THE HUE ON THE HEADER IS WHAT THE DELETED STRIPE WAS SAYING. Cyan for
+ * PERMISSIONS, amber for TEST THE ALERT, muted for THIS PHONE and for the two
+ * groups this screen keeps that the spec has no frame for.
+ * ====================================================================== */
+
+.fwm-settingsv1-group {
+  display: grid;
+  gap: var(--fwm-sv1-gap); /* 4 */
+}
+
+.fwm-settingsv1-group-head {
+  padding: var(--fwm-sv1-head-pad-t-next) var(--fwm-sv1-head-pad-x)
+    var(--fwm-sv1-head-pad-b);
+}
+
+/* The first group hangs off the title track rather than off a group above it,
+   so it takes the spec's smaller top padding. */
+.fwm-settingsv1-group:first-of-type .fwm-settingsv1-group-head {
+  padding-top: var(--fwm-sv1-head-pad-t); /* 10 */
+}
+
+.fwm-settingsv1-group-label {
+  margin: 0;
+  font-size: var(--fwm-text-micro); /* 11 */
+  font-weight: 700;
+  letter-spacing: var(--fwm-sv1-track-caps); /* 0.14em */
+  /* The rule is in the stylesheet, not in the caller's string, so a header
+     typed in sentence case is still drawn as the design draws it. */
+  text-transform: uppercase; /* keyword */
+  color: var(--dr-ink-muted);
+}
+
+.fwm-settingsv1-group-label[data-fwm-hue='accent'] {
+  color: var(--dr-accent);
+}
+
+/* GAP -- AMBER HAS NO `--dr-*` NAME.
+ *
+ * The spec draws this header at `#f5a524` dark / `#8a5f10` light. Resolved to
+ * `--dr-owner-hoa`, which is the palette's amber: `#8a5f10` in light is the
+ * spec's value to the digit, and `#FFC02E` in dark is brighter and greener than
+ * drawn. Both clear 4.5:1 on `--dr-screen`. Reported rather than minted --
+ * `--dr-*` is a published list and adding to it is the brief author's call. One
+ * line in `tokens.css` beside the others closes it:
+ *
+ *   --dr-amber:  #f5a524;   / * light: #8a5f10 * /
+ */
+.fwm-settingsv1-group-label[data-fwm-hue='amber'] {
+  color: var(--dr-owner-hoa);
+}
+
+.fwm-settingsv1-group-note {
+  margin: var(--fwm-sv1-head-gap) 0 0; /* 3 */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate); /* 12; spec draws 12.5 */
+}
+
+/* =========================================================================
+ * 4. EVERY ROW -- 44 tall, radius 12, `padding: 0 12`, hairline + fill
+ *
+ * Five shapes share this: a permission, an alert test, a navigation row, the
+ * install row and the wipe row. They differ only in what sits in the third
+ * slot -- a switch, a verdict word, a chevron, an affordance word, or nothing.
+ * ====================================================================== */
+
+.fwm-settingsv1-row,
+.fwm-settingsv1-perm,
+.fwm-settingsv1-switch,
+.fwm-settingsv1-help {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-sv1-row-gap); /* 10 */
+  min-width: 0;
+  width: 100%;
+  height: var(--fwm-sv1-row-h); /* 44 */
+  padding: 0 var(--fwm-sv1-row-pad); /* 12 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sv1-row-radius); /* 12 */
+  background: var(--dr-row-fill);
+  /* A button carries the UA's centred text and its own font. Both are undone
+     so one set of declarations draws a row whether it is a button, an anchor
+     or a div. */
+  color: inherit; /* keyword */
+  font-family: inherit; /* keyword */
+  text-align: left; /* keyword */
+  text-decoration: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* THE LABEL NEVER GIVES. The value is the half that ellipsises, because a row
+   whose NAME is cut is a row you cannot identify. */
+.fwm-settingsv1-row-label,
+.fwm-settingsv1-switch-label {
+  flex: none; /* keyword */
+  color: var(--dr-ink-2);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 500;
+}
+
+/* THE STATE, IN WORDS, RIGHT-ALIGNED. This is the half `menu.css` argues for
+   and the brief repeats: "on -- used while the map is open", not a switch
+   position. The switch says on or off; this says what that MEANS. */
+.fwm-settingsv1-row-value,
+.fwm-settingsv1-switch-sub {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The word in the third slot -- `Send`, `Offer`, or the platform's own verdict.
+   13 / 700, hued by the row. */
+.fwm-settingsv1-row-word,
+.fwm-settingsv1-perm-word {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-forecast); /* 13 */
+  font-weight: 700;
+  color: var(--dr-accent);
+}
+
+.fwm-settingsv1-row-word[data-fwm-hue='amber'],
+.fwm-settingsv1-perm-word {
+  color: var(--dr-owner-hoa);
+}
+
+/* A row whose affordance is spent says so in the muted ink rather than
+   disappearing: the label still names the setting. */
+.fwm-settingsv1-row:disabled .fwm-settingsv1-row-word,
+.fwm-settingsv1-perm:disabled .fwm-settingsv1-perm-word {
+  color: var(--dr-ink-4);
+}
+
+.fwm-settingsv1-chevron {
+  flex: none; /* keyword */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-subtitle);
+}
+
+/* =========================================================================
+ * 5. THE PERMISSION AND ALERT-TEST STACKS
+ * ====================================================================== */
+
+.fwm-settingsv1-perms {
+  display: grid;
+  gap: var(--fwm-sv1-gap); /* 4 */
+  margin: 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+/* `.fwm-settingsv1-perm-rule` USED TO BE HERE, with five
+   `[data-fwm-state=...]` blocks painting it. It was the left-border colour
+   stripe on every permission and alert-test row, and brief 4 deletes it by
+   name: nothing else in the app has one, and the row hairline plus the hue on
+   the group header already carries the state. Deleted rather than restyled. */
+
+/* =========================================================================
+ * 6. THE SWITCH -- 40 x 23, keyed off `aria-checked`
+ *
+ * The knob's side is flex alignment read from the same attribute a screen
+ * reader announces, so the picture and the announcement cannot drift apart.
+ * `settings.css` says this too, having had them drift once.
+ * ====================================================================== */
+
+.fwm-settingsv1-perm-track {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: flex-start; /* keyword */
+  flex: none; /* keyword */
+  width: var(--fwm-sv1-switch-w); /* 40 */
+  height: var(--fwm-sv1-switch-h); /* 23 */
+  padding: var(--fwm-sv1-switch-pad); /* 2 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-row-hover);
+}
+
+/* GAP -- THE OFF TRACK'S EDGE AND FILL, same two as `menu.css` and resolved the
+   same way. The spec draws `rgba(255,255,255,0.12)` / `rgba(15,20,25,0.16)` for
+   the edge; `--dr-hairline` is 0.10 / 0.12, so this is 2% lighter in dark and
+   4% in light. The fill is exact in dark -- `--dr-row-hover` IS
+   `rgba(255,255,255,0.06)` -- and 1% out in light. The token is read for its
+   VALUE and the coincidence in its name is written down. */
+
+.fwm-settingsv1-perm[aria-checked='true'] .fwm-settingsv1-perm-track,
+.fwm-settingsv1-switch[aria-checked='true'] .fwm-settingsv1-perm-track {
+  justify-content: flex-end; /* keyword */
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+}
+
+/* GAP -- THE ON TRACK IS DRAWN DENSER THAN `--dr-accent-fill`, and this is the
+   one substitution a person can see. Spec: edge 0.45, fill 0.22. Published:
+   `--dr-accent-line` 0.42 and `--dr-accent-fill` 0.13. The edge is within 5%
+   and invisible; the fill is roughly half the drawn alpha. Built on the
+   published token anyway -- the knob is solid `--dr-accent` and the edge is
+   accent, so the switch still reads unambiguously ON. Identical to the delta
+   `menu.css` records for the identical switch. */
+
+.fwm-settingsv1-perm-knob {
+  width: var(--fwm-sv1-knob); /* 17 */
+  height: var(--fwm-sv1-knob); /* 17 */
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-ink-muted);
+}
+
+.fwm-settingsv1-perm[aria-checked='true'] .fwm-settingsv1-perm-knob,
+.fwm-settingsv1-switch[aria-checked='true'] .fwm-settingsv1-perm-knob {
+  background: var(--dr-accent);
+}
+
+/* A GRANTED ROW IS `aria-disabled`, NEVER `disabled` -- `OnboardingViewV1`
+   argues why, and `permissionParity.test.tsx` pins it. It still has to LOOK
+   spent, and the ink tier is how, because a row that dims its ground stops
+   reading as a row. */
+.fwm-settingsv1-perm[aria-disabled='true'] .fwm-settingsv1-switch-sub,
+.fwm-settingsv1-switch:disabled .fwm-settingsv1-switch-sub {
+  color: var(--dr-ink-4);
+}
+
+/* =========================================================================
+ * 7. THE AMBER NOTE, AND THE MUTED ONE
+ *
+ * `data-fwm-warn` is the same treatment the durability warning already wears,
+ * because it is the same class of statement: what you are about to see is not
+ * what it says it is.
+ * ====================================================================== */
+
+.fwm-settingsv1-note {
+  margin: 0;
+  padding: 0 var(--fwm-sv1-head-pad-x);
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate); /* 12; spec draws 12.5 */
+  line-height: 1.45;
+}
+
+.fwm-settingsv1-note[data-fwm-warn='true'] {
+  margin-top: var(--fwm-sv1-note-gap); /* 6 */
+  padding: var(--fwm-sv1-note-pad-y) var(--fwm-sv1-note-pad-x); /* 11 / 13 */
+  border: var(--fwm-rule-w) solid var(--fwm-tint-approaching-ring);
+  border-radius: var(--fwm-sv1-row-radius); /* 12 */
+  background: var(--fwm-notice-wash);
+  color: var(--fwm-alert-approaching);
+}
+
+/* GAP -- THE AMBER NOTE'S THREE VALUES, and all three resolve to published
+ * amber tints rather than to a minted colour.
+ *
+ *   edge  spec `rgba(245,165,36,0.28)` -> `--fwm-tint-approaching-ring`, the
+ *         amber at 35%. Denser than drawn.
+ *   fill  spec `rgba(245,165,36,0.07)` -> `--fwm-notice-wash`, the amber at 8%.
+ *         One point off, which is nothing.
+ *   ink   spec `#d8b478` dark / `#6d4c10` light -> `--fwm-alert-approaching`,
+ *         which is `#FFC02E` dark and the skin's own amber in light. Brighter
+ *         and more saturated than the drawn ink, which is the direction that
+ *         helps a 12px note clear 4.5:1.
+ *
+ * All three are the SAME family the spec drew, at published alphas. Three lines
+ * in `tokens.css` would make them exact:
+ *
+ *   --dr-amber-line: rgba(245,165,36,0.28);  / * light: 138,95,16,0.30 * /
+ *   --dr-amber-fill: rgba(245,165,36,0.07);  / * light: 245,165,36,0.12 * /
+ *   --dr-amber-ink:  #d8b478;                / * light: #6d4c10 * /
+ */
+
+/* =========================================================================
+ * 8. THE WIPE ROW -- red, and the only red on the screen
+ *
+ * The spec draws it as a bare 44px row with one 14/700 label and nothing in the
+ * right-hand slot: there is no value to state and no affordance to offer, only
+ * the thing itself. Everything the two-press rule needs -- the warning before
+ * the press, the cancel beside it, the receipt after it -- hangs below.
+ * ====================================================================== */
+
+.fwm-settingsv1-removal {
+  display: grid;
+  gap: var(--fwm-sv1-gap); /* 4 */
+}
+
+.fwm-settingsv1-removal-key {
+  display: flex;
+  align-items: center; /* keyword */
+  min-width: 0;
+  width: 100%;
+  height: var(--fwm-sv1-row-h); /* 44 */
+  padding: 0 var(--fwm-sv1-row-pad); /* 12 */
+  border: var(--fwm-rule-w) solid var(--fwm-tint-in-range-arc);
+  border-radius: var(--fwm-sv1-row-radius); /* 12 */
+  background: var(--fwm-tint-in-range-weak);
+  color: var(--fwm-alert-in-range-text);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+  text-align: left; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* GAP -- RED HAS NO `--dr-*` NAME EITHER, and its three values resolve to the
+ * published in-range tints:
+ *
+ *   edge  spec `rgba(255,122,138,0.28)` dark / `rgba(163,22,44,0.30)` light
+ *         -> `--fwm-tint-in-range-arc`, the alert red at 35%.
+ *   fill  spec `rgba(255,90,110,0.07)` / `rgba(163,22,44,0.08)`
+ *         -> `--fwm-tint-in-range-weak`, the alert red at 13%. Denser than
+ *         drawn, and the direction that helps: 7% of a red over `--dr-screen`
+ *         is very nearly invisible, and this row must not be missable.
+ *   ink   spec `#ff9aa6` / `#8f1226` -> `--fwm-alert-in-range-text`, `#FF8DA5`.
+ *         Four points off in green and blue, and the closest published match to
+ *         a spec value anywhere in this file.
+ *
+ * Three lines in `tokens.css` close it:
+ *
+ *   --dr-red-line: rgba(255,122,138,0.28);  / * light: 163,22,44,0.30 * /
+ *   --dr-red-fill: rgba(255,90,110,0.07);   / * light: 163,22,44,0.08 * /
+ *   --dr-red-ink:  #ff9aa6;                 / * light: #8f1226 * /
+ */
+
+/* --- THE RED ROW THAT CARRIES A COUNT -------------------------------------
+ *
+ * `DarkRoute Search Entry.html` `[data-dc-tpl="188"]`, measured: a 44px row,
+ * radius 12, `padding: 0 12`, `gap: 10`, edge `rgba(255,122,138,0.28)` over
+ * `rgba(255,90,110,0.07)` -- the SAME three values as the wipe row above, which
+ * is why it reuses `.fwm-settingsv1-removal-key` rather than declaring a second
+ * red. It differs from that row in exactly one way: the spec gives it a right-
+ * hand slot with a number in it (`[data-dc-tpl="190"]`, 12.5 / 400).
+ *
+ * WHY A COUNT AND NOT A WORD. Every other row on this screen puts a STATE in
+ * that slot -- `on - used while the map is open`, `90 days`, `Send`. This one
+ * puts the size of what the press destroys, and it is the one number on the
+ * screen somebody should read before pressing. The wipe row has no count
+ * because "everything" is not a number.
+ * ---------------------------------------------------------------------- */
+
+.fwm-settingsv1-removal-label {
+  /* The label gives before the count does: a number cut in half is unreadable
+     and a label cut in half is still recognisable. The opposite of the rule
+     for a value row, and for the same reason -- what matters here is the
+     figure. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-settingsv1-removal-count {
+  flex: none; /* keyword */
+  margin-left: var(--fwm-sv1-row-gap); /* 10 -- the spec's own row gap */
+  font-size: var(--fwm-text-plate); /* 12; spec draws 12.5 */
+  font-weight: 400;
+  color: var(--fwm-alert-in-range-text);
+}
+
+/* GAP -- THE COUNT'S INK HAS NO `--dr-*` NAME, and this is the fourth time this
+ * file has had to say so. The spec draws it `rgb(207,143,151)`: the red of the
+ * label beside it, darkened toward the muted ink every other value slot on this
+ * screen uses -- which is what the number IS, a quieter statement of the same
+ * fact as the label.
+ *
+ * BUILT ON THE ROW'S OWN RED INSTEAD, `--fwm-alert-in-range-text` (`#FF8DA5`),
+ * which is 48 points brighter in red, 2 in green and 14 in blue. The quiet is
+ * carried by the size and the weight instead -- 12 / 400 against the label's
+ * 14 / 700 -- which is most of what separates the two in the drawing anyway.
+ * The result is a row drawn in ONE red rather than in two that are eleven
+ * points apart, and at 12px nobody is going to identify the second one.
+ *
+ * A `color-mix` of the red toward `--dr-ink-muted` at 58% lands on
+ * `rgb(207,145,163)` -- exact in red, two points out in green, twelve in blue,
+ * and much closer than the flat token. `check-design-values.mjs` refuses a
+ * `color-mix` outside `tokens.css` (`color-fn -- raw color function`), which is
+ * the rule working: a derived colour belongs in the palette, not in a feature
+ * stylesheet. So it is not built that way here, and one line in `tokens.css`
+ * beside the other three this file asks for closes it properly:
+ *
+ *   --dr-red-ink-quiet: #cf8f97;   / * light: #8f4a52 * /
+ */
+
+.fwm-settingsv1-removal-key:disabled {
+  color: var(--dr-ink-4);
+}
+
+/* A SPENT RED ROW GOES QUIET IN BOTH HALVES. The count is the half that would
+   otherwise stay bright, and a bright `0` on a dead control reads as an
+   affordance -- which is the exact misreading a disabled state exists to
+   prevent. It is disabled when there is nothing to forget, so the number it is
+   drawing is a zero or a dash. */
+.fwm-settingsv1-removal-key:disabled .fwm-settingsv1-removal-count {
+  color: var(--dr-ink-4);
+}
+
+/* ARMED IS THE SAME ROW, LOUDER. No second colour and no size change: the words
+   inside it already changed to `Tap again to forget them`, and a control that
+   also grew or moved under the finger about to press it a second time is how a
+   confirm step becomes a mis-tap. */
+.fwm-settingsv1-removal-key[data-fwm-removal='armed'] {
+  border-color: var(--fwm-alert-in-range-text);
+}
+
+.fwm-settingsv1-removal-warning {
+  margin: 0;
+  padding: var(--fwm-sv1-note-pad-y) var(--fwm-sv1-note-pad-x);
+  border: var(--fwm-rule-w) solid var(--fwm-tint-in-range-arc);
+  border-radius: var(--fwm-sv1-row-radius);
+  background: var(--fwm-tint-in-range-weak);
+  color: var(--fwm-alert-in-range-text);
+  font-size: var(--fwm-text-plate); /* 12 */
+  line-height: 1.45;
+}
+
+.fwm-settingsv1-removal-cancel {
+  height: var(--fwm-sv1-row-h);
+  padding: 0 var(--fwm-sv1-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sv1-row-radius);
+  background: var(--dr-row-fill);
+  color: var(--dr-ink-2);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-label);
+  font-weight: 500;
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-settingsv1-removal-lines {
+  display: grid;
+  gap: var(--fwm-sv1-head-gap);
+  margin: 0;
+  padding: var(--fwm-sv1-note-gap) var(--fwm-sv1-head-pad-x) 0;
+  list-style: none; /* keyword */
+}
+
+.fwm-settingsv1-removal-line,
+.fwm-settingsv1-removal-reason {
+  margin: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate);
+  line-height: 1.45;
+}
+
+/* =========================================================================
+ * 9. THE CARDS THE SPEC HAS NO ROW FOR
+ *
+ * The spec's SETTINGS is three groups and nine rows. The screen that ships also
+ * picks the palette, the text size, the cartography, the map ground, the demo
+ * drive and four material axes, and links to WHAT THIS APP KNOWS and to a
+ * contact address. Brief 4 is explicit that this is "a refactor, not a
+ * redesign -- every screen keeps its purpose, its data and its copy intent",
+ * and it names its deletions (the stripes here, three things on MORE) rather
+ * than leaving them to be inferred. So none of those controls is deleted: each
+ * is restyled onto this screen's surface under a group header of its own.
+ *
+ * They stay CARDS rather than becoming rows because a 7-swatch palette, a
+ * 5-step type ramp and a 5-way cartography picker are not 44px rows and the
+ * spec draws no shape for them. A card is `--dr-card-fill` on `--dr-card-line`
+ * -- quieter than a row, which is the whole distinction: a row is a target and
+ * a card is a statement.
+ * ====================================================================== */
+
+.fwm-settingsv1-card {
+  display: grid;
+  gap: var(--fwm-space-3); /* 12 */
+  padding: var(--fwm-sv1-card-pad); /* 14 */
+  border: var(--fwm-rule-w) solid var(--dr-card-line);
+  border-radius: var(--fwm-sv1-card-radius); /* 16 */
+  background: var(--dr-card-fill);
+}
+
+.fwm-settingsv1-card-head {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between; /* keyword */
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-settingsv1-card-title {
+  margin: 0;
+  color: var(--dr-ink);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 700;
+}
+
+.fwm-settingsv1-card-value {
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  text-align: right; /* keyword */
+}
+
+/* --- the segmented pickers ------------------------------------------------
+ * 36px items in a 44px shell, radius 12 inside radius 16 -- brief 4's own
+ * segmented-control geometry, applied to the four pickers that were loose
+ * button rows.
+ * ---------------------------------------------------------------------- */
+
+.fwm-settingsv1-stops,
+.fwm-settingsv1-designs,
+.fwm-settingsv1-sizes {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-1); /* 4 */
+  min-height: var(--fwm-sv1-row-h); /* 44 -- the shell */
+  padding: var(--fwm-space-1); /* 4 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sv1-card-radius); /* 16 */
+  background: var(--dr-row-fill);
+  overflow-x: auto; /* keyword */
+  scrollbar-width: none; /* keyword */
+}
+
+.fwm-settingsv1-stops::-webkit-scrollbar,
+.fwm-settingsv1-designs::-webkit-scrollbar,
+.fwm-settingsv1-sizes::-webkit-scrollbar {
+  height: 0;
+}
+
+.fwm-settingsv1-stop,
+.fwm-settingsv1-design,
+.fwm-settingsv1-size {
+  display: flex;
+  align-items: center; /* keyword */
+  justify-content: center; /* keyword */
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--fwm-sv1-seg-h); /* 36 -- inside the 44 shell */
+  padding: 0 var(--fwm-space-2);
+  border: var(--fwm-rule-w) solid transparent;
+  border-radius: var(--fwm-sv1-row-radius); /* 12 */
+  background: transparent;
+  color: var(--dr-ink-3);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-forecast); /* 13 */
+  font-weight: 500;
+  white-space: nowrap; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* ONE SELECTION, EVER -- the menu language's own rule. The chosen item is the
+   only thing on this screen that fills with accent. */
+.fwm-settingsv1-stop[data-fwm-selected='true'],
+.fwm-settingsv1-design[data-fwm-selected='true'],
+.fwm-settingsv1-size[data-fwm-selected='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+  font-weight: 700;
+}
+
+.fwm-settingsv1-stop:disabled,
+.fwm-settingsv1-design:disabled,
+.fwm-settingsv1-size:disabled {
+  color: var(--dr-ink-4);
+}
+
+.fwm-settingsv1-design-name {
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* EVERY STEP DRAWN AT ITS OWN SIZE. A row of identical labels reading 87 / 100
+   / 112 makes somebody do arithmetic to choose; a row where the letter grows is
+   the answer itself. The size comes from an inline `fontSize` the component
+   sets from the scale it is offering, which is the one place on this screen a
+   value is computed rather than read. */
+.fwm-settingsv1-size {
+  font-weight: 700;
+}
+
+/* --- the palette ---------------------------------------------------------- */
+
+.fwm-settingsv1-swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-1); /* 4 */
+}
+
+.fwm-settingsv1-swatch {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-space-2);
+  min-width: 0;
+  height: var(--fwm-sv1-row-h); /* 44 */
+  padding: 0 var(--fwm-sv1-row-pad); /* 12 */
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sv1-row-radius); /* 12 */
+  background: var(--dr-row-fill);
+  color: var(--dr-ink-3);
+  font-family: inherit; /* keyword */
+  font-size: var(--fwm-text-forecast); /* 13 */
+  text-align: left; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-settingsv1-swatch[data-fwm-selected='true'] {
+  border-color: var(--dr-accent-line);
+  background: var(--dr-accent-fill);
+  color: var(--dr-accent);
+  font-weight: 700;
+}
+
+.fwm-settingsv1-swatch:disabled {
+  color: var(--dr-ink-4);
+}
+
+.fwm-settingsv1-swatch-chips {
+  display: flex;
+  flex: none; /* keyword */
+  gap: calc(var(--fwm-space-1) / 2); /* 2 */
+}
+
+/* PAINTED FROM THE MODE'S OWN TOKENS, so a swatch cannot drift from the skin it
+   names. These three are the only colours in this file that are not `--dr-*`
+   or a published tint: they ARE the palette being chosen. */
+.fwm-settingsv1-chip {
+  width: var(--fwm-space-2); /* 8 */
+  height: var(--fwm-space-2); /* 8 */
+  border-radius: var(--fwm-radius-full);
+}
+
+.fwm-settingsv1-chip[data-fwm-chip='bg'] {
+  background: var(--fwm-bg);
+}
+
+.fwm-settingsv1-chip[data-fwm-chip='accent'] {
+  background: var(--fwm-accent-scan);
+}
+
+.fwm-settingsv1-chip[data-fwm-chip='alert'] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-settingsv1-swatch-name {
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  white-space: nowrap; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* --- the map-ground picker ------------------------------------------------
+ * A native colour input, on purpose: every platform has a picker its owner
+ * knows how to drive, it is reachable by keyboard, and a hand-built wheel would
+ * be a design surface to maintain for a control used twice a year.
+ * ---------------------------------------------------------------------- */
+
+.fwm-settingsv1-swatch input[type='color'] {
+  flex: none; /* keyword */
+  width: var(--fwm-space-6); /* 24 */
+  height: var(--fwm-space-6); /* 24 */
+  padding: 0;
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-space-2); /* 8 */
+  background: transparent;
+}
+
+/* --- the material fold ----------------------------------------------------
+ * Four axes almost nobody changes, shut by default. Native `details` keeps the
+ * closed state honest without another preference to persist, and the summary
+ * carries the current values -- so collapsing hides controls rather than state.
+ * ---------------------------------------------------------------------- */
+
+.fwm-settingsv1-fold {
+  display: grid;
+  gap: var(--fwm-sv1-gap);
+}
+
+.fwm-settingsv1-fold-key {
+  display: flex;
+  align-items: center; /* keyword */
+  gap: var(--fwm-sv1-row-gap);
+  min-width: 0;
+  height: var(--fwm-sv1-row-h); /* 44 */
+  padding: 0 var(--fwm-sv1-row-pad);
+  border: var(--fwm-rule-w) solid var(--dr-hairline-row);
+  border-radius: var(--fwm-sv1-row-radius);
+  background: var(--dr-row-fill);
+  list-style: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-settingsv1-fold-key::-webkit-details-marker {
+  display: none; /* keyword */
+}
+
+.fwm-settingsv1-fold-title {
+  flex: none; /* keyword */
+  color: var(--dr-ink-2);
+  font-size: var(--fwm-text-label); /* 14 */
+  font-weight: 500;
+}
+
+.fwm-settingsv1-fold-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  text-align: right; /* keyword */
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-settingsv1-fold-chevron {
+  flex: none; /* keyword */
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-subtitle);
+}
+
+.fwm-settingsv1-glass-sample {
+  margin: 0;
+  color: var(--dr-ink-muted);
+  font-size: var(--fwm-text-plate);
+  line-height: 1.45;
+}
+
+/* THE MATERIAL FOLD IS THE ONE PLACE ON THIS SCREEN WHERE GLASS IS THE POINT,
+   and it is the second departure from the no-blur rule. "this panel is the
+   material you just set" is literally true of the cards inside it: they are a
+   live preview of the setting being changed, not chrome floating over a map,
+   and drawing them opaque would turn the control into a picture of itself. The
+   blur is scoped to `[open]`, so a shut fold costs no compositor pass. */
+.fwm-settingsv1-fold[open] .fwm-settingsv1-card {
+  border-color: var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+}

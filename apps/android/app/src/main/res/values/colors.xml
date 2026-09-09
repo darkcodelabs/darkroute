@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Transcribed from apps/pwa/src/styles/tokens.css. Android resources cannot
+    read CSS custom properties, so these are the one permitted copy — every
+    value below names the token it came from, and nothing here is a colour the
+    web app does not already use.
+-->
+<resources>
+    <!-- The fwm-bg token. Status bar, navigation bar, splash and adaptive-icon
+         background all take it, so the app has no seam against the page. -->
+    <color name="backgroundColor">#000000</color>
+
+    <!-- The fwm-alert-in-range token. The crimson the ring uses when a camera is in
+         range; the launcher icon's eye is drawn in it. -->
+    <color name="alertInRange">#FF2D5E</color>
+
+    <!-- The fwm-text token. -->
+    <color name="text">#F7F9FC</color>
+</resources>

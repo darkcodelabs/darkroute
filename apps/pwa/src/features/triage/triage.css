@@ -1,0 +1,373 @@
+/* TRIAGE -- alert fatigue control, by owner type.
+ *
+ * SOURCE: `Flockys Screens II.dc.html`, panel `B4 · ALERT TRIAGE - BY OWNER
+ * TYPE` (lines 497-546). Header 52px; body 16px gutter with a 14px stack; the
+ * projection card and the muting card share one card treatment (1px rule,
+ * surface-1, radius 2, 16px padding); five 64px owner rows split by 1px rules;
+ * a 56px footer row with a rule above it, pushed down by `margin-top:auto`.
+ *
+ * Every colour, length, radius and duration below is `var(--fwm-*)` or a
+ * `calc()` over one. Lines the token set cannot express exactly are marked
+ * `GAP:` and filed in `docs/gaps-inbox/triage.md`. Nothing here is a literal.
+ *
+ * =============================================================================
+ * NO INLINE STYLE
+ * =============================================================================
+ * An inline `style` is the one way a raw length reaches the DOM without passing
+ * the token checker, so there is not one in this feature. The switch knob moves
+ * by flex alignment keyed off `aria-checked`, not by a computed offset.
+ *
+ * =============================================================================
+ * NO POINTER-STATE RULE, EVER
+ * =============================================================================
+ * Touch-first product; a pointer state never fires on a phone in a car mount.
+ * `TriageView.test.tsx` reads this file off disk and fails if the selector
+ * appears in it.
+ *
+ * =============================================================================
+ * A SWITCHED-OFF OWNER CLASS IS DIMMED, NOT REMOVED
+ * =============================================================================
+ * There is no rule in this file that hides a row, and none that changes a
+ * count. Switching a class off dims its headline -- exactly as the design draws
+ * the two off rows -- and does nothing else: "Muting only removes the alert -
+ * never the record." (Screens II, B4)
+ * ========================================================================== */
+
+.fwm-triage {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design rules every panel
+   * with. Derived, so a mode that rescales space rescales the rules with it.
+   * A component-scoped local, NOT a new token. */
+  --fwm-triage-rule-w: calc(var(--fwm-space-1) / 4);
+  /* An owner row is 64px: two --fwm-space-8 steps exactly. The same derivation
+   * `log.css` uses for its 64px plot. */
+  --fwm-triage-row-h: calc(var(--fwm-space-8) * 2);
+  /* The footer row and the switch are both 56px: 24 + 32, exact from tokens. */
+  --fwm-triage-footer-h: calc(var(--fwm-space-6) + var(--fwm-space-8));
+  --fwm-triage-switch-w: calc(var(--fwm-space-6) + var(--fwm-space-8));
+  /* Track 30px, knob 24px, so the knob sits 3px inside on every edge. Derived
+   * rather than stated, so the inset stays centred if the track ever moves. */
+  --fwm-triage-track-h: calc(var(--fwm-space-8) - var(--fwm-space-1) / 2);
+  --fwm-triage-knob: var(--fwm-space-6);
+  --fwm-triage-knob-inset: calc((var(--fwm-triage-track-h) - var(--fwm-triage-knob)) / 2);
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `TRIAGE` at 17px/700/.1em, `ALERT FATIGUE CONTROL` at
+ * 10px/.1em in the muted grey.
+ * ------------------------------------------------------------------------ */
+
+.fwm-triage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-triage-rule-w) solid var(--fwm-line);
+}
+
+.fwm-triage-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) / 10);
+  color: var(--fwm-text);
+  white-space: nowrap;
+}
+
+/* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-triage-strapline {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack.
+ * GAP: see docs/gaps-inbox/triage.md#spacing-scale-misses-10-and-14
+ * ------------------------------------------------------------------------ */
+
+.fwm-triage-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+}
+
+/* Both cards on this screen: 1px rule, surface-1, radius 2, 16px padding. */
+.fwm-triage-card {
+  flex: none;
+  border: var(--fwm-triage-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  padding: var(--fwm-space-4);
+  min-width: 0;
+}
+
+/* Rendered 10px/.2em on the projection card, 10px/.18em on the muting card.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-triage-card-label {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * ALERTS PER DRIVE - PROJECTED
+ * ------------------------------------------------------------------------ */
+
+.fwm-triage-projection {
+  display: flex;
+  align-items: baseline;
+  /* Rendered 10px, between --fwm-space-2 and --fwm-space-3.
+   * GAP: see docs/gaps-inbox/triage.md#spacing-scale-misses-10-and-14 */
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-2);
+  min-width: 0;
+}
+
+/* GAP: see docs/gaps-inbox/triage.md#projection-numeral-is-56px
+ *      and DESIGN-GAPS.md#token-set-does-not-cover-rendered-hero-sizes
+ *
+ * THIS NUMERAL DOES NOT RENDER AT THE SIZE B4 DRAWS IT. The panel draws 56px;
+ * --fwm-text-readout is 40px and --fwm-text-hero is 80px, so the readout step
+ * is the nearer of the two and this focal figure lands 16px (29%) short. That
+ * is the largest visual divergence on this screen and it is deliberate: the
+ * repo-wide rule is that a rendered size with no token snaps to the nearest
+ * step and is filed (RADAR 96 and LOG 72 both snap to the 80px hero the same
+ * way), because manufacturing 56px out of a calc would put a size in the
+ * product that the token set never declared. Closing it means a new step in
+ * tokens.css, which is not this feature's file.
+ *
+ * The rendered line-height (.9) is carried as a ratio of the token rather than
+ * as a raw length.
+ *
+ * THE DIGITS DO NOT ANIMATE. There is no transition and no animation on this
+ * rule and there never may be: a counter that rolls is a counter a driver
+ * cannot read at a glance. */
+.fwm-triage-projection-value {
+  flex: none;
+  font-size: var(--fwm-text-readout);
+  font-weight: 700;
+  line-height: 0.9;
+  color: var(--fwm-alert-clear);
+}
+
+/* An unknown projection is not a good projection. The em dash takes the muted
+ * grey so an absent figure never reads as a low one.
+ * GAP: see DESIGN-GAPS.md#empty-and-loading-states-mostly-undrawn */
+.fwm-triage-projection-value[data-fwm-triage-projected="unknown"] {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-triage-projection-caption {
+  min-width: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.6;
+  color: var(--fwm-text-2);
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * The five owner rows.
+ *
+ * 64px each, split by a 1px rule, no rule under the last one -- the footer row
+ * draws its own rule above itself.
+ * ------------------------------------------------------------------------ */
+
+.fwm-triage-owners {
+  flex: none;
+  min-width: 0;
+}
+
+.fwm-triage-owner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-triage-row-h);
+  border-bottom: var(--fwm-triage-rule-w) solid var(--fwm-line);
+  min-width: 0;
+}
+
+.fwm-triage-owner:last-child {
+  border-bottom: none;
+}
+
+.fwm-triage-owner-main {
+  min-width: 0;
+}
+
+.fwm-triage-owner-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Switched off dims the headline -- as the design draws HOA and PRIVATE. It
+ * does not hide the row, and it does not change a single count on this screen.
+ * GAP: see docs/gaps-inbox/triage.md#unverified-row-drawn-off-but-undimmed */
+.fwm-triage-owner[data-fwm-triage-owner-enabled="false"] .fwm-triage-owner-label {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-triage-owner-caption {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * The switch.
+ *
+ * GAP: see docs/gaps-inbox/triage.md#switch-is-below-the-touch-floor
+ * The drawn track is 56x30, which is under this product's own 44px touch
+ * floor. The BUTTON is --fwm-touch-min tall and the drawn track sits inside it,
+ * so the target is reachable in a car mount and the panel still looks drawn.
+ * ------------------------------------------------------------------------ */
+
+.fwm-triage-switch {
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: var(--fwm-triage-switch-w);
+  height: var(--fwm-touch-min);
+  padding: 0;
+  border: none;
+  border-radius: var(--fwm-radius-0);
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+.fwm-triage-switch-track {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: var(--fwm-triage-track-h);
+  padding: 0 var(--fwm-triage-knob-inset);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+  transition: background-color var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+/* THE KNOB'S SIDE IS THIS ONE DECLARATION. `justify-content` is the whole of
+ * the ON position -- there is no offset, no transform and no inline style to
+ * fall back on -- so dropping it would leave the knob parked on the left while
+ * `aria-checked` kept flipping, and the picture and the announcement would say
+ * different things. `TriageView.test.tsx` asserts both alignments off disk. */
+.fwm-triage-switch[aria-checked="true"] .fwm-triage-switch-track {
+  justify-content: flex-end;
+  background: var(--fwm-alert-in-range);
+}
+
+/* The re-alert switch is the amber one: it is the control that lets a camera
+ * through a mute, not one that silences a class. */
+.fwm-triage-switch[data-fwm-triage-switch-tone="pierce"][aria-checked="true"]
+  .fwm-triage-switch-track {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-triage-switch-knob {
+  flex: none;
+  width: var(--fwm-triage-knob);
+  height: var(--fwm-triage-knob);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+.fwm-triage-switch[aria-checked="true"] .fwm-triage-switch-knob {
+  background: var(--fwm-bg);
+}
+
+/* Not wired in this build: visibly inert rather than live-looking and dead.
+ * Colour only -- an inert control must not change the row's geometry, or the
+ * panel would reflow depending on which handlers a build happens to pass. */
+.fwm-triage-switch[disabled] .fwm-triage-switch-track,
+.fwm-triage-switch[disabled][aria-checked="true"] .fwm-triage-switch-track {
+  background: var(--fwm-surface-2);
+}
+
+.fwm-triage-switch[disabled] .fwm-triage-switch-knob,
+.fwm-triage-switch[disabled][aria-checked="true"] .fwm-triage-switch-knob {
+  background: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * MUTED CAMERAS DON'T DISAPPEAR -- the invariant, printed.
+ * ------------------------------------------------------------------------ */
+
+/* Rendered .18em on this label alone. */
+.fwm-triage-notice .fwm-triage-card-label {
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  margin-bottom: var(--fwm-space-3);
+  white-space: normal;
+}
+
+/* Rendered 11.5px; --fwm-text-micro is 11px and is the nearest step.
+ * GAP: see docs/gaps-inbox/triage.md#notice-body-is-11-5px */
+.fwm-triage-notice-body {
+  margin: 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.9;
+  color: var(--fwm-text-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * RE-ALERT ON MUTED IF -- 56px, ruled above, pinned to the bottom.
+ * ------------------------------------------------------------------------ */
+
+.fwm-triage-footer {
+  flex: none;
+  margin-top: auto;
+}
+
+.fwm-triage-realert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-triage-footer-h);
+  border-top: var(--fwm-triage-rule-w) solid var(--fwm-line);
+  min-width: 0;
+}
+
+/* The mark takes the title's colour. It is a SIBLING of the title, so its own
+ * `currentColor` would resolve against the header instead -- measured white
+ * beside a coloured title on RADAR before this was made explicit. */
+.fwm-triage-header .fwm-brand-mark {
+  color: var(--fwm-text);
+}

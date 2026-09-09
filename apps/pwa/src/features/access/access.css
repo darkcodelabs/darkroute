@@ -1,0 +1,60 @@
+/* ---------------------------------------------------------------------------
+ * SIGN-IN EXPIRED
+ *
+ * Sits above the dock, across the width of the app. Amber rather than red: the
+ * driver is not in danger and nothing is broken -- the app simply cannot read
+ * anything until the gate lets it back in. Red is reserved for a camera.
+ *
+ * See features/access/SignedOutBanner.tsx for why it is not dismissible.
+ * ------------------------------------------------------------------------ */
+
+.fwm-signedout {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px; /2 is the 2px rule the offline strip already uses for
+   * a warning edge. Component-scoped local, NOT a new token. */
+  --fwm-signedout-rule-w: calc(var(--fwm-space-1) / 2);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  margin: 0 var(--fwm-space-2) var(--fwm-space-2);
+  padding: var(--fwm-space-2);
+  border-left: var(--fwm-signedout-rule-w) solid var(--fwm-alert-approaching);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-signedout-title {
+  margin: 0;
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-label) * 0.04);
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-signedout-body {
+  margin: 0;
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.5;
+  color: var(--fwm-text-2);
+}
+
+.fwm-signedout-action {
+  align-self: flex-start;
+  margin-top: var(--fwm-space-1);
+  padding: var(--fwm-space-1) var(--fwm-space-2);
+  /* The one control on the banner, drawn with the same weight as RADAR's keys
+   * so it reads as a button rather than as more of the message. */
+  border: var(--fwm-signedout-rule-w) solid var(--fwm-alert-approaching);
+  border-radius: var(--fwm-radius-2);
+  background: none;
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-label) * 0.04);
+  color: var(--fwm-alert-approaching);
+  /* A label that must not break between its two words. */
+  white-space: nowrap;
+  /* The 44px target the rest of the app holds to. */
+  min-height: var(--fwm-touch-min);
+}

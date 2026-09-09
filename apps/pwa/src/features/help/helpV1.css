@@ -1,0 +1,174 @@
+/* HELP - v1. A green promise, then the answers as cards.
+ *
+ * Green is the product's word for "clear", and it is the right hue for the one
+ * card on this screen that is a claim about the whole product rather than an
+ * answer to a question.
+ */
+
+.fwm-helpv1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  padding: var(--fwm-space-4);
+  padding-bottom: calc(var(--fwm-dock-h) + var(--fwm-space-4));
+  overflow-y: auto; /* keyword */
+}
+
+.fwm-helpv1-header {
+  display: flex;
+  align-items: center;
+  /* Room for the back key beside the title. Same gap MISUSE and INTEL use. */
+  gap: var(--fwm-space-3);
+}
+
+.fwm-helpv1-title {
+  font-size: var(--fwm-text-title);
+  font-weight: 800;
+  color: var(--fwm-text);
+}
+
+.fwm-helpv1-promise {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-tint-clear);
+}
+
+.fwm-helpv1-promise-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 800;
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-helpv1-promise-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}
+
+.fwm-helpv1-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+}
+
+.fwm-helpv1-section-title {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+  padding-top: var(--fwm-space-2);
+}
+
+.fwm-helpv1-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-helpv1-question {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-helpv1-answer {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+}
+
+.fwm-helpv1-files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  list-style: none; /* keyword */
+}
+
+/* The citation, in the cyan the product uses for "this part is live". It is
+   not a link: there is nothing to open offline, and a path that looks tappable
+   and is not is worse than one that reads as a reference. */
+.fwm-helpv1-file {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-accent-scan);
+  overflow-wrap: anywhere; /* keyword */
+}
+
+/* NOTHING ON THIS PAGE MAY BE SQUASHED BELOW ITS CONTENT.
+ *
+ * The root is a scrolling flex COLUMN, and a flex item's default
+ * `flex-shrink: 1` lets it be compressed to fit rather than overflowing the
+ * container - so on a page taller than the viewport, every card gets a little
+ * shorter and its last line is cut off by its own bottom edge. It shipped that
+ * way: MORE's install card lost the second half of its subtitle, and the same
+ * rule was live on every v1 screen at once.
+ *
+ * `min-height` does not help: it raises the floor, it does not stop shrinking
+ * a taller item. The page is supposed to SCROLL, which is what this restores. */
+.fwm-helpv1 > * {
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+ * THE MATERIAL. The answer cards drew their own, and it was not the app's.
+ * =============================================================================
+ * `--fwm-surface-1` and a radius, with no hairline, no backdrop and no rim. The
+ * back key above them has all three, so this screen was painting chrome in two
+ * materials at once and only one of them answered the SETTINGS controls -
+ * frost, transparency, tone, flat, the cards looked the same through all of it.
+ *
+ * One rule rather than a change to each card, and the same four declarations
+ * MORE and MISUSE already carry: the tint, the hairline, the optics and the
+ * specular rim come from the tokens, and the OFF switch resolves
+ * `--fwm-glass-filter` to `none`, which removes the read-back rather than the
+ * visible half of it.
+ *
+ * THE PROMISE BLOCK IS DELIBERATELY LEFT OUT. `--fwm-tint-clear` is a MEANING -
+ * the green that says nothing here leaves the phone - and a coloured wash is
+ * not a material this axis should be reaching into. Same reason LOOK UP keeps
+ * its selected owner chips off its own glass list.
+ * ========================================================================== */
+.fwm-helpv1-card {
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  background: var(--fwm-surface-glass);
+  backdrop-filter: var(--fwm-glass-filter);
+  box-shadow: var(--fwm-glass-rim);
+}
+
+/* THE TERMS ROW, at the foot of the screen the `?` key opens.
+ *
+ * A card like the answers above it rather than a link in a paragraph: it is the
+ * one thing on this screen a person may be looking FOR rather than reading
+ * past, and a text link at the bottom of a long scroll is a link nobody finds.
+ *
+ * It leaves the app - the document is served from our own origin through the
+ * doc proxy, same as every other one, and opens in a tab so a reader keeps
+ * their place here. Same treatment as the document rows on `DocsScreen`. */
+.fwm-helpv1-terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-4);
+  border: var(--fwm-hairline) solid var(--fwm-glass-border);
+  border-radius: var(--fwm-radius-5);
+  background: var(--fwm-surface-1);
+  color: inherit; /* keyword */
+  text-decoration: none; /* keyword */
+}
+
+.fwm-helpv1-terms:active {
+  filter: brightness(0.88);
+}
+
+.fwm-helpv1-terms-title {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+.fwm-helpv1-terms-sub {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+}

@@ -1,0 +1,636 @@
+/* LOG / EXPOSURE -- what the cameras collected, counted back.
+ *
+ * SOURCE (v2, and it wins): `.design-src-v2/Flockys App Screens v2.dc.html`,
+ * panel `05 · LOG - EXPOSURE` (lines 337-408). Compared line by line against
+ * `.design-src/Flockys App Screens.dc.html` (lines 323-390).
+ * ALSO: `Flockys Watch.dc.html`, `W5 · TODAY - EXPOSURE GLANCE`, which draws
+ * the same seven-bar trend and names it `7 DAY TREND`;
+ * `Flockys Screens II.dc.html`, `B4 · ALERT TRIAGE` for the muting rule and
+ * `B6 · ZONE AUDIT` for the destination of the second footer button.
+ *
+ * Every colour, length, radius and easing below is `var(--fwm-*)` or a
+ * `calc()` over one. Lines the token set cannot express are marked `GAP:` and
+ * filed in `docs/gaps-inbox/log.md` (v1) and `docs/gaps-inbox/log-v2.md` (the
+ * redesign). Nothing here is a literal.
+ *
+ * =============================================================================
+ * WHAT v2 MOVED ON THIS SCREEN, IN FULL
+ * =============================================================================
+ * v2's own subtitle is "flat borderless controls, 8px radius, fill-based
+ * depth", and LOG is that sentence with nothing else attached: not one string
+ * on this panel changed. Six visual deltas, each documented at the rule that
+ * carries it, and each asserted in `LogView.test.tsx` under `the v2 redesign`.
+ *
+ *   1. title            17px / .1em          -> 19px / .06em
+ *   2. scope track      1px --fwm-line, r2   -> no border, --fwm-surface-track,
+ *                                               r8, 3px inset, 3px gap
+ *   3. scope key on     ink --fwm-bg, no r   -> ink --fwm-text-on-alert, r6
+ *   4. every card       1px --fwm-line +     -> no border, --fwm-surface-card,
+ *                       --fwm-surface-1, r2     r6
+ *   5. timeline rule    --fwm-line           -> --fwm-line-soft
+ *   6. HEAT MAP /       r2                   -> r8 (the 1px --fwm-line-strong
+ *      ZONE AUDIT                               edge SURVIVED -- one of v2's
+ *                                               30 remaining borders)
+ *
+ * Byte-identical to v1 and therefore untouched here: the 52px header rule, the
+ * hero numeral, the seven-day trend (bars still --fwm-line / --fwm-alert-*, the
+ * plot still 64px, the axis still 9px --fwm-text-disabled), every eyebrow, both
+ * stat-card interiors, the row dot, the row type, and CONF / DISM.
+ *
+ * =============================================================================
+ * NO INLINE STYLE, WHICH IS WHY THE BARS ARE QUANTISED
+ * =============================================================================
+ * A bar height is data. An inline `style` is the one way a raw length can
+ * reach the DOM without passing the token checker, so it is banned -- and a
+ * data-driven height therefore has to be a class. The seven-day trend is
+ * quantised into twenty 5% steps and each step is a rule below.
+ * GAP: see docs/gaps-inbox/log.md#bar-heights-are-quantised
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * `LogView.test.tsx` reads this file off disk and fails if the pointer-state
+ * selector appears in it.
+ *
+ * =============================================================================
+ * MUTED ROWS ARE NOT DIMMED AND ARE NOT HIDDEN
+ * =============================================================================
+ * There is no rule in this file that keys off `[data-fwm-log-muted="true"]`
+ * other than the one that marks it for a test. A muted camera counted, so it
+ * draws exactly like any other row: "Muting only removes the alert - never the
+ * record." (Screens II, B4)
+ * ========================================================================== */
+
+.fwm-log {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design rules every panel
+   * with. Derived, so a mode that rescales space rescales the rules with it.
+   * A component-scoped local, NOT a new token. */
+  --fwm-log-rule-w: calc(var(--fwm-space-1) / 4);
+  /* The seven-bar plot is 64px tall and its bars are 5px apart. 64px is two
+   * --fwm-space-8 steps exactly; the gap takes the 4px step below.
+   * GAP: see docs/gaps-inbox/log.md#spacing-scale-misses-5-14-and-18 */
+  --fwm-log-plot-h: calc(var(--fwm-space-8) * 2);
+  /* v2 draws the scope keys 30px (selected) and 34px (not) inside a 3px-inset
+   * track. --fwm-space-8 (32px) is the nearest token and lands the track on
+   * the 40px v2 draws it at, inside the 52px header, with the hit area taken
+   * to --fwm-touch-min below. A component-scoped local, NOT a new token.
+   * GAP: see docs/gaps-inbox/log-v2.md#scope-key-30-34-and-a-3px-inset */
+  --fwm-log-key-h: var(--fwm-space-8);
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `EXPOSURE`, the TRIP / ALL TIME toggle.
+ *
+ * The 1px rule under the bar is one of the borders v2 KEPT: it is screen
+ * chrome, not a control, and it is still `--fwm-line` (#23262F) in v2.
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-log-rule-w) solid var(--fwm-line);
+}
+
+/* v2: the title grew 17px/.1em -> 19px/.06em. The tracking is expressible; the
+ * size is not -- the scale steps 17 -> 24, so it holds --fwm-text-subtitle and
+ * reads 2px small. Same substitution as `.fwm-radar-title`.
+ * GAP: see docs/gaps-inbox/log-v2.md#screen-title-19px-has-no-step */
+.fwm-log-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .06em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.06);
+  color: var(--fwm-text);
+  white-space: nowrap;
+}
+
+/* v2: the outlined block became a FILLED TRACK. The 1px --fwm-line edge and the
+ * 2px radius are gone; in their place --fwm-surface-track (#15171D) at
+ * --fwm-radius-3 (8px), with the keys floated on it by a 3px inset. This is
+ * "fill-based depth" in one control: the track is now read as a recess rather
+ * than as a hairline box, and the selected key is the only thing with an edge.
+ *
+ * The 3px inset and the 3px gap both take --fwm-space-1 (4px), the nearest
+ * token; the track therefore stands 40px, which is exactly what v2 draws it at.
+ * GAP: see docs/gaps-inbox/log-v2.md#scope-key-30-34-and-a-3px-inset
+ *
+ * v2 still declares `overflow:hidden` on the track and it is NOT carried here.
+ * In v1 the clip was load-bearing -- it rounded the flush-mounted TRIP fill to
+ * the track's own corner. In v2 the selected key carries its own radius and is
+ * inset on every side, so nothing reaches the corner and the clip draws
+ * nothing; all it could still do is cut the transparent hit-area overhang that
+ * takes a 32px key to the 44px floor. */
+.fwm-log-toggle {
+  display: flex;
+  flex: none;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-1);
+  border: none;
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-track);
+}
+
+/* v2 draws this key BELOW the touch floor (30px selected, 34px not), so it
+ * takes the drawn height and extends its hit area instead of inflating -- the
+ * standing touch-floor decision in `docs/gaps-inbox/README.md`, and the pattern
+ * `.fwm-sweep-key` already uses. Inflating it to 44px here would also push the
+ * track to 52px, the full height of the header it sits in.
+ * GAP: see docs/gaps-inbox/log-v2.md#scope-key-30-34-and-a-3px-inset */
+.fwm-log-toggle-key {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--fwm-log-key-h);
+  padding: 0 var(--fwm-space-3);
+  border: none;
+  border-radius: var(--fwm-radius-0);
+  background: transparent;
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+/* The hit area, not a decoration: 6px of transparent overhang top and bottom
+ * takes the 32px key to --fwm-touch-min without moving a drawn pixel. Inside
+ * the button, so it needs no handler of its own.
+ * See docs/gaps-inbox/README.md#touch-target-floor */
+.fwm-log-toggle-key::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block: calc((var(--fwm-touch-min) - var(--fwm-log-key-h)) / -2);
+  background: transparent;
+}
+
+/* The selected key is filled in the in-range hue, exactly as `TRIP` is drawn.
+ *
+ * v2 moved two things here. It gave the key its own 6px radius -- in v1 the key
+ * was flush to the track and borrowed the track's corner; in v2 it is a pill
+ * floating on the recess. And it changed the ink on the fill from the page
+ * ground (#000) to --fwm-text-on-alert (#0A0A0C), which is v2's one ink for a
+ * label sitting on a saturated alert fill, shared with RADAR's `TAKE DETOUR`
+ * and REPORT's `NEW CAMERA`. It is not the background any more, so a mode that
+ * lifts --fwm-bg off black no longer drags this label with it. */
+.fwm-log-toggle-key[aria-pressed="true"] {
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-alert-in-range);
+  color: var(--fwm-text-on-alert);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack.
+ * GAP: see docs/gaps-inbox/log.md#spacing-scale-misses-5-14-and-18
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+}
+
+/* Every panel on this screen is the same card, and v2 rebuilt it: the 1px
+ * --fwm-line rule is GONE, --fwm-surface-1 (#0E0F13) lifted to
+ * --fwm-surface-card (#12141A), and the radius went 2px -> 6px. The card is now
+ * separated from --fwm-bg by four points of lift instead of by a hairline,
+ * which is the whole of "fill-based depth" in one rule. Identical to what v2
+ * did to RADAR's stat tiles, so both screens still draw one card. */
+.fwm-log-card {
+  border: none;
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card);
+  /* Rendered 18px on the today card and 14px on the two stat cards. */
+  padding: var(--fwm-space-4);
+  min-width: 0;
+}
+
+.fwm-log-card-label {
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px (today) and 9px (stat cards).
+   * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * FLOCKED TODAY -- the hero count and its caption.
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-today-count {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-1);
+  min-width: 0;
+}
+
+/* GAP: see DESIGN-GAPS.md#token-set-does-not-cover-rendered-hero-sizes
+ * Rendered 72px; --fwm-text-hero is 80px. The rendered line-height (.9) and
+ * tracking (-.03em) are carried as ratios of the token rather than as raw
+ * lengths, so the numerals stay proportioned at whatever the hero step becomes.
+ *
+ * THE DIGITS DO NOT ANIMATE. There is no transition and no animation on this
+ * rule and there never may be: a counter that rolls is a counter a driver
+ * cannot read at a glance. */
+.fwm-log-hero {
+  flex: none;
+  /* A count is a readout: it must not break between its digits. It used to get
+   * this by inheriting from `.fwm-data`, which also forced every prose caption
+   * in the app onto one line -- see the note on `.fwm-data` in global.css. */
+  white-space: nowrap;
+  font-size: var(--fwm-text-hero);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: calc(var(--fwm-text-hero) * -0.03);
+  color: var(--fwm-alert-in-range);
+}
+
+/* Rendered 13px, between --fwm-text-micro (11) and --fwm-text-body (15).
+ * GAP: see docs/gaps-inbox/log.md#type-scale-misses-12-13-and-16 */
+.fwm-log-today-caption {
+  min-width: 0;
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+  overflow: hidden;
+  /* `text-overflow` does nothing without `white-space: nowrap` -- the text
+   * simply wraps instead. This used to inherit that from `.fwm-data`; now that
+   * the global rule is gone (see global.css) the ellipsis has to say so. */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+ * The seven-day trend.
+ *
+ * Bars are `flex: 1` and their heights are the twenty quantised steps below.
+ * A day with no passes is NOT a missing bar: it draws the baseline hairline, so
+ * the week always reads as seven days.
+ * GAP: see docs/gaps-inbox/log.md#empty-day-draws-a-baseline
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--fwm-space-1);
+  height: var(--fwm-log-plot-h);
+  margin-top: var(--fwm-space-4);
+}
+
+.fwm-log-bar {
+  flex: 1;
+  min-width: 0;
+  background: var(--fwm-line);
+}
+
+/* The tallest day of the seven, in the in-range hue. */
+.fwm-log-bar[data-fwm-log-bar-rank="peak"] {
+  background: var(--fwm-alert-in-range);
+}
+
+/* The next tallest, in the approaching hue. */
+.fwm-log-bar[data-fwm-log-bar-rank="second"] {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-log-bar[data-fwm-log-bar-level="0"] {
+  height: var(--fwm-log-rule-w);
+}
+.fwm-log-bar[data-fwm-log-bar-level="1"] {
+  height: 5%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="2"] {
+  height: 10%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="3"] {
+  height: 15%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="4"] {
+  height: 20%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="5"] {
+  height: 25%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="6"] {
+  height: 30%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="7"] {
+  height: 35%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="8"] {
+  height: 40%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="9"] {
+  height: 45%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="10"] {
+  height: 50%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="11"] {
+  height: 55%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="12"] {
+  height: 60%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="13"] {
+  height: 65%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="14"] {
+  height: 70%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="15"] {
+  height: 75%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="16"] {
+  height: 80%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="17"] {
+  height: 85%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="18"] {
+  height: 90%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="19"] {
+  height: 95%;
+}
+.fwm-log-bar[data-fwm-log-bar-level="20"] {
+  height: 100%;
+}
+
+/* Rendered 9px in --fwm-text-disabled.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-log-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--fwm-space-2);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * HOTTEST SEGMENT + ALL TIME -- a 1fr 1fr grid, 8px apart.
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+/* Rendered 16px/600 in the UI face -- one step above the timeline row name, and
+ * deliberately not the mono readout face the design uses for the hero.
+ * GAP: see docs/gaps-inbox/log.md#type-scale-misses-12-13-and-16 */
+.fwm-log-stat-value {
+  margin-top: var(--fwm-space-1);
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 600;
+  color: var(--fwm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fwm-log-stat-detail {
+  margin-top: var(--fwm-space-1);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The hottest segment's own detail line is drawn in the in-range hue: it is the
+ * one number on this card that is a warning rather than a fact. */
+.fwm-log-card[data-fwm-log-stat="HOTTEST SEGMENT"] .fwm-log-stat-detail {
+  color: var(--fwm-alert-in-range);
+}
+
+/* ---------------------------------------------------------------------------
+ * TIMELINE
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-section-label {
+  flex: none;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 5);
+  color: var(--fwm-text-muted);
+}
+
+/* The only scrolling region on the screen. The footer buttons stay put. */
+.fwm-log-timeline {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* GAP: see docs/gaps-inbox/log.md#timeline-row-height-56
+ * Rendered 56px with a 14px gap and a 1px rule under each row. 48px is the
+ * nearest token (--fwm-space-12) and still clears the 44px touch floor the
+ * CONF / DISM keys inside it need. */
+/* v2 softened the rule under a row from --fwm-line (#23262F) to
+ * --fwm-line-soft (#191C22) -- the same move it made to LOOKUP's 60px read
+ * rows. The rule between two rows of one list is quieter than the rule that
+ * closes the header, which in v2 is the only remaining --fwm-line on the
+ * screen. This is a separator inside a list, not a division of the screen. */
+.fwm-log-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  flex: none;
+  min-height: var(--fwm-space-12);
+  border-bottom: var(--fwm-log-rule-w) solid var(--fwm-line-soft);
+  min-width: 0;
+}
+
+/* Rendered 8px, exactly --fwm-space-2. Hue is the recorded alert state and
+ * nothing else -- muting does not change it, because the state is what
+ * happened and the mute is only what the driver heard.
+ *
+ * THREE STATES, NOT FOUR. A row is an ENCOUNTER, and an encounter is never
+ * `clear` (`exposure.ts` `cameraEncounters()`), so there is no `clear` rule
+ * here: a dead selector on the production path is a claim about a row this
+ * screen cannot draw. The base colour above catches anything unforeseen. */
+.fwm-log-row-dot {
+  flex: none;
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line-strong);
+}
+
+.fwm-log-row-dot[data-fwm-log-row-state="approaching"] {
+  background: var(--fwm-alert-approaching);
+}
+.fwm-log-row-dot[data-fwm-log-row-state="in_range"] {
+  background: var(--fwm-alert-in-range);
+}
+.fwm-log-row-dot[data-fwm-log-row-state="multiple"] {
+  background: var(--fwm-alert-multiple);
+}
+
+.fwm-log-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fwm-log-row-name {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fwm-log-row-meta {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fwm-log-row-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+/* CONF and DISM. Both are always present, because a row the driver has not
+ * ruled on yet still has to be rulable.
+ * GAP: see docs/gaps-inbox/log.md#conf-dism-are-controls-not-a-recorded-word */
+.fwm-log-outcome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-1);
+  border: none;
+  border-radius: var(--fwm-radius-0);
+  background: transparent;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  /* Unruled: present, reachable, and visibly not yet the answer. */
+  color: var(--fwm-text-disabled);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+/* The recorded outcome, in the two colours the design draws it in. */
+.fwm-log-outcome[data-fwm-log-outcome-key="confirmed"][aria-pressed="true"] {
+  color: var(--fwm-alert-clear);
+}
+
+.fwm-log-outcome[data-fwm-log-outcome-key="dismissed"][aria-pressed="true"] {
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty states -- undrawn by the design, so they say what they are.
+ * GAP: see DESIGN-GAPS.md#empty-and-loading-states-mostly-undrawn
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-empty {
+  display: flex;
+  align-items: center;
+  flex: none;
+  min-height: var(--fwm-space-12);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * HEAT MAP / ZONE AUDIT -- 44px, outlined, pinned to the bottom of the body.
+ *
+ * THE ONLY BORDER v2 LEFT ON A CONTROL HERE. "Flat borderless controls" stripped
+ * the edge off the scope track and off all three cards, and left these two keys
+ * their 1px --fwm-line-strong -- the same call v2 made on SWEEP's ROUTE / MESH
+ * pair and on RADAR's VOL key. They are destinations off this screen rather
+ * than a state of it, and an outline is what says so. Only the radius moved,
+ * 2px -> 8px, onto v2's control radius.
+ * ------------------------------------------------------------------------ */
+
+.fwm-log-actions {
+  display: flex;
+  gap: var(--fwm-space-2);
+  flex: none;
+  margin-top: auto;
+}
+
+.fwm-log-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-touch-min);
+  border: var(--fwm-log-rule-w) solid var(--fwm-line-strong);
+  border-radius: var(--fwm-radius-3);
+  background: transparent;
+  font-family: var(--fwm-font-ui);
+  /* Rendered 12px/600/.08em.
+   * GAP: see docs/gaps-inbox/log.md#type-scale-misses-12-13-and-16 */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  color: var(--fwm-text-2);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+.fwm-log-action:disabled {
+  color: var(--fwm-text-disabled);
+  border-color: var(--fwm-line);
+}
+
+/* The mark takes the title's colour. It is a SIBLING of the title, so its own
+ * `currentColor` would resolve against the header instead -- measured white
+ * beside a coloured title on RADAR before this was made explicit. */
+.fwm-log-header .fwm-brand-mark {
+  color: var(--fwm-text);
+}

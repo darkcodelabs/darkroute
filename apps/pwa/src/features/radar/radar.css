@@ -1,0 +1,3559 @@
+/* RADAR -- the screen that is on 90% of the time.
+ *
+ * SOURCE (v2, authoritative): `Flockys App Screens v2.dc.html`, screen
+ * `01 · RADAR - IN RANGE`, plus the four-card `RADAR state matrix` at the foot
+ * of the same file.
+ * SOURCE (v1, still standing where v2 is silent): `Flockys App Screens.dc.html`
+ * and `Flockys Screens II.dc.html` -- `A2 · OFFLINE - DEGRADED` and the
+ * persistent county strip.
+ *
+ * "v2 · flat borderless controls, 8px radius, fill-based depth" -- the header
+ * keys, the degraded action and the stat tiles lost their 1px edges and gained
+ * a fill; the alert ring became a 250px dot-lattice SCOPE. Where v2 redrew an
+ * element, v2 wins. Where it did not -- the county strip, the offline strip,
+ * the GPS row, the hero readout -- the v1 rules below are untouched.
+ *
+ * Every colour, length, radius, duration and easing below is `var(--fwm-*)` or
+ * a `calc()` over one. Where the design renders a value the token set does not
+ * carry, the line is marked `GAP:` and the entry is filed in
+ * `docs/gaps-inbox/radar-v2.md` (v2 deltas) or `radar-screen.md` (v1, still
+ * open). Nothing here is a literal.
+ *
+ * =============================================================================
+ * HUE MEANS STATE AND NOTHING ELSE
+ * =============================================================================
+ * One custom property, `--fwm-radar-hue`, is set once per state on the root and
+ * read by everything: the title, the scope's lattice rings, its ticks, its
+ * crosshairs, its marker, the LOCK readout, the in-range bar, the direction
+ * line. No component picks its own colour, and no colour in this file
+ * decorates anything.
+ *
+ *   clear        --fwm-alert-clear        #3DE08A
+ *   approaching  --fwm-alert-approaching  #FFC02E
+ *   in_range     --fwm-alert-in-range     #FF2D5E
+ *   multiple     --fwm-alert-multiple     #FF3DBE
+ *   muted        --fwm-text-muted         #6B7381  desaturated on purpose
+ *   no_gps       --fwm-line-strong        #3A3F4B  dashed, grey, not a hue
+ *
+ * The last two are grey BECAUSE they are not alert states: a coloured scope on
+ * this screen always means a camera.
+ *
+ * THE SCOPE CARRIES ITS ALPHA AS `opacity`, NOT AS A TINT TOKEN. v2 draws the
+ * lattice rings at .34 / .5 / 1, the ring ticks at 50% and the crosshairs at
+ * 13%. The token set's `--fwm-tint-in-range-*` pair carries those exact alphas
+ * but is hue-LOCKED to crimson, and this screen has six hues. Every layer
+ * therefore paints `var(--fwm-radar-hue)` at full strength and is faded by
+ * `opacity`, which is hue-agnostic and mode-safe.
+ * GAP: see docs/gaps-inbox/radar-v2.md#scope-tints-are-hue-locked
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * `RadarView.test.tsx` reads this file off disk and fails if `:hover` appears.
+ *
+ * =============================================================================
+ * THE DIGITS DO NOT ANIMATE
+ * =============================================================================
+ * There is no `transition` and no `animation` on `.fwm-radar-digits`, and there
+ * never may be. See the comment above the readout in `DistanceReadout.tsx`.
+ * ========================================================================== */
+
+.fwm-radar {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design draws everywhere,
+   * *0.75 is the 3px ring stroke v2 keeps on the state matrix's no-GPS card.
+   * Derived, so a mode that rescales space rescales the strokes with it.
+   * Component-scoped locals, NOT new tokens. */
+  --fwm-radar-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-radar-ring-w: calc(var(--fwm-space-1) * 0.75);
+  /* THE DOT LATTICE, declared here rather than borrowed.
+   *
+   * These two were read from `sweep.css` across a component boundary, which
+   * resolves to NOTHING: a custom property inherits down the tree, and
+   * `.fwm-sweep-dial` is a descendant of `.fwm-radar`, not an ancestor. So the
+   * radial-gradient below had no stop positions at all and the lattice never
+   * drew - silently, because an unresolved var is not an error.
+   *
+   * Copied rather than promoted to a token, following `sweep.css`'s own note
+   * that this lattice is "Component-scoped locals, NOT new tokens". Promoting
+   * would split a family of seven for the two that happen to be shared. */
+  --fwm-radar-dot-core: calc(var(--fwm-space-1) * 0.175);
+  --fwm-radar-dot-edge: calc(var(--fwm-space-1) * 0.3);
+  /* GAP: see docs/gaps-inbox/radar-screen.md#status-dot-size-has-no-token
+   * Rendered 6px (strips) and 7px (GPS row). One derived 6px dot for both. It
+   * doubles as v2's 6px marker wing. */
+  --fwm-radar-dot: calc(var(--fwm-space-1) * 1.5);
+
+  /* GAP: see docs/gaps-inbox/radar-v2.md#scope-dot-lattice-has-no-tokens
+   * v2 builds the scope out of one repeated dot: `radial-gradient(circle at
+   * center, <colour> 0.7px, transparent 1.2px) 0 0/5px 5px`, with a fatter dot
+   * on the hue rings (0.75/1.25) and fatter again on the outer ring
+   * (0.85/1.35). None of the six lengths is on the space scale; each is an
+   * exact multiple of --fwm-space-1 (4px), so a mode that rescales space
+   * rescales the lattice with it. Component-scoped locals, NOT new tokens. */
+  --fwm-radar-grid: calc(var(--fwm-space-1) * 1.25);
+  --fwm-radar-dot-core: calc(var(--fwm-space-1) * 0.175);
+  --fwm-radar-dot-edge: calc(var(--fwm-space-1) * 0.3);
+  --fwm-radar-hue-dot-core: calc(var(--fwm-space-1) * 0.1875);
+  --fwm-radar-hue-dot-edge: calc(var(--fwm-space-1) * 0.3125);
+  --fwm-radar-rim-dot-core: calc(var(--fwm-space-1) * 0.2125);
+  --fwm-radar-rim-dot-edge: calc(var(--fwm-space-1) * 0.3375);
+  /* v2's 9px bearing pip and the 2px gap in the scope's centre stack. */
+  --fwm-radar-pip: calc(var(--fwm-space-1) * 2.25);
+  --fwm-radar-hair: calc(var(--fwm-space-1) / 2);
+
+  /* Fallback hue. Every render sets [data-fwm-radar-state], and the blocks
+     below override this; a state that somehow arrives unset draws clear-green
+     rather than an alert colour, because a false all-clear is quieter than a
+     false alarm and the readout still shows the real distance. */
+  --fwm-radar-hue: var(--fwm-alert-clear);
+  --fwm-radar-glow: none;
+
+  /* GAP: see DESIGN-GAPS.md#animations-are-not-tokens
+   * The design's timings (1.4s matrix pulse, 1.15s v2 scope pulse, 1.6s and 1s
+   * dots) all exceed --fwm-dur-alert (400ms), the longest duration the system
+   * exports. Each is an exact multiple of that token rather than a literal:
+   * 3.5x = 1400ms, 2.875x = 1150ms, 4x = 1600ms, 2.5x = 1000ms.
+   * See docs/gaps-inbox/radar-screen.md#ring-durations-derived-from-dur-alert */
+  --fwm-radar-dur-pulse: calc(var(--fwm-dur-alert) * 3.5);
+  --fwm-radar-dur-scope: calc(var(--fwm-dur-alert) * 2.875);
+  --fwm-radar-dur-strip: calc(var(--fwm-dur-alert) * 4);
+  --fwm-radar-dur-nofix: calc(var(--fwm-dur-alert) * 2.5);
+
+  display: flex;
+  flex-direction: column;
+  /* BOUNDED TO THE VIEWPORT, not `min-height: 100%`.
+   *
+   * With a min-height the screen grows to whatever its contents need and the
+   * DOCUMENT scrolls -- under a dock that is fixed. Since RADAR absorbed
+   * SWEEP the column is a 343px dial plus the zone card, which is taller than
+   * a phone, so the last card sat 36px behind the dock bar at rest and a
+   * bottom gutter could not help: padding below a card does not move the card.
+   *
+   * `100dvh` is the dynamic viewport unit -- it tracks the mobile browser's
+   * collapsing address bar, which `vh` does not, and getting that wrong is
+   * what makes a fixed dock jump on scroll. `height: 100%` is the fallback for
+   * anything that does not know the unit.
+   *
+   * With the screen bounded, `.fwm-radar-body` is the only scroller: the
+   * header and the dock stay put and the column moves between them, which is
+   * what the design draws and what a driver glancing at a mount needs. */
+  height: 100%;
+  overflow: hidden; /* keyword */
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden; /* keyword */
+}
+
+.fwm-radar[data-fwm-radar-state="clear"] {
+  --fwm-radar-hue: var(--fwm-alert-clear);
+  /* v2's token pass finally gave the matrix's green ring glow a name. */
+  --fwm-radar-glow: var(--fwm-glow-clear);
+}
+
+.fwm-radar[data-fwm-radar-state="approaching"] {
+  --fwm-radar-hue: var(--fwm-alert-approaching);
+  --fwm-radar-glow: var(--fwm-glow-approaching);
+}
+
+.fwm-radar[data-fwm-radar-state="in_range"] {
+  --fwm-radar-hue: var(--fwm-alert-in-range);
+  --fwm-radar-glow: var(--fwm-glow-alert);
+}
+
+/* GAP: see DESIGN-GAPS.md#multiple-state-never-rendered
+ * The design ships a swatch for this state and no screen. The stand-in is the
+ * in_range treatment with the multiple hue; the only other difference is the
+ * emphasis on the count, below. No new structure was invented for it. */
+.fwm-radar[data-fwm-radar-state="multiple"] {
+  --fwm-radar-hue: var(--fwm-alert-multiple);
+  /* GAP: see docs/gaps-inbox/radar-screen.md#glow-token-is-crimson-only
+   * `multiple` is the one state still without a glow of its own, so it borrows
+   * the crimson one and reads slightly warmer than its own hue. */
+  --fwm-radar-glow: var(--fwm-glow-alert);
+}
+
+/* Muting desaturates the hue. It does not stop the numbers. */
+.fwm-radar[data-fwm-radar-state="muted"] {
+  --fwm-radar-hue: var(--fwm-text-muted);
+  --fwm-radar-glow: none;
+}
+
+.fwm-radar[data-fwm-radar-state="no_gps"] {
+  --fwm-radar-hue: var(--fwm-line-strong);
+  --fwm-radar-glow: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, title in the state hue, three mono keys.
+ *
+ * v2: `height:52px`, `padding:0 16px`, 1px rule, title `19px/700/.06em` (was
+ * 17px/.1em), and three 44x36 keys at 10px mono. REP and SET lost their 1px
+ * edge for a `#1B1E25` fill at an 8px radius; VOL keeps its hue outline and
+ * takes the same radius.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-header {
+  /* The live count is a flex child sized by what the title and the keys leave,
+     which is what stops it printing over either. See `.fwm-radar-live`. */
+  position: relative;
+  gap: var(--fwm-space-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none; /* keyword */
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-radar-rule-w) solid var(--fwm-line);
+}
+
+/* GAP: see docs/gaps-inbox/radar-v2.md#screen-title-19px-has-no-step
+ * v2 renders 19px; --fwm-text-subtitle is 17px, the nearest step, so the title
+ * reads 2px small. The tracking is v2's own .06em. */
+/* The brand mark is a sibling of the title, so its `currentColor` resolves
+ * against the HEADER, not against the title -- measured white (247,249,252)
+ * beside a green title (61,224,138). It takes the state hue explicitly. */
+.fwm-radar-header .fwm-brand-mark {
+  /* The title's colour AND the title's type size, so `1.5em` in brand.css
+   * resolves against the title rather than against the header's body text. */
+  font-size: var(--fwm-text-subtitle);
+  color: var(--fwm-radar-hue);
+}
+
+/**
+ * THE WORDMARK GIVES WAY BEFORE THE DATA DOES.
+ *
+ * The header holds three things and only one of them is a reading. Measured at
+ * 100% text: the count group needs 184px at 320, 219 at 390 and 249 at 430,
+ * against 139 / 209 / 249 available -- so below a wide phone something has to
+ * go, and it must not be the numbers or the labels that say which is which.
+ *
+ * `RADAR` is the one part that is constant, and the dock underneath already
+ * says which screen this is, in the active key, at all times. The eye stays --
+ * it is the brand and it costs 24px.
+ */
+.fwm-radar-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden; /* keyword */
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .06em. GAP: docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.06);
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-radar-mute {
+  margin-left: var(--fwm-space-3);
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  /* The countdown is amber in the state matrix even though the state hue is
+     grey: it is a timer, not an alert, and it is the one thing on a muted
+     screen the driver may want to act on. */
+  color: var(--fwm-alert-approaching);
+  white-space: nowrap; /* keyword */
+}
+
+/* The live count, centred on the title's row. Absolutely positioned so it is
+ * centred on the HEADER rather than on whatever space the title and the keys
+ * happen to leave -- a flex-centred middle child slides as the mute countdown
+ * appears and disappears beside the title. */
+/**
+ * IN FLOW, NOT ABSOLUTELY CENTRED.
+ *
+ * =============================================================================
+ * THE BUG THIS KEEPS COMING BACK FROM
+ * =============================================================================
+ * This was `position: absolute; left: 50%` -- centred against the header box
+ * rather than against the space the title and the keys leave. Absolute
+ * centring cannot see its neighbours, so it collides with whichever one it
+ * grows into, and it has now done that twice:
+ *
+ *   PASSED, drawn in normal flow beside the absolute group, printed over it as
+ *   `1,263 /0PASSED AMS`. Fixed by moving PASSED inside the group.
+ *
+ *   Then LOCAL and NETWORK made the group wider still, and it ran under the
+ *   title on the left: `RADA(R)OCAL / 131,083 NETWORK`.
+ *
+ * Both are the same defect, and moving the next thing inside the group would
+ * only postpone the third. A flex child sized by what is left CANNOT overlap a
+ * sibling -- it is given the space the other two do not take, and shrinks
+ * inside it rather than growing over them.
+ *
+ * `min-width: 0` is what makes that true: without it a flex item refuses to
+ * shrink below its content and the overflow comes straight back.
+ */
+.fwm-radar-live {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: center;
+  /* Half a step. A label belongs to the number beside it, and a full gap made
+     six parts read as six separate things. */
+  gap: calc(var(--fwm-space-1) / 2);
+  margin: 0;
+  overflow: hidden; /* keyword */
+  font-family: var(--fwm-font-data);
+  white-space: nowrap; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+/* ONE SIZE FOR ALL THREE PARTS.
+ *
+ * The cached figure was a size up from the total beside it, which made the pair
+ * read as a headline with a footnote rather than as one ratio. They are two
+ * halves of the same statement -- what is on this phone, out of what exists --
+ * so they are the same size and the DIFFERENCE IS CARRIED BY COLOUR:
+ *
+ *   the cached count   white, because it is the live half, the one that moves
+ *   the published total scan blue, because it is the fixed half: context, not news
+ *   the word CAMS      muted, because it is a unit and units never compete
+ */
+.fwm-radar-live-value {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  color: var(--fwm-text);
+}
+
+.fwm-radar-live-total {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  color: var(--fwm-accent-scan);
+}
+
+/**
+ * THE LABELS ARE THE SECONDARY HALF, and are sized and tracked to say so.
+ *
+ * `AREA` and `NETWORK` name the two numbers where they stand -- one label after
+ * two numbers does not say which is which -- but the NUMBERS are the reading.
+ * The .14em tracking they inherited from a header with one short word in it is
+ * ~9px of pure air across three labels, which is most of what pushed the group
+ * over the width the title and the menu leave it.
+ */
+.fwm-radar-live-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.04);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radar-keys {
+  display: flex;
+  flex: none; /* keyword */
+  gap: var(--fwm-space-2);
+}
+
+/**
+ * BELOW A WIDE PHONE, THE WORDMARK GOES AND THE READING STAYS.
+ *
+ * Hidden rather than truncated: `RADA…` is worse than no word at all, and the
+ * screen is still named -- by the dock's active key, which is on screen
+ * whenever this header is.
+ *
+ * The breakpoint is where the count stops fitting beside it, measured, not
+ * chosen: 219px of content against 209 available at 390.
+ */
+@media (max-width: 26.5rem) {
+  .fwm-radar-title {
+    display: none; /* keyword */
+  }
+}
+
+/* v2's flat control: no border, a --fwm-surface-control fill, 8px radius.
+ * GAP: see docs/gaps-inbox/radar-screen.md#radar-header-key-44x36
+ * Rendered 44x36. 36px is below the product's own 44px touch floor, so the
+ * key is square at --fwm-touch-min: the nearest token, and the only reading
+ * that keeps the key reachable in a car mount. */
+.fwm-radar-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fwm-touch-min);
+  height: var(--fwm-touch-min);
+  padding: 0;
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-3);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* The menu mark, on the dock's own 24x24 / 1.6px stroke grid. Paint is
+ * `currentColor` so the mark takes the key's state -- including the dimmed
+ * colour when the key has nowhere to go. */
+.fwm-radar-key-icon {
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+  fill: none; /* keyword */
+  stroke: currentcolor; /* keyword */
+  /* Unitless SVG user units, not a CSS length, so there is no token for it --
+   * same 1.6px platform grid the five dock marks are drawn on. See the note in
+   * dock.css and docs/gaps-inbox/tokens-v2.md. */
+  stroke-width: 1.6;
+  stroke-linecap: round; /* keyword */
+  stroke-linejoin: round; /* keyword */
+}
+
+/* NEITHER HEADER KEY CARRIES A CHIP -- see the `background: transparent` on
+ * `.fwm-radar-key` above. `?` never did; the MENU had a filled square with an
+ * edge, which made a 52px bar carrying two marks look like it carried one
+ * button and one glyph. Two controls of equal weight read as two controls, and
+ * the 44px touch target is unchanged on both: the target is not the paint. */
+
+/* A key with no destination is dimmed rather than hidden: the design draws
+ * three keys and the header would re-flow if one vanished. Without an edge to
+ * dim, the fill steps back down the surface ladder instead. */
+.fwm-radar-key:disabled {
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}
+
+.fwm-radar-key[data-fwm-radar-key-bare="true"]:disabled {
+  background: transparent; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Strips -- county RECORD (34px) and OFFLINE (32px). v2 redraws neither.
+ *
+ * "Strip sits under the header, above content, 34px. It replaces the OFFLINE
+ *  strip when both apply -- record outranks connectivity."
+ *   -- Flockys Screens II.dc.html
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  width: 100%;
+  padding: 0 var(--fwm-space-4);
+  background: var(--fwm-surface-2);
+  font-family: var(--fwm-font-data);
+  text-align: left; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* GAP: see docs/gaps-inbox/radar-screen.md#county-record-strip-34px
+ * Rendered 34px and tappable ("Tapping it opens RECORD scoped to this
+ * county"). --fwm-touch-min (44px) is both the nearest token and the only one
+ * that makes the tap target legal. */
+.fwm-radar-strip[data-fwm-radar-strip="county"] {
+  min-height: var(--fwm-touch-min);
+  border-bottom: var(--fwm-radar-rule-w) solid var(--fwm-line);
+}
+
+/* The offline strip is not tappable and renders 32px = --fwm-space-8 exactly. */
+.fwm-radar-strip[data-fwm-radar-strip="offline"] {
+  min-height: var(--fwm-space-8);
+}
+
+.fwm-radar-strip-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-radar-dot);
+  height: var(--fwm-radar-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-destructive);
+}
+
+.fwm-radar-strip[data-fwm-radar-strip="offline"] .fwm-radar-strip-dot {
+  background: var(--fwm-alert-approaching);
+  animation: fwmPulse var(--fwm-radar-dur-strip) var(--fwm-ease-mech) infinite;
+}
+
+.fwm-radar-strip-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-destructive);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  min-width: 0;
+}
+
+.fwm-radar-strip[data-fwm-radar-strip="offline"] .fwm-radar-strip-label {
+  color: var(--fwm-alert-approaching);
+}
+
+.fwm-radar-strip-action {
+  margin-left: auto; /* keyword */
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack gap. Unchanged in v2.
+ * GAP: see docs/gaps-inbox/radar-screen.md#spacing-scale-misses-10-14-and-30
+ * ------------------------------------------------------------------------ */
+
+/* THE COLUMN SCROLLS, AND IT RESERVES THE DOCK.
+ *
+ * Since RADAR absorbed SWEEP this column carries a 343px dial AND the live zone
+ * card, and on a 852px phone that is taller than the screen. It had neither an
+ * overflow rule nor a bottom gutter, so the page grew past the viewport and the
+ * fixed dock sat on top of the last thing in the column: the zone card rendered
+ * 194px tall with its bottom 35px - the row of counts - behind the dock bar.
+ *
+ * `overflow-y: auto` with `min-height: 0` makes this the scroll container
+ * rather than the document, which keeps the header and dock fixed where the
+ * design puts them. The bottom padding is the dock's full height plus the safe
+ * area plus the column's own padding, so the last card clears it completely.
+ * Same relationship as `.fwm-safe-dock-gutter` in global.css, written out here
+ * because this element also sets `padding` as a shorthand and a utility class
+ * fighting a shorthand over one side is a cascade accident waiting to happen. */
+.fwm-radar-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  /* NO SCROLLING. The screen conforms to the display: the fixed rows take what
+   * they need and the scope takes the rest (see the bleed rule in sweep.css),
+   * so there is never anything below the fold to scroll to. A driving
+   * instrument that can be scrolled is one a thumb can push off the screen. */
+  overflow-y: hidden; /* keyword */
+  /* The overlay is positioned against this, so the readouts can sit ON the map
+   * instead of stacking above it. */
+  position: relative;
+  /* The bleed scope is deliberately wider than this column. Without this it is
+   * a horizontal scrollbar and a screen that slides sideways under a thumb. */
+  overflow-x: hidden; /* keyword */
+  /* NO VISIBLE SCROLLBAR. A driving instrument with a scrollbar down the side
+   * of it looks like a web page; the column still scrolls, it just does not
+   * advertise it. Both spellings: Firefox takes the standard property, WebKit
+   * and Blink still need the pseudo-element below. */
+  scrollbar-width: none; /* keyword */
+  /* NO PADDING AT THE TOP. The overlay carries its own inset now, so a padding
+   * here only pushes the map down away from the header for nothing -- measured
+   * at 16 px of black between the header rule and the first tile of map. */
+  padding: 0 var(--fwm-space-4) var(--fwm-space-4);
+  /* No dock reservation here. The dock is in the shell's flex column and takes
+   * its own height out of this screen's slot, so this scroller already ends
+   * where the dock begins. Reserving it a second time was the bug. */
+  /* Momentum scrolling on iOS, and no scroll chaining into the page behind. */
+  overscroll-behavior: contain; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * GPS status row -- lock dot, coordinates, satellite count. Unchanged in v2.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-gps {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-radar-gps-dot {
+  flex: none; /* keyword */
+  width: var(--fwm-radar-dot);
+  height: var(--fwm-radar-dot);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-radar-gps-label {
+  flex: none; /* keyword */
+  color: var(--fwm-alert-clear);
+}
+
+/* No fix: the dot pulses and both it and the label go destructive-orange.
+   Rendered `animation:fwmPulse 1s ease-in-out infinite` in matrix card 3. */
+.fwm-radar-gps[data-fwm-radar-fix="false"] .fwm-radar-gps-dot {
+  background: var(--fwm-destructive);
+  animation: fwmPulse var(--fwm-radar-dur-nofix) var(--fwm-ease-mech) infinite;
+}
+
+.fwm-radar-gps[data-fwm-radar-fix="false"] .fwm-radar-gps-label {
+  color: var(--fwm-destructive);
+}
+
+.fwm-radar-gps-coords {
+  flex: 1;
+  min-width: 0;
+  text-align: center; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+.fwm-radar-gps-sats {
+  flex: none; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero readout -- the number a driver reads at a glance. Unchanged in v2.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-readout {
+  flex: none; /* keyword */
+  text-align: center; /* keyword */
+}
+
+.fwm-radar-hero {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: center;
+  gap: var(--fwm-space-2);
+  font-family: var(--fwm-font-data);
+  font-weight: 700;
+}
+
+/* NO TRANSITION AND NO ANIMATION ON THIS RULE. Not now, not later.
+ * GAP: see DESIGN-GAPS.md#radar-hero-96-vs-token-80
+ * Rendered `font-size:96px; line-height:.82; letter-spacing:-.04em`.
+ * --fwm-text-hero is 5rem (80px), the nearest token, so the readout is smaller
+ * than the reference until a per-screen hero step exists. */
+.fwm-radar-digits {
+  font-size: var(--fwm-text-hero);
+  line-height: 0.82;
+  /* Rendered -.04em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-hero) * -0.04);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 28px beside the 96px hero; --fwm-text-title (24px) is the nearest.
+ * GAP: see docs/gaps-inbox/radar-screen.md#unit-and-readout-steps-missing */
+.fwm-radar-unit {
+  font-size: var(--fwm-text-title);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 14px/.2em; --fwm-text-body is 15px, the nearest step. */
+.fwm-radar-direction {
+  margin-top: var(--fwm-space-3);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-body);
+  letter-spacing: calc(var(--fwm-text-body) / 5);
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The degraded-state copy that replaces the readout: "last fix 40s ago.
+ * showing cached cameras only." Rendered 14px #A7AFBD, line-height 1.5. */
+.fwm-radar-message {
+  flex: none; /* keyword */
+  font-size: var(--fwm-text-body);
+  line-height: 1.5;
+  color: var(--fwm-text-2);
+  text-align: center; /* keyword */
+}
+
+.fwm-radar-message-note {
+  display: block;
+  margin-top: var(--fwm-space-2);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * "N in range" bar.
+ *
+ * v2: 52px, `border:1px solid rgba(255,45,94,.55)`, `background:
+ * rgba(255,45,94,.14)`, 8px radius, and a 24px eye mark in the hue where v1
+ * drew an 18x12 block. The two alphas are exactly the token set's
+ * --fwm-tint-in-range-strong (55%) and --fwm-tint-in-range-soft (14%), which
+ * closes DESIGN-GAPS.md#report-bar-tint-and-alert-tints for this bar.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-inrange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+  height: var(--fwm-header-h);
+  border: var(--fwm-radar-rule-w) solid var(--fwm-tint-in-range-strong);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-tint-in-range-soft);
+}
+
+/* GAP: see docs/gaps-inbox/radar-v2.md#in-range-bar-tint-is-hue-locked
+ * The two tint tokens are crimson-locked and the bar also renders while the
+ * mute is up, where "MUTED · hue desaturates" is the design's own rule. A
+ * crimson wash under a grey label would read as an alarm the driver silenced,
+ * so a muted bar drops to the flat card fill and the neutral line. */
+.fwm-radar[data-fwm-radar-state="muted"] .fwm-radar-inrange {
+  border-color: var(--fwm-line);
+  background: var(--fwm-surface-card);
+}
+
+/* v2 replaces the block with the brand eye at 24px, tinted by the state hue.
+ * The mask is the shipped master (`apps/pwa/public/assets/darkroute-mark.png`),
+ * so the mark can never drift from the icon the notification badge uses. */
+.fwm-radar-inrange-mark {
+  flex: none; /* keyword */
+  width: var(--fwm-icon-size);
+  height: var(--fwm-icon-size);
+  background: var(--fwm-radar-hue);
+  -webkit-mask: url("/assets/darkroute-mark.png") center / contain no-repeat;
+  mask: url("/assets/darkroute-mark.png") center / contain no-repeat;
+}
+
+.fwm-radar-inrange-label {
+  font-size: var(--fwm-text-body);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-body) * 0.08);
+  text-transform: uppercase; /* keyword */
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+}
+
+/* GAP: see DESIGN-GAPS.md#multiple-state-never-rendered
+ * "the in-range layout with the multiple hue applied and the in-range count
+ * emphasised" -- the emphasis is one type step, which is the smallest change
+ * that reads as emphasis without inventing a layout the design never drew. */
+.fwm-radar[data-fwm-radar-state="multiple"] .fwm-radar-inrange-label {
+  font-size: var(--fwm-text-subtitle);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE SCOPE.
+ *
+ * v2 replaced v1's 172px bordered ring with a 250px dot lattice. In paint
+ * order, exactly as `01 · RADAR - IN RANGE` draws it:
+ *
+ *   1. the field   a 5px grey dot lattice under a radial vignette
+ *   2. band 1      hue dots masked to an 18% ring,   opacity .34
+ *   3. band 2      hue dots masked to a 32.5% ring,  opacity .5
+ *   4. the rim     hue dots masked to a 47.5% ring,  full strength
+ *   5. the ticks   a 15deg conic comb masked to the rim, at 50%
+ *   6. the axes    two 1px crosshairs fading out at 32% / 68%, at 13%
+ *   7. the centre  THRESHOLD / 500 / FT / LOCK 041°
+ *   8. the pip     a 9px bearing mark with two 6px wings on the top edge
+ *   9. the range   `1000FT`, vertical, on the left
+ *  10. the rate    `SCAN 4HZ`, vertical, on the right
+ *
+ * NO GLOW AND NO EXPANDING RING. v2 draws neither on this screen: v1's
+ * `box-shadow:0 0 30px` on the ring, its 14px glow on the marker and its
+ * `fwmRing` expansion are all gone, and `@keyframes fwmRing` is declared in
+ * the v2 file and used by nothing. The glow survives on the pip alone, which
+ * is the one solid-hue element a masked lattice leaves to carry it, and it now
+ * follows the state hue: v2's token pass added --fwm-glow-clear and
+ * --fwm-glow-approaching for the state matrix's green and amber rings.
+ *
+ * `no_gps` is the one state that is NOT a lattice. The matrix's third card is
+ * unchanged in v2 -- a 3px dashed grey circle with `NO GPS` in it -- and every
+ * lattice layer is a measurement against a position that does not exist, so
+ * the scope collapses back to that circle rather than drawing a live-looking
+ * instrument with nothing behind it.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-ring-wrap {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* GAP: see docs/gaps-inbox/radar-v2.md#scope-diameter-250px
+ * 5.2 x --fwm-space-12 is 249.6px, the closest a derived value gets to v2's
+ * 250px. `min()` keeps it inside a narrow surface rather than overflowing it. */
+.fwm-radar-ring {
+  position: relative;
+  width: min(100%, calc(var(--fwm-space-12) * 5.2));
+  aspect-ratio: 1;
+  flex: none; /* keyword */
+}
+
+/* Every lattice layer is the same square, differing only in dot, colour, mask
+ * and opacity. */
+.fwm-radar-ring-field,
+.fwm-radar-ring-inner,
+.fwm-radar-ring-edge,
+.fwm-radar-ring-ticks {
+  position: absolute;
+  inset: 0;
+  /* Decoration over a live screen: never intercept a tap meant for it. */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-radar-ring-field {
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-line-grid-3) var(--fwm-radar-dot-core),
+        transparent var(--fwm-radar-dot-edge)
+      )
+      0 0 / var(--fwm-radar-grid) var(--fwm-radar-grid);
+  -webkit-mask: var(--fwm-mask-scope-vignette);
+  mask: var(--fwm-mask-scope-vignette);
+}
+
+.fwm-radar-ring-inner {
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-radar-hue) var(--fwm-radar-hue-dot-core),
+        transparent var(--fwm-radar-hue-dot-edge)
+      )
+      0 0 / var(--fwm-radar-grid) var(--fwm-radar-grid);
+}
+
+/* Band 1 -- 18% of the diameter, the innermost range ring. */
+.fwm-radar-ring-inner[data-fwm-radar-inner="1"] {
+  opacity: 0.34;
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 13.5%,
+    var(--fwm-mask-solid) 18%,
+    transparent 22.5%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 13.5%,
+    var(--fwm-mask-solid) 18%,
+    transparent 22.5%
+  );
+}
+
+/* Band 2 -- 32.5%. */
+.fwm-radar-ring-inner[data-fwm-radar-inner="2"] {
+  opacity: 0.5;
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 27.5%,
+    var(--fwm-mask-solid) 32.5%,
+    transparent 37.5%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 27.5%,
+    var(--fwm-mask-solid) 32.5%,
+    transparent 37.5%
+  );
+}
+
+/* The rim -- 47.5%, the outer range ring, drawn on a fatter dot. */
+.fwm-radar-ring-edge {
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-radar-hue) var(--fwm-radar-rim-dot-core),
+        transparent var(--fwm-radar-rim-dot-edge)
+      )
+      0 0 / var(--fwm-radar-grid) var(--fwm-radar-grid);
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 41.5%,
+    var(--fwm-mask-solid) 47.5%,
+    transparent 53.5%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 41.5%,
+    var(--fwm-mask-solid) 47.5%,
+    transparent 53.5%
+  );
+}
+
+/* The tick comb: a hairline every 15deg, masked to a band just outside the
+ * rim. v2 draws it at 50% alpha, which is what the opacity carries. */
+.fwm-radar-ring-ticks {
+  opacity: 0.5;
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--fwm-radar-hue) 0 0.6deg,
+    transparent 0.6deg 15deg
+  );
+  -webkit-mask: radial-gradient(
+    circle at center,
+    transparent 41%,
+    var(--fwm-mask-solid) 47%,
+    var(--fwm-mask-solid) 49%,
+    transparent 53%
+  );
+  mask: radial-gradient(
+    circle at center,
+    transparent 41%,
+    var(--fwm-mask-solid) 47%,
+    var(--fwm-mask-solid) 49%,
+    transparent 53%
+  );
+}
+
+/* The two crosshairs, fading out before they reach the rim. v2 draws them at
+ * 13% alpha; the opacity carries it so they follow the hue. */
+.fwm-radar-ring-axis {
+  position: absolute;
+  opacity: 0.13;
+  pointer-events: none; /* keyword */
+}
+
+.fwm-radar-ring-axis[data-fwm-radar-axis="v"] {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: var(--fwm-radar-rule-w);
+  margin-left: calc(var(--fwm-radar-rule-w) / -2);
+  background: linear-gradient(
+    transparent,
+    var(--fwm-radar-hue) 32%,
+    var(--fwm-radar-hue) 68%,
+    transparent
+  );
+}
+
+.fwm-radar-ring-axis[data-fwm-radar-axis="h"] {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--fwm-radar-rule-w);
+  margin-top: calc(var(--fwm-radar-rule-w) / -2);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--fwm-radar-hue) 32%,
+    var(--fwm-radar-hue) 68%,
+    transparent
+  );
+}
+
+/* in_range and multiple breathe the rim at 1.15s -- v2's own timing, and the
+ * fastest thing on the screen. `approaching` keeps the matrix's slower 1.4s.
+ * Both keyframes live in global.css, copied from the design. */
+.fwm-radar-ring[data-fwm-radar-ring="pulse-fast"] .fwm-radar-ring-edge {
+  animation: fwmPulse var(--fwm-radar-dur-scope) var(--fwm-ease-mech) infinite;
+}
+
+.fwm-radar[data-fwm-radar-state="approaching"] .fwm-radar-ring-edge {
+  animation: fwmPulse var(--fwm-radar-dur-pulse) var(--fwm-ease-mech) infinite;
+}
+
+/* no_gps: the matrix's dashed circle, not a lattice. The dot background and
+ * the ring mask are both dropped so the border is all there is. */
+.fwm-radar-ring[data-fwm-radar-ring="dashed"] .fwm-radar-ring-edge {
+  background: none; /* keyword */
+  border: var(--fwm-radar-ring-w) dashed var(--fwm-radar-hue);
+  border-radius: var(--fwm-radius-full);
+  -webkit-mask: none; /* keyword */
+  mask: none; /* keyword */
+}
+
+.fwm-radar-ring-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fwm-radar-hair);
+  font-family: var(--fwm-font-data);
+  text-align: center; /* keyword */
+}
+
+/* Rendered 9px/.28em. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-radar-ring-cap {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.28);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/* v2 puts the unit on the numeral's baseline instead of under it. */
+.fwm-radar-ring-readout {
+  display: flex;
+  align-items: baseline; /* keyword */
+  gap: var(--fwm-space-1);
+}
+
+/* Rendered 44px; --fwm-text-readout (40px) is the nearest step.
+ * GAP: see docs/gaps-inbox/radar-screen.md#unit-and-readout-steps-missing */
+.fwm-radar-ring-value {
+  font-size: var(--fwm-text-readout);
+  font-weight: 700;
+  line-height: 1;
+  /* Rendered -.02em. GAP: docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-readout) * -0.02);
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 13px; --fwm-text-body (15px) is the nearest step above the micro
+ * rung, and keeping it above --fwm-text-micro is what preserves the two-rung
+ * hierarchy v2 draws between this unit and the THRESHOLD caption.
+ * GAP: see docs/gaps-inbox/radar-v2.md#scope-unit-13px-has-no-step */
+.fwm-radar-ring-unit {
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+}
+
+/* `LOCK 041°` -- the heading the scope is oriented to, in the state hue.
+ * Rendered 9px/.18em with a 4px top margin. */
+.fwm-radar-ring-lock {
+  margin-top: var(--fwm-space-1);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+}
+
+/* The state word the matrix draws inside the ring: CLEAR, NO GPS.
+ * Rendered 18px and 15px respectively; --fwm-text-subtitle (17px) sits between
+ * them and is the only step in that range. */
+.fwm-radar-ring-word {
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.14);
+  color: var(--fwm-radar-hue);
+  white-space: nowrap; /* keyword */
+}
+
+/* The bearing pip: a 32x12 box straddling the top edge, holding a 9px dot with
+ * a 6x1 wing at each end. Rendered `top:-6px; margin-left:-16px`. */
+.fwm-radar-ring-marker {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--fwm-radar-dot) * -1);
+  margin-left: calc(var(--fwm-space-8) / -2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fwm-space-8);
+  height: var(--fwm-space-3);
+  pointer-events: none; /* keyword */
+}
+
+.fwm-radar-ring-marker::before,
+.fwm-radar-ring-marker::after {
+  content: ""; /* keyword */
+  position: absolute;
+  top: 0;
+  width: var(--fwm-radar-dot);
+  height: var(--fwm-radar-rule-w);
+  background: var(--fwm-radar-hue);
+}
+
+.fwm-radar-ring-marker::before {
+  left: 0;
+}
+
+.fwm-radar-ring-marker::after {
+  right: 0;
+}
+
+.fwm-radar-ring-marker-dot {
+  width: var(--fwm-radar-pip);
+  height: var(--fwm-radar-pip);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-radar-hue);
+  box-shadow: var(--fwm-radar-glow);
+}
+
+/* Scope telemetry -- the instrument describing itself, on the dimmest text
+ * rung the system has. Rendered 8px/.1em at `left:-2px` / `right:-2px`, half
+ * off the lattice, rotated into the gutter. v2's own vertical offsets (-16px
+ * and -14px) are eyeballed per string length; `translateY(-50%)` centres both
+ * exactly, whatever they read.
+ * GAP: see docs/gaps-inbox/radar-v2.md#instrument-type-8px-has-no-step */
+.fwm-radar-ring-range,
+.fwm-radar-ring-rate {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-instrument);
+  writing-mode: vertical-rl; /* keyword */
+  white-space: nowrap; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+.fwm-radar-ring-range {
+  left: calc(var(--fwm-radar-rule-w) * -2);
+}
+
+.fwm-radar-ring-rate {
+  right: calc(var(--fwm-radar-rule-w) * -2);
+}
+
+/* ---------------------------------------------------------------------------
+ * Stat tiles -- SPEED / HEADING / TODAY.
+ *
+ * v2: `background:#12141A; border-radius:6px; padding:12px`, no border. The
+ * fill IS the card now -- "x11: data card / stat tile, always radius-2 (6px),
+ * always on --fwm-bg".
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fwm-space-2);
+  flex: none; /* keyword */
+}
+
+.fwm-radar-tile {
+  padding: var(--fwm-space-3);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card);
+  font-family: var(--fwm-font-data);
+  text-align: center; /* keyword */
+  min-width: 0;
+}
+
+/* Rendered 9px, which is below the stated 11px phone type floor.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-radar-tile-label {
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.18);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+/*
+ * TEXT SIZE ABOVE 125%.
+ *
+ * The tiles are a three-up grid on a 360dp phone, so each is about 78px wide,
+ * and the tracking the design puts on these labels is 18% of the type size.
+ * That fits at the drawn size and stops fitting once the driver scales the
+ * type up: measured, HEADING renders 91px wide at 150% and is clipped by the
+ * tile, so the word reads as HEADIN.
+ *
+ * The tracking is what goes, not the size. The label's job at 150% is to be
+ * READ, and the driver asked for it to be bigger; the letterspaced look is a
+ * styling choice, and a styling choice loses to a legibility one. Below 138%
+ * nothing changes, so the design renders exactly as drawn at its own size.
+ *
+ * `data-fwm-text-scale` is written by app/textScale.ts alongside the root font
+ * size, which is why the ratio is available to CSS at all.
+ */
+:root[data-fwm-text-scale='1.375'] .fwm-radar-tile-label,
+:root[data-fwm-text-scale='1.5'] .fwm-radar-tile-label {
+  letter-spacing: normal; /* keyword */
+}
+
+/* Rendered 26px; --fwm-text-title is 24px, the nearest step. */
+.fwm-radar-tile-value {
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap; /* keyword */
+}
+
+/* Rendered 9px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-radar-tile-unit {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-disabled);
+  white-space: nowrap; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Degraded-state action -- RETRY LOCK / ALLOW / RETRY SYNC.
+ *
+ * v2's state matrix redraws this as the flat control: `height:44px;
+ * background:#1B1E25; border-radius:8px`, no edge. It sits at the bottom of
+ * the card in the matrix, so `margin-top:auto` holds it there.
+ *
+ * `OfflineView` reuses this component for RETRY SYNC, so the offline screen
+ * picks up the flat treatment too. That is the intended reading of a global
+ * "flat borderless controls" pass; see docs/gaps-inbox/radar-v2.md.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none; /* keyword */
+  margin-top: auto; /* keyword */
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  padding: 0 var(--fwm-space-4);
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-control);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-body) / 10);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* An action with nothing wired to it says so instead of pretending. With no
+ * edge left to dim, the fill steps down the surface ladder. */
+.fwm-radar-action:disabled {
+  background: var(--fwm-surface-1);
+  color: var(--fwm-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * The takeover.
+ *
+ * "A live camera alert always wins the screen."
+ *   -- Flockys Screens II.dc.html, B10 · CROSSING IN - ESCALATION LADDER
+ *
+ * RADAR's alert presentation is RADAR itself, so the takeover is not a second
+ * design: it is this screen, opaque, filling its container, painted last, with
+ * the strips suppressed. Nothing renders over it.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar[data-fwm-radar-takeover="true"] {
+  position: absolute;
+  inset: 0;
+  background: var(--fwm-bg);
+  /* Above the screen content and any sheet that was open when it fired. The
+     shell has already moved that sheet aside; this is belt and braces. */
+  z-index: 1;
+  overflow-y: auto; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * TELEMETRY, COMPACT
+ *
+ * The same three numbers as the drawn cards, as one row under the GPS status
+ * line. They moved because three full cards below the dial put the least
+ * urgent readings in the most valuable space on the screen.
+ *
+ * No card fill and no border - a single hairline rule between the values, in
+ * the v2 manner: depth from fill and rules, not from boxes.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-tiles[data-fwm-radar-tiles='compact'] {
+  gap: 0;
+  margin-top: var(--fwm-space-1);
+}
+
+.fwm-radar-tiles[data-fwm-radar-tiles='compact'] .fwm-radar-tile {
+  flex: 1 1 0;
+  /* The base tile is a block, so its three children stack. Without this the
+     "row" below does nothing and the strip is 71px tall - which is what it
+     was, measured. */
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-2) var(--fwm-space-1);
+  border-radius: var(--fwm-radius-0);
+  background: transparent; /* keyword */
+}
+
+/* The rule BETWEEN, not around: three boxes become one row. */
+.fwm-radar-tiles[data-fwm-radar-tiles='compact'] .fwm-radar-tile + .fwm-radar-tile {
+  border-left: var(--fwm-radar-rule-w) solid var(--fwm-line-soft);
+}
+
+.fwm-radar-tiles[data-fwm-radar-tiles='compact'] .fwm-radar-tile-value {
+  font-size: var(--fwm-text-subtitle);
+}
+
+/* The unit sits beside the number instead of under it, which is what lets the
+   row be one line tall. */
+.fwm-radar-tiles[data-fwm-radar-tiles='compact'] .fwm-radar-tile-unit,
+.fwm-radar-tiles[data-fwm-radar-tiles='compact'] .fwm-radar-tile-label {
+  font-size: var(--fwm-text-micro);
+}
+
+/* ---------------------------------------------------------------------------
+ * THE LIVE ZONE CARD
+ *
+ * ZONE AUDIT's reading for where the vehicle is, under the dial that draws it.
+ *
+ * Built in the INTEL CARD's language rather than a second one: the hue-lit top
+ * rule, the title row with a readout opposite, the mono sub-line, then a row of
+ * bordered fact tiles. A zone is the same shape of statement about a bigger
+ * subject. Two card idioms on one screen is how an interface stops feeling
+ * like one product.
+ *
+ * The top rule carries the RADAR STATE hue, which is what makes it feel live -
+ * green while the road is clear, crimson while something is inside the
+ * threshold - without printing a second copy of the state anywhere.
+ * ------------------------------------------------------------------------ */
+
+/* NO LIT TOP RULE.
+ *
+ * It had one -- a 3px bar in the radar state's hue across the top edge. It went
+ * because it was decoration doing an information job badly: the state is
+ * already said in words and at 80px on the same screen, so a coloured stripe
+ * over the card was a third copy of a fact nobody was missing, and it read as
+ * ornament stuck on top of a card rather than as part of it.
+ *
+ * The hue local stays. `[data-fwm-radar-zone-state]` still resolves it, and the
+ * counts below still take it -- the card is tinted by its state, it just is not
+ * capped by a bar. */
+.fwm-radar-zone {
+  /* The state hue, defaulting to the calm one. Overridden per state below,
+     exactly as the intel card sets --fwm-intel-hue. */
+  --fwm-radar-zone-hue: var(--fwm-text-muted);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-2);
+  padding: var(--fwm-space-4);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-card);
+}
+
+.fwm-radar-zone[data-fwm-radar-zone-state="clear"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-clear);
+}
+.fwm-radar-zone[data-fwm-radar-zone-state="approaching"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-approaching);
+}
+.fwm-radar-zone[data-fwm-radar-zone-state="in_range"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-in-range);
+}
+.fwm-radar-zone[data-fwm-radar-zone-state="multiple"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-multiple);
+}
+/* Muted and no-GPS keep the neutral rule: a muted camera still counts here,
+   but the card must not look like it is alerting. */
+.fwm-radar-zone[data-fwm-radar-zone-state="muted"],
+.fwm-radar-zone[data-fwm-radar-zone-state="no_gps"] {
+  --fwm-radar-zone-hue: var(--fwm-text-disabled);
+}
+
+.fwm-radar-zone-title-row {
+  display: flex;
+  align-items: baseline; /* keyword */
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  min-width: 0;
+}
+
+/* The place name, at the intel card's title weight and tracking. */
+.fwm-radar-zone-title {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-title) * 0.06);
+  color: var(--fwm-text);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis;
+}
+
+.fwm-radar-zone-readout {
+  flex: none; /* keyword */
+  margin: 0;
+  font-size: var(--fwm-text-body);
+  color: var(--fwm-radar-zone-hue);
+}
+
+/* The county, or the word for having none. Mono, like the intel id line. */
+.fwm-radar-zone-subline {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis;
+}
+
+.fwm-radar-zone-empty {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radar-zone-tiles {
+  display: flex;
+  gap: var(--fwm-space-2);
+  margin-top: var(--fwm-space-2);
+}
+
+/* NO BOX AROUND EACH COUNT.
+ *
+ * Every tile had a border and a fill, which drew four little cards inside a
+ * card: the eye landed on the boxes, and the numbers -- the only thing on this
+ * card anybody reads -- were the least prominent part of it.
+ *
+ * The numbers stand on their own ground now. They are separated by space and by
+ * type weight, which is what separates them on every other surface in this
+ * product, and the card reads as one thing instead of five. */
+.fwm-radar-zone-tile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: calc(var(--fwm-space-1) / 2);
+  min-width: 0;
+}
+
+.fwm-radar-zone-tile-label {
+  display: block;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.16);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis;
+}
+
+/* The number is the point of the tile, so it is the readout size, not body. */
+.fwm-radar-zone-tile-value {
+  display: block;
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  color: var(--fwm-text);
+}
+
+/* Zero is a real answer - "0 POLICE" is information - but it is drawn muted so
+   the eye lands on the counts that are not zero. */
+.fwm-radar-zone-tile[data-fwm-radar-zone-zero="true"] .fwm-radar-zone-tile-value {
+  color: var(--fwm-text-muted);
+}
+
+/* The CAMERAS tile is the headline of the card and takes the state hue. */
+.fwm-radar-zone-tile[data-fwm-radar-zone-tile="CAMERAS"] .fwm-radar-zone-tile-value {
+  color: var(--fwm-radar-zone-hue);
+}
+
+/* THE ZONE CARD RIDES THE BOTTOM OF THE SCOPE.
+ *
+ * The scope now fills the screen, which pushed this card off the bottom of the
+ * column -- present, correct, and never seen. It is pinned instead: `sticky`
+ * keeps it in flow (so it never overlaps anything above it) while holding it
+ * against the bottom of the scrolling column.
+ *
+ * Translucent, so the lattice runs through it. A solid card cut a rectangle out
+ * of the scope; this one sits on it. */
+.fwm-radar:has(.fwm-sweep-dial[data-fwm-sweep-bleed="true"]) .fwm-radar-zone {
+  position: sticky;
+  bottom: 0;
+  background: var(--fwm-surface-card-over);
+  backdrop-filter: blur(var(--fwm-space-1));
+}
+
+/* ---------------------------------------------------------------------------
+ * THE ZONE STRIP - one row, flush against the dock.
+ *
+ * `sticky` so it holds the bottom of the scrolling column, and negative side
+ * margins so it runs the full width of the screen rather than sitting inside
+ * the column's padding: an inset row reads as a card again, and the point of
+ * the strip is that it is chrome, not content.
+ *
+ * A hairline on top and the dock's own ground underneath, which is what joins
+ * it to the navigation bar below rather than floating it above.
+ * ------------------------------------------------------------------------ */
+
+.fwm-radar-zone-strip {
+  --fwm-radar-zone-hue: var(--fwm-text-muted);
+
+  flex: none; /* keyword */
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--fwm-space-2);
+  margin: 0;
+  /* TIGHT AND TRANSLUCENT.
+   *
+   * It was `--fwm-space-2` of padding on a solid `--fwm-bg`, which put a black
+   * bar across the bottom of the scope with more empty space in it than text.
+   * One line of type needs one line of room, and the lattice should run behind
+   * it -- the strip is a caption ON the instrument, not a shelf under it.
+   *
+   * No top rule either: the dock below already draws one, and two hairlines a
+   * few pixels apart is a seam, not a separation. */
+  padding: var(--fwm-space-1) var(--fwm-space-4);
+  background: var(--fwm-surface-card-over);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.1);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  overflow-x: hidden; /* keyword */
+}
+
+.fwm-radar-zone-strip[data-fwm-radar-zone-state="clear"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-clear);
+}
+.fwm-radar-zone-strip[data-fwm-radar-zone-state="approaching"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-approaching);
+}
+.fwm-radar-zone-strip[data-fwm-radar-zone-state="in_range"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-in-range);
+}
+.fwm-radar-zone-strip[data-fwm-radar-zone-state="multiple"] {
+  --fwm-radar-zone-hue: var(--fwm-alert-multiple);
+}
+
+.fwm-radar-zone-strip-where {
+  font-weight: 700;
+  color: var(--fwm-text);
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+}
+
+/* The count takes the state hue: it is the number the state is ABOUT, and it
+ * saves the strip from printing the state a second time in words. */
+.fwm-radar-zone-strip-count {
+  font-weight: 700;
+  color: var(--fwm-radar-zone-hue);
+}
+
+.fwm-radar-zone-strip-unit,
+.fwm-radar-zone-strip-radius,
+.fwm-radar-zone-strip-empty {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-radar-zone-strip-sep {
+  color: var(--fwm-line-strong);
+}
+
+.fwm-radar-body::-webkit-scrollbar {
+  display: none; /* keyword */
+}
+
+/* =============================================================================
+ * THE MAP GETS THE SCREEN. THE READOUTS FLOAT ON IT.
+ * =============================================================================
+ * The column stacked GPS row, telemetry, an 80px hero and the direction line
+ * ABOVE the scope, and gave the scope whatever height was left. On a 852px
+ * phone that is 216px of text and 450px of map -- so the thing the screen is
+ * about got half the screen, and zooming in had almost no room to open into.
+ *
+ * They are all one-line readouts. Floating them over the top of the map costs
+ * the map nothing but the few rows they actually occupy, and gives it the
+ * ~216px back. That is the difference between a scope you squint at and a map
+ * you can read.
+ *
+ * `pointer-events: none` on the overlay: it is text, and it sits over the
+ * surface a driver pans and pinches. Anything readable there must never eat a
+ * gesture meant for the map underneath.
+ * ========================================================================== */
+
+.fwm-radar-body {
+  position: relative;
+}
+
+/* IN FLOW, NOT FLOATING.
+ *
+ * It was absolutely positioned over the map, which gave the scope the whole
+ * column -- and put the readouts straight on top of the scope's own chrome: the
+ * range rail's end labels landed across the GPS row, and RECENTRE printed over
+ * the word HEADING. Two layers both anchored to the top of the same box will
+ * always collide.
+ *
+ * The readouts sit above the map again. The space they were taking is given
+ * back a different way: the hero is a title-sized number rather than an 80px
+ * one, and the rows are tight. That is most of the height with none of the
+ * overlap. */
+.fwm-radar-overlay {
+  /* =========================================================================
+   * OVER THE MAP, NOT ABOVE IT.
+   * =========================================================================
+   * The comment beside this block already said "over the map"; the rules did
+   * not. `flex: none` in a column means the readouts TAKE height, and they were
+   * taking about a fifth of a phone before the map got its first pixel -- the
+   * GPS row, three tiles, the hero and the state line, none of which is more
+   * than one line of text.
+   *
+   * Absolutely positioned now, so the map starts immediately under the header
+   * and these float on it. The screen gets that fifth back and the map is the
+   * subject, which is the whole argument for having a map.
+   *
+   * `pointer-events: none` is what makes it work rather than merely look
+   * right: a transparent panel across the top of a map is a dead zone where
+   * drags and pinches land on nothing. Gestures pass through to the map; the
+   * few children that are actually controls take their events back below.
+   * ====================================================================== */
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-3) var(--fwm-space-4) var(--fwm-space-4);
+  pointer-events: none; /* keyword */
+  /* A SCRIM, NOT A PANEL. White-on-map text is unreadable wherever the map is
+   * bright -- and the coverage field goes yellow-white exactly where the news
+   * is worst, which is where these readings matter most. A gradient from the
+   * page colour to nothing keeps the type legible without drawing a box the
+   * map has to live under. */
+  background: linear-gradient(
+    to bottom,
+    var(--fwm-bg) 0%,
+    var(--fwm-bg) 62%,
+    transparent 100%
+  );
+}
+
+/* The controls inside the scrim take their events back. Everything else stays
+   transparent to a thumb. */
+.fwm-radar-overlay button,
+.fwm-radar-overlay a,
+.fwm-radar-overlay [role='button'] {
+  pointer-events: auto; /* keyword */
+}
+
+/* The hero is a title-sized number, not an 80px one. At 5rem it took a fifth of
+ * the screen for a figure the direction line repeats in words underneath; the
+ * map is the subject and it needed that height back. */
+.fwm-radar-overlay .fwm-radar-digits {
+  font-size: var(--fwm-text-title);
+}
+
+.fwm-radar-overlay .fwm-radar-unit {
+  font-size: var(--fwm-text-label);
+}
+
+.fwm-radar-overlay .fwm-radar-readout {
+  align-items: center;
+}
+
+/* =============================================================================
+ * THE CORRIDOR - the road ahead, above the scope.
+ *
+ * Tight on purpose. It carries four rows of real information in about the
+ * height the hero readout alone used to take, because the space above the map
+ * is the most valuable on the screen and the map has first claim on it.
+ * ========================================================================== */
+
+.fwm-corridor {
+  display: flex;
+  flex: none; /* keyword */
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  padding: var(--fwm-space-2) var(--fwm-space-4) 0;
+}
+
+.fwm-corridor-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fwm-space-2);
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.12);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-corridor-label {
+  color: var(--fwm-alert-clear);
+}
+
+/* Pushed to the far end, where the design puts the satellite count. */
+.fwm-corridor-sats {
+  margin-left: auto;
+  color: var(--fwm-accent-scan);
+}
+
+/* THE STRIP OF ROAD. Left edge is here, right edge is the full range, and every
+ * mark sits at its true share of that -- a distance scale, not a schematic. */
+.fwm-corridor-bar {
+  position: relative;
+  height: var(--fwm-space-8);
+  border-radius: var(--fwm-radius-2);
+  background: var(--fwm-surface-card);
+  overflow: hidden; /* keyword */
+}
+
+.fwm-corridor-mark {
+  position: absolute;
+  top: var(--fwm-space-1);
+  bottom: var(--fwm-space-1);
+  width: var(--fwm-radar-rule-w);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-corridor-mark[data-fwm-corridor-state="approaching"] {
+  background: var(--fwm-alert-approaching);
+}
+
+.fwm-corridor-mark[data-fwm-corridor-state="in_range"] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-corridor-scale {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-corridor-read {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+}
+
+.fwm-corridor-words {
+  min-width: 0;
+}
+
+.fwm-corridor-clear {
+  margin: 0;
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  color: var(--fwm-alert-clear);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-corridor-stretch {
+  margin: 0;
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-alert-approaching);
+  white-space: nowrap; /* keyword */
+}
+
+/* REROUTE hands the detour to whatever maps app the phone has. It says "around
+ * this stretch", never "avoids all cameras" -- see `../reroute.ts`. */
+.fwm-corridor-reroute {
+  flex: none; /* keyword */
+  min-height: var(--fwm-touch-min);
+  padding: var(--fwm-space-2) var(--fwm-space-4);
+  border: var(--fwm-radar-rule-w) solid var(--fwm-accent-scan);
+  border-radius: var(--fwm-radius-3);
+  background: transparent; /* keyword */
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-accent-scan);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* Each mark's position along the strip, quantised to whole percent. Same
+ * arrangement as the camera blend ramp and the rail blocks: a measurement per
+ * element, declared here rather than emitted as an inline style. */
+.fwm-corridor-mark[data-fwm-corridor-at="0"],
+.fwm-topblock-mark[data-fwm-corridor-at="0"] {
+  left: 0%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="10"],
+.fwm-topblock-mark[data-fwm-corridor-at="10"] {
+  left: 1%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="20"],
+.fwm-topblock-mark[data-fwm-corridor-at="20"] {
+  left: 2%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="30"],
+.fwm-topblock-mark[data-fwm-corridor-at="30"] {
+  left: 3%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="40"],
+.fwm-topblock-mark[data-fwm-corridor-at="40"] {
+  left: 4%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="50"],
+.fwm-topblock-mark[data-fwm-corridor-at="50"] {
+  left: 5%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="60"],
+.fwm-topblock-mark[data-fwm-corridor-at="60"] {
+  left: 6%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="70"],
+.fwm-topblock-mark[data-fwm-corridor-at="70"] {
+  left: 7%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="80"],
+.fwm-topblock-mark[data-fwm-corridor-at="80"] {
+  left: 8%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="90"],
+.fwm-topblock-mark[data-fwm-corridor-at="90"] {
+  left: 9%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="100"],
+.fwm-topblock-mark[data-fwm-corridor-at="100"] {
+  left: 10%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="110"],
+.fwm-topblock-mark[data-fwm-corridor-at="110"] {
+  left: 11%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="120"],
+.fwm-topblock-mark[data-fwm-corridor-at="120"] {
+  left: 12%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="130"],
+.fwm-topblock-mark[data-fwm-corridor-at="130"] {
+  left: 13%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="140"],
+.fwm-topblock-mark[data-fwm-corridor-at="140"] {
+  left: 14%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="150"],
+.fwm-topblock-mark[data-fwm-corridor-at="150"] {
+  left: 15%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="160"],
+.fwm-topblock-mark[data-fwm-corridor-at="160"] {
+  left: 16%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="170"],
+.fwm-topblock-mark[data-fwm-corridor-at="170"] {
+  left: 17%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="180"],
+.fwm-topblock-mark[data-fwm-corridor-at="180"] {
+  left: 18%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="190"],
+.fwm-topblock-mark[data-fwm-corridor-at="190"] {
+  left: 19%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="200"],
+.fwm-topblock-mark[data-fwm-corridor-at="200"] {
+  left: 20%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="210"],
+.fwm-topblock-mark[data-fwm-corridor-at="210"] {
+  left: 21%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="220"],
+.fwm-topblock-mark[data-fwm-corridor-at="220"] {
+  left: 22%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="230"],
+.fwm-topblock-mark[data-fwm-corridor-at="230"] {
+  left: 23%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="240"],
+.fwm-topblock-mark[data-fwm-corridor-at="240"] {
+  left: 24%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="250"],
+.fwm-topblock-mark[data-fwm-corridor-at="250"] {
+  left: 25%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="260"],
+.fwm-topblock-mark[data-fwm-corridor-at="260"] {
+  left: 26%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="270"],
+.fwm-topblock-mark[data-fwm-corridor-at="270"] {
+  left: 27%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="280"],
+.fwm-topblock-mark[data-fwm-corridor-at="280"] {
+  left: 28%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="290"],
+.fwm-topblock-mark[data-fwm-corridor-at="290"] {
+  left: 29%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="300"],
+.fwm-topblock-mark[data-fwm-corridor-at="300"] {
+  left: 30%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="310"],
+.fwm-topblock-mark[data-fwm-corridor-at="310"] {
+  left: 31%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="320"],
+.fwm-topblock-mark[data-fwm-corridor-at="320"] {
+  left: 32%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="330"],
+.fwm-topblock-mark[data-fwm-corridor-at="330"] {
+  left: 33%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="340"],
+.fwm-topblock-mark[data-fwm-corridor-at="340"] {
+  left: 34%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="350"],
+.fwm-topblock-mark[data-fwm-corridor-at="350"] {
+  left: 35%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="360"],
+.fwm-topblock-mark[data-fwm-corridor-at="360"] {
+  left: 36%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="370"],
+.fwm-topblock-mark[data-fwm-corridor-at="370"] {
+  left: 37%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="380"],
+.fwm-topblock-mark[data-fwm-corridor-at="380"] {
+  left: 38%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="390"],
+.fwm-topblock-mark[data-fwm-corridor-at="390"] {
+  left: 39%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="400"],
+.fwm-topblock-mark[data-fwm-corridor-at="400"] {
+  left: 40%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="410"],
+.fwm-topblock-mark[data-fwm-corridor-at="410"] {
+  left: 41%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="420"],
+.fwm-topblock-mark[data-fwm-corridor-at="420"] {
+  left: 42%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="430"],
+.fwm-topblock-mark[data-fwm-corridor-at="430"] {
+  left: 43%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="440"],
+.fwm-topblock-mark[data-fwm-corridor-at="440"] {
+  left: 44%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="450"],
+.fwm-topblock-mark[data-fwm-corridor-at="450"] {
+  left: 45%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="460"],
+.fwm-topblock-mark[data-fwm-corridor-at="460"] {
+  left: 46%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="470"],
+.fwm-topblock-mark[data-fwm-corridor-at="470"] {
+  left: 47%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="480"],
+.fwm-topblock-mark[data-fwm-corridor-at="480"] {
+  left: 48%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="490"],
+.fwm-topblock-mark[data-fwm-corridor-at="490"] {
+  left: 49%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="500"],
+.fwm-topblock-mark[data-fwm-corridor-at="500"] {
+  left: 50%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="510"],
+.fwm-topblock-mark[data-fwm-corridor-at="510"] {
+  left: 51%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="520"],
+.fwm-topblock-mark[data-fwm-corridor-at="520"] {
+  left: 52%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="530"],
+.fwm-topblock-mark[data-fwm-corridor-at="530"] {
+  left: 53%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="540"],
+.fwm-topblock-mark[data-fwm-corridor-at="540"] {
+  left: 54%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="550"],
+.fwm-topblock-mark[data-fwm-corridor-at="550"] {
+  left: 55%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="560"],
+.fwm-topblock-mark[data-fwm-corridor-at="560"] {
+  left: 56%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="570"],
+.fwm-topblock-mark[data-fwm-corridor-at="570"] {
+  left: 57%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="580"],
+.fwm-topblock-mark[data-fwm-corridor-at="580"] {
+  left: 58%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="590"],
+.fwm-topblock-mark[data-fwm-corridor-at="590"] {
+  left: 59%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="600"],
+.fwm-topblock-mark[data-fwm-corridor-at="600"] {
+  left: 60%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="610"],
+.fwm-topblock-mark[data-fwm-corridor-at="610"] {
+  left: 61%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="620"],
+.fwm-topblock-mark[data-fwm-corridor-at="620"] {
+  left: 62%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="630"],
+.fwm-topblock-mark[data-fwm-corridor-at="630"] {
+  left: 63%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="640"],
+.fwm-topblock-mark[data-fwm-corridor-at="640"] {
+  left: 64%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="650"],
+.fwm-topblock-mark[data-fwm-corridor-at="650"] {
+  left: 65%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="660"],
+.fwm-topblock-mark[data-fwm-corridor-at="660"] {
+  left: 66%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="670"],
+.fwm-topblock-mark[data-fwm-corridor-at="670"] {
+  left: 67%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="680"],
+.fwm-topblock-mark[data-fwm-corridor-at="680"] {
+  left: 68%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="690"],
+.fwm-topblock-mark[data-fwm-corridor-at="690"] {
+  left: 69%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="700"],
+.fwm-topblock-mark[data-fwm-corridor-at="700"] {
+  left: 70%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="710"],
+.fwm-topblock-mark[data-fwm-corridor-at="710"] {
+  left: 71%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="720"],
+.fwm-topblock-mark[data-fwm-corridor-at="720"] {
+  left: 72%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="730"],
+.fwm-topblock-mark[data-fwm-corridor-at="730"] {
+  left: 73%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="740"],
+.fwm-topblock-mark[data-fwm-corridor-at="740"] {
+  left: 74%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="750"],
+.fwm-topblock-mark[data-fwm-corridor-at="750"] {
+  left: 75%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="760"],
+.fwm-topblock-mark[data-fwm-corridor-at="760"] {
+  left: 76%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="770"],
+.fwm-topblock-mark[data-fwm-corridor-at="770"] {
+  left: 77%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="780"],
+.fwm-topblock-mark[data-fwm-corridor-at="780"] {
+  left: 78%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="790"],
+.fwm-topblock-mark[data-fwm-corridor-at="790"] {
+  left: 79%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="800"],
+.fwm-topblock-mark[data-fwm-corridor-at="800"] {
+  left: 80%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="810"],
+.fwm-topblock-mark[data-fwm-corridor-at="810"] {
+  left: 81%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="820"],
+.fwm-topblock-mark[data-fwm-corridor-at="820"] {
+  left: 82%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="830"],
+.fwm-topblock-mark[data-fwm-corridor-at="830"] {
+  left: 83%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="840"],
+.fwm-topblock-mark[data-fwm-corridor-at="840"] {
+  left: 84%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="850"],
+.fwm-topblock-mark[data-fwm-corridor-at="850"] {
+  left: 85%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="860"],
+.fwm-topblock-mark[data-fwm-corridor-at="860"] {
+  left: 86%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="870"],
+.fwm-topblock-mark[data-fwm-corridor-at="870"] {
+  left: 87%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="880"],
+.fwm-topblock-mark[data-fwm-corridor-at="880"] {
+  left: 88%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="890"],
+.fwm-topblock-mark[data-fwm-corridor-at="890"] {
+  left: 89%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="900"],
+.fwm-topblock-mark[data-fwm-corridor-at="900"] {
+  left: 90%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="910"],
+.fwm-topblock-mark[data-fwm-corridor-at="910"] {
+  left: 91%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="920"],
+.fwm-topblock-mark[data-fwm-corridor-at="920"] {
+  left: 92%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="930"],
+.fwm-topblock-mark[data-fwm-corridor-at="930"] {
+  left: 93%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="940"],
+.fwm-topblock-mark[data-fwm-corridor-at="940"] {
+  left: 94%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="950"],
+.fwm-topblock-mark[data-fwm-corridor-at="950"] {
+  left: 95%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="960"],
+.fwm-topblock-mark[data-fwm-corridor-at="960"] {
+  left: 96%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="970"],
+.fwm-topblock-mark[data-fwm-corridor-at="970"] {
+  left: 97%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="980"],
+.fwm-topblock-mark[data-fwm-corridor-at="980"] {
+  left: 98%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="990"],
+.fwm-topblock-mark[data-fwm-corridor-at="990"] {
+  left: 99%;
+}
+
+.fwm-corridor-mark[data-fwm-corridor-at="1000"],
+.fwm-topblock-mark[data-fwm-corridor-at="1000"] {
+  left: 100%;
+}
+
+/* =============================================================================
+ * THE TOP BLOCK - v3. One row, four columns.
+ *
+ * Replaces the corridor strip, the CLEAR verdict, the REROUTE key, the GPS
+ * coordinate row, three stat tiles, the hero readout and the state line. Seven
+ * stacked one-line things became one row, and the map got the difference.
+ *
+ * Column widths are the design's: a 56px sign, a 110px reroute stack, the
+ * ladder taking what is left, a 40px compass. Only the ladder flexes, because
+ * only the ladder has a variable amount to say.
+ * ========================================================================== */
+
+.fwm-topblock {
+  /* THE DESIGN'S OWN COLUMNS, at the design's own width.
+   *
+   * v3 is drawn at 375px: a 56px sign, a 110px reroute stack, the ladder taking
+   * what is left, a 40px compass. Those three fixed widths were already here and
+   * were already right -- what was wrong is that they were the ONLY thing that
+   * was, so on anything wider than a small phone the ladder swallowed the extra
+   * space and the row stopped being the drawing. The block is capped at its
+   * design width and centred, so a wide viewport gets the same instrument
+   * rather than a stretched one. */
+  /* The speed column holds the words SPEED / LIMIT, which are wider than the
+     sign that used to box them. Measured in type so it holds the same words at
+     every text size. */
+  --fwm-plate-w: calc(var(--fwm-text-micro) * 5.5);
+  /**
+   * Wide enough for the longest verdict the corridor produces -- "CLEAR FOR
+   * 2260 FT" -- because this column is FIXED and the text cannot push it.
+   *
+   * MEASURED IN TYPE, NOT IN SPACE. It was `--fwm-space-4 * 8.25`, which is
+   * 132px and stays 132px at every text size, while the verdict inside it
+   * grows with the TEXT SIZE control. At 100% the string is 96px and fits; at
+   * 125% it is ~120px plus the `>>>` marker and does not, so it wrapped on a
+   * real drive.
+   *
+   * `--fwm-text-micro` is a rem, so this tracks the type it has to hold and
+   * the column is the same number of CHARACTERS wide at every setting.
+   *
+   * NARROWED, because it no longer holds the verdict. This column was sized
+   * around "CLEAR FOR 2260 FT" -- twelve characters of micro type for a line
+   * that has moved to the caption over the ladder. What is left is the REROUTE
+   * key and its glyph, and sizing a control a driver rarely presses to a string
+   * it no longer contains was costing the instrument ~70px. The ladder takes
+   * all of it.
+   *
+   * Still fixed against the DATA: nothing the corridor reports can change it.
+   */
+  --fwm-reroute-w: calc(var(--fwm-text-micro) * 6.5);
+  /* Wider than the dial itself: the column now carries a rule and its gutter
+     on the left, and the cardinal plus the degrees underneath. Sized so the
+     dial keeps its drawn diameter rather than being squeezed by the padding. */
+  --fwm-compass-w: calc(var(--fwm-space-4) * 3.75);
+  /**
+   * THE GUTTERS GIVE WAY BEFORE THE TYPE DOES.
+   *
+   * The design is drawn at 375px and the columns are fixed at 56/110/1fr/40, so
+   * on a narrower phone the only flexible column -- the ladder -- absorbs the
+   * whole shortfall. At 320px it collapses to 69px while "CORRIDOR AHEAD" needs
+   * 99, and the caption paints thirty pixels into the compass. Measured, not
+   * guessed: that is why the block read as "completely jacked" on a 358px
+   * screen and looked perfect at 393.
+   *
+   * Shrinking type would fix it and is not allowed -- every label stays at or
+   * above the 11px floor, which is the one rule this block does not bend. So
+   * the padding and the gaps give way instead, buying back roughly 25px before
+   * anything overlaps, and they shrink with the viewport rather than at a
+   * breakpoint so there is no width where it snaps.
+   */
+  --fwm-block-gap: clamp(
+    var(--fwm-space-1),
+    calc(var(--fwm-space-2) - var(--fwm-space-1) / 4),
+    var(--fwm-space-2)
+  );
+  --fwm-block-pad: var(--fwm-space-fluid-3);
+  /* 1.5px. The keys and the sign are drawn with a heavier rule than the
+   * panel edges -- --fwm-radar-rule-w is the 1px hairline, this is the line
+   * that says "this is a control". */
+  --fwm-key-rule-w: calc(var(--fwm-space-1) * 0.375);
+  --fwm-compass-ring-w: calc(var(--fwm-space-1) * 0.45);
+
+  position: relative;
+  z-index: 2;
+  display: grid;
+  /**
+   * FULL WIDTH, and the two text columns take the slack.
+   *
+   * The block was capped at its 375px design width and centred, which on a
+   * wider screen left dead space either side while the ladder starved: the
+   * caption truncated to "CORRIDOR AHE..." and the CLEAR verdict crowded the
+   * mile scale, with empty page beside both.
+   *
+   * EVERY COLUMN BUT THE LADDER IS A FIXED WIDTH, and that is the point.
+   *
+   * The reroute column used to size to its own content, so the block reflowed
+   * whenever the VERDICT changed: "CLEAR FOR 0.5 MI" gave a wide corridor panel
+   * with NOW / 1 MI / 2 MI / 3 MI evenly spread, and one tick later "CLEAR FOR
+   * 1860 FT" stole eighty pixels, truncating the caption to "CORRIDOR..." and
+   * mashing the scale into "NOW1 MI2 MI3 MI". The instrument changed shape
+   * because the text in the box beside it got longer, which is exactly what a
+   * driver's glance cannot absorb.
+   *
+   * So the sign, the reroute column and the compass are all fixed, and the
+   * ladder takes whatever is left. The ladder still varies with the SCREEN,
+   * which is fine -- it never varies with the DATA.
+   */
+  /**
+   * THE LADDER HAS A FLOOR, AND THE REROUTE COLUMN IS WHAT PAYS FOR IT.
+   *
+   * Fixing the reroute column stopped the block reflowing when the VERDICT
+   * changed, which was the bug. It also made the ladder the only column that
+   * could absorb a narrow SCREEN, and it cannot absorb much: measured, the mile
+   * scale needs 89px to lay NOW / 1 MI / 2 MI / 3 MI side by side, and the
+   * ladder gets 117px at 390, 102 at 375, 88 at 360 and 51 at 320. So on a
+   * 320px phone the last two posts painted out over the compass.
+   *
+   * `minmax(0, …)` on the reroute column and a floor on the ladder swap which
+   * one gives way. This does NOT reintroduce the reflow bug: a `minmax(0, X)`
+   * track is sized by the CONTAINER, never by the text inside it, so the column
+   * is still exactly X at every width where X fits and the verdict still cannot
+   * push it. Only the viewport can, and the viewport does not change while
+   * somebody is driving.
+   */
+  --fwm-ladder-min: calc(var(--fwm-space-4) * 5.625);
+  /**
+   * THREE COLUMNS NOW, not four.
+   *
+   * The reroute key had a column of its own for as long as the verdict sat
+   * under it. Both have moved -- the verdict to the headline over the ladder,
+   * the key to the foot of it -- so the block is what it always described:
+   * the limit and your speed, the instrument, and which way you are pointed.
+   *
+   * The instrument takes everything the other two do not need.
+   */
+  grid-template-columns:
+    var(--fwm-plate-w)
+    minmax(var(--fwm-ladder-min), 1fr)
+    var(--fwm-compass-w);
+  gap: var(--fwm-block-gap);
+  align-items: start;
+  width: 100%;
+  padding: var(--fwm-block-pad) var(--fwm-block-pad)
+    calc(var(--fwm-block-pad) + var(--fwm-space-1) / 2);
+}
+
+/* THE BLOCK FADES INTO THE MAP RATHER THAN STOPPING AT A LINE.
+ *
+ * There was a hard horizontal cut where the block ended and the ground began,
+ * which reads as two screens stacked -- an instrument panel bolted above a map,
+ * rather than readings sitting on it. A short gradient from the page colour to
+ * nothing lets the map arrive instead of starting.
+ *
+ * `pointer-events: none` because it overhangs the map: a gradient a thumb
+ * cannot drag through is a dead strip along the top of the thing you pan. */
+.fwm-topblock::after {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--fwm-space-4) * -1);
+  left: 0;
+  height: var(--fwm-space-4);
+  background: linear-gradient(to bottom, var(--fwm-bg), transparent);
+  content: ''; /* keyword */
+  pointer-events: none; /* keyword */
+}
+
+/* --- the three columns, and the rules between them ----------------------- */
+
+/**
+ * THE LEFT COLUMN: the posted limit, then your own speed.
+ *
+ * It is TYPE now, not a sign. The MUTCD plate was a white rectangle -- the
+ * single brightest object on a black instrument panel at night -- carrying the
+ * number a driver needs least. The words say what it is; the plate was only
+ * saying "look here", to the wrong place.
+ */
+.fwm-topblock-speed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--fwm-space-1) / 4);
+  align-self: stretch;
+  min-width: 0;
+  padding-right: var(--fwm-block-gap);
+  border-right: var(--fwm-radar-rule-w) solid var(--fwm-line);
+}
+
+/* The sign group: three lines that are one reading. */
+.fwm-topblock-speed-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fwm-topblock-speed-word {
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-plate);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--fwm-text-2);
+}
+
+/* The posted limit. A dash when nothing on the way underneath carries one,
+   which is the normal answer on a side street -- see `speedAt.ts`. */
+.fwm-topblock-speed-limit {
+  margin-top: calc(var(--fwm-space-1) / 2);
+  font-size: var(--fwm-text-heading);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fwm-text);
+}
+
+/**
+ * YOUR speed, and the only thing in this column that changes.
+ *
+ * It carries the over-limit state on itself rather than in a fill behind it:
+ * the chip is gone with the plate, so the colour has to live on the glyphs.
+ */
+.fwm-topblock-speed-you {
+  font-size: var(--fwm-text-figure);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-figure) * -0.02);
+  color: var(--fwm-text);
+}
+
+/* OVER THE LIMIT. Its own hue, deliberately not the in-range red -- driving
+   four over is a fact about the dashboard, and a camera in range has to stay
+   the loudest thing on the screen. */
+.fwm-topblock-speed[data-fwm-speed-over='true'] .fwm-topblock-speed-you {
+  color: var(--fwm-speed-over);
+}
+
+/**
+ * THE HEADLINE over the instrument: the one answer, centred.
+ *
+ * "NEAREST 220 FT" or "CLEAR FOR 3 MI". It replaced a caption that said
+ * "CORRIDOR AHEAD" over a ladder whose own scale already reads NOW / 1 MI /
+ * 2 MI / 3 MI -- the only line above the bar, spent restating the bar.
+ */
+.fwm-topblock-headline {
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  margin: 0;
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap; /* keyword */
+  color: var(--fwm-alert-clear);
+}
+
+/* No corridor, no reading: NO FIX and NO BEARING are absences, and an
+   absence in the CLEAR hue reads as an all-clear it has not earned. */
+.fwm-topblock-headline[data-fwm-verdict='none'] {
+  color: var(--fwm-text-2);
+}
+
+/* The count and the density, one at each end of the ladder's own width. */
+.fwm-topblock-readings {
+  display: flex;
+  gap: var(--fwm-space-1);
+  align-items: baseline;
+  justify-content: space-between;
+  margin: calc(var(--fwm-space-1) / 2) 0 calc(var(--fwm-space-1) / 2);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fwm-accent-scan);
+}
+
+.fwm-topblock-around,
+.fwm-topblock-density {
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* --- the R2-1 plate ------------------------------------------------------ */
+
+/**
+ * REVERSED. The sign is dark and the type is light.
+ *
+ * A real R2-1 is white with black type, and drawing it that way is what let the
+ * plate need no legend. Reversing it keeps every one of those cues -- the
+ * proportions, SPEED over LIMIT over the figure, the rule inset from the edge,
+ * the numerals -- and drops the one thing that was working against the screen:
+ * a white rectangle is the brightest object on a black instrument panel at
+ * night, and it was pulling the eye to the number a driver needs LEAST. The
+ * corridor is what this app is for.
+ *
+ * The brightness is spent on YOUR speed instead, which is the number that
+ * changes and the only one that can be wrong.
+ *
+ * The ground is `--fwm-surface-2` rather than the face's own black: the page is
+ * #000000, so a black plate on it has no silhouette at all and the object would
+ * dissolve into the panel behind the white rule.
+ */
+.fwm-speedplate {
+  /* ONE OBJECT, not two stacked boxes. The design's whole argument for the
+     plate is that the posted limit and your speed "read as one object" -- so
+     the sign face and the speed chip sit on a single ground with a single
+     radius, and the chip is a panel INSIDE the sign rather than a card under
+     it. */
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--fwm-space-1) * 0.75);
+  width: var(--fwm-plate-w);
+  padding: calc(var(--fwm-space-1) * 0.75);
+  border-radius: var(--fwm-radius-3);
+  background: var(--fwm-surface-2);
+}
+
+/* A road sign, reversed: dark face, light rule inset from the edge, rounded
+   corners. The rule is INSET rather than a border so it reads as printed on the
+   sign rather than as the edge of a UI panel.
+
+   `--fwm-text-on-alert` and `--fwm-sign-face` are the two tokens in the system
+   that do NOT shift with the mode, which is what a thing drawn as a physical
+   sign needs -- `--fwm-text` is redefined by four modes and would have flipped
+   this to a light face under two of them. */
+.fwm-speedplate-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  background: var(--fwm-text-on-alert);
+  color: var(--fwm-sign-face);
+  font-family: var(--fwm-font-ui);
+  line-height: 1;
+}
+
+/* The inner box carries the rule; the padding around it is the sign's margin,
+   exactly as the real face is printed. */
+.fwm-speedplate-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: calc(var(--fwm-space-1) * 1.25) 0 var(--fwm-space-1);
+  border: var(--fwm-key-rule-w) solid var(--fwm-sign-face);
+  border-radius: var(--fwm-radius-2);
+}
+
+.fwm-speedplate-word {
+  font-size: var(--fwm-text-plate);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.fwm-speedplate-figure {
+  margin-top: calc(var(--fwm-space-1) / 4);
+  font-size: var(--fwm-text-heading);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-heading) * -0.02);
+}
+
+/**
+ * YOUR number, in the bright chip under the sign.
+ *
+ * The "YOU" caption that used to sit beside it is gone. On a reversed sign this
+ * is the only light-filled object on the plate and it sits directly under the
+ * posted limit, so the caption was spending a third of the chip's width saying
+ * what its position already said -- and it was the reason the two numbers were
+ * set at different sizes on one baseline. The screen-reader label moved to the
+ * chip itself; see SpeedPlate.tsx.
+ */
+.fwm-speedplate-you {
+  display: flex;
+  gap: var(--fwm-space-1);
+  align-items: baseline;
+  justify-content: center;
+  padding: var(--fwm-space-1) calc(var(--fwm-space-1) / 2) calc(var(--fwm-space-1) * 1.25);
+  border-radius: var(--fwm-radius-2);
+  /**
+   * NO FILL WHEN THERE IS NOTHING TO SAY.
+   *
+   * A solid white chip under a reversed sign is the brightest object on the
+   * whole panel, and it was carrying the least urgent number on it -- lit at
+   * full strength on an empty road at night, every second of every drive.
+   *
+   * The fill is the ALERT now, not the container. Off, the number is simply
+   * part of the sign; on, an area of colour arrives where there was none, which
+   * is a far larger change than a white box turning pink and is visible without
+   * being looked at.
+   */
+  background: none; /* keyword */
+}
+
+.fwm-speedplate-you-value {
+  font-size: var(--fwm-text-figure);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-figure) * -0.02);
+  /* Light, like the rest of the reversed sign it now sits on. It goes black
+     only when the fill arrives underneath it -- see the over-limit rule. */
+  color: var(--fwm-sign-face);
+}
+
+/**
+ * OVER THE LIMIT - the CHIP changes, not the digits.
+ *
+ * This used to recolour the numerals and leave the fill alone, which put a
+ * ~4.5:1 tint where a black-on-white readout had been: the loudest thing it
+ * could do was make one small number slightly harder to read.
+ *
+ * Filling the chip changes an area rather than a glyph, so it registers in
+ * peripheral vision -- which is the only kind a driver has to spare -- and the
+ * digits stay black at 7.3:1 on this fill, better contrast than they had as a
+ * tinted numeral. The number never becomes harder to read for being urgent.
+ *
+ * Still `--fwm-speed-over` and deliberately NOT the in-range red: driving four
+ * over is a fact about the dashboard, and a camera in range must remain the
+ * loudest thing on the screen.
+ */
+.fwm-speedplate[data-fwm-speed-over='true'] .fwm-speedplate-you {
+  background: var(--fwm-speed-over);
+}
+
+/* And the digits invert onto it. White on this fill is about 2.7:1 and fails
+   outright; black is 7.28:1, measured -- so the number is at its MOST readable
+   exactly when it matters, rather than paying for the warning with legibility. */
+.fwm-speedplate[data-fwm-speed-over='true'] .fwm-speedplate-you-value {
+  color: var(--fwm-text-on-alert);
+}
+
+/* --- the reroute column -------------------------------------------------- */
+
+.fwm-topblock-reroute {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  /* The key sizes to its content and the VERDICT stays pinned to the bottom of
+     the row, level with the ladder's scale beside it. Without this the key
+     shrinking would pull the verdict up with it and break that line. */
+  justify-content: space-between;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.fwm-topblock-key {
+  /* A KEY, not a word. It was bare cyan text, which on a screen where the only
+     other cyan is the road lines read as a label rather than as something to
+     press. The design boxes it with the turn glyph ABOVE the word -- the arrow
+     is what makes it legible as an action at a glance, and it was missing. */
+  display: flex;
+  /*
+   * FULL HEIGHT AGAIN, because the column changed under it.
+   *
+   * `flex: 1` was removed when this key shared the column with the verdict: it
+   * was absorbing 74px of the row's 101 and dwarfing everything. The verdict
+   * has moved to the caption, so the key is now the column's only child and
+   * `flex: 1` means exactly "the height of the row" -- level with the speed
+   * plate on one side and the ladder on the other. Sized to its content it was
+   * a stub floating in a column-tall gap.
+   */
+  /*
+   * AT THE FOOT OF THE INSTRUMENT, AND UNBOXED.
+   *
+   * It had a column of its own and a cyan rule around it, which made the
+   * control a driver presses least the second-largest object in the block. The
+   * glyph and the word are enough to read as an action; the box was only
+   * making it compete with the ladder.
+   */
+  flex: none;
+  flex-direction: row;
+  gap: calc(var(--fwm-space-1) / 2);
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  margin-top: calc(var(--fwm-space-1) / 2);
+  padding: calc(var(--fwm-space-1) / 2) var(--fwm-space-1);
+  /* No rule. See the note above -- the box was the problem, not the colour. */
+  border: none; /* keyword */
+  background: none; /* keyword */
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-label) * 0.02);
+  color: var(--fwm-accent-scan);
+  white-space: nowrap; /* keyword */
+}
+
+/**
+ * NOTHING TO ROUTE AROUND, and it says so.
+ *
+ * The key was drawn at full cyan on a clear road, where `rerouteWaypoint`
+ * correctly refuses -- there is no way around a stretch with no cameras on it.
+ * A control that looks live and does nothing is the same shape as a broken one,
+ * and this app's rule everywhere else is that a key with nothing behind it
+ * says so rather than pretending.
+ *
+ * Dimmed rather than hidden: the driver should still see that REROUTE exists
+ * and is simply not applicable to the road they are on.
+ */
+.fwm-topblock-key:disabled {
+  color: var(--fwm-text-disabled);
+  cursor: default; /* keyword */
+}
+
+.fwm-topblock-key:disabled .fwm-topblock-key-glyph {
+  stroke: var(--fwm-text-disabled);
+}
+
+.fwm-topblock-key-glyph {
+  /* Beside the word rather than above it, so it is sized to the type it sits
+     next to instead of to the box that used to contain both. */
+  width: var(--fwm-text-label);
+  height: var(--fwm-text-label);
+  flex: none;
+  stroke: var(--fwm-accent-scan);
+  stroke-width: calc(var(--fwm-space-1) * 0.55);
+  fill: none; /* keyword */
+}
+
+/* RADAR'S ONLY GREEN TEXT. The plate owns the posted limit, so the corridor
+   verdict is the one thing on this screen wearing the clear colour -- one thing
+   to read per glance. */
+.fwm-topblock-clear {
+  display: flex;
+  gap: calc(var(--fwm-space-1) / 2);
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: calc(var(--fwm-space-1) * 0.75) calc(var(--fwm-space-1) / 4);
+  border: var(--fwm-key-rule-w) solid var(--fwm-alert-clear);
+  border-radius: var(--fwm-radius-2);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-micro) * -0.04);
+  color: var(--fwm-alert-clear);
+  /**
+   * ONE LINE, ALWAYS.
+   *
+   * This wrapped for a while, on the reasoning that two lines beat a clipped
+   * verdict on a narrow phone. Seen on a real drive it is worse than either:
+   * "CLEAR FOR 2260 FT" broke across two lines and the whole block jumped a
+   * row taller the moment the distance crossed into four digits, so the
+   * instrument changed shape while the driver was looking at it. A readout
+   * that resizes with its own value is the thing this block was rebuilt to
+   * stop.
+   *
+   * The text is NOT what was too big. Measured at 100%: the verdict is 96px in
+   * 128px of column. It wraps because the column is sized in `--fwm-space-*`,
+   * which is px and deliberately does NOT scale, while the type scales with
+   * the TEXT SIZE setting -- so at 125% the words grow and the box does not.
+   * The column is sized in type units now; see `--fwm-reroute-w`.
+   */
+  white-space: nowrap; /* keyword */
+}
+
+/* The chevrons live INSIDE the verdict, tracked hard together so they read as
+   one arrowhead rather than three characters. They were on the REROUTE key,
+   where they competed with the turn glyph for the same meaning.
+ *
+ * DRAWN FROM CSS, not from the DOM. As an element they became part of the
+ * verdict's `textContent` -- so a screen reader announced "greater-than
+ * greater-than greater-than clear for 1.4 miles", and every assertion about
+ * what the verdict SAYS started failing against a string with punctuation
+ * glued to the front. Decoration that changes the text is not decoration. */
+.fwm-topblock-clear[data-fwm-verdict='live']::before {
+  flex: none;
+  font-family: var(--fwm-font-data);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) * -0.16);
+  content: '>>>';
+}
+
+/* The forecast runs under the ladder: it is the least urgent line in the block
+   and the only one allowed the width of two columns. Tracked out so it lands
+   flush with the ladder's right edge, which is the design's own trick for
+   making a full-width line belong to the row above it. */
+/* The forecast now rides in the ladder's caption slot -- see
+   `.fwm-topblock-caption` and RadarTopBlock.tsx. `.fwm-topblock-stretch` is
+   gone with the row it needed: a short green string with dead space beside it
+   was costing ~20px of block height to say what the caption slot was already
+   there to say. */
+
+/* --- the ladder ---------------------------------------------------------- */
+
+/**
+ * THE LADDER FILLS THE ROW, so the scale lands on the reroute key's baseline.
+ *
+ * The grid is `align-items: start`, so every column was as tall as its own
+ * content: the plate and the reroute stack ran to the bottom of the row and the
+ * ladder stopped 17px short, leaving a dead strip under the corridor with the
+ * NOW / 1 MI / 2 MI / 3 MI scale floating above it.
+ *
+ * `align-self: stretch` gives this column the row's full height and the BAR
+ * takes the slack, so the graphic grows into the space rather than a gap
+ * sitting under it. The scale then sits on the same line as the bottom of the
+ * NEAREST key beside it, which is what makes the four columns read as one
+ * instrument instead of four boxes of different lengths.
+ */
+.fwm-topblock-ladder {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fwm-topblock-caption {
+  /* LAST RESORT, below every width the gutters can rescue. An ellipsis is
+     ugly; painting "CORRIDOR AHEAD" across the compass is unreadable. */
+  overflow: hidden; /* keyword */
+  text-overflow: ellipsis; /* keyword */
+  margin: 0 0 calc(var(--fwm-space-1) * 1.25);
+  font-size: var(--fwm-text-micro);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fwm-alert-clear);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-topblock-bar {
+  /* A PANEL, not a bare strip.
+   *
+   * This is the piece that made the rendered block look least like the design:
+   * the bars were drawn straight onto the page, so an empty corridor was an
+   * empty region of screen with nothing to say it was an instrument at all. The
+   * design sinks them into a bordered, dot-gridded field -- the same lattice
+   * the scope uses -- and the field reads as a distance whether or not anything
+   * is on it. */
+  position: relative;
+  /* Grows into whatever the column has spare -- see `.fwm-topblock-ladder`.
+     The height is the FLOOR, not the size: on a short row the field is still
+     the drawn depth, and the bars are positioned as percentages so they scale
+     with it.
+
+     The floor is deliberately generous. The instrument is the point of this
+     block, and everything around it -- two words, two short readings, a scale
+     and one control -- is there to be read at a glance and then ignored. */
+  flex: 1 1 auto;
+  min-height: calc(var(--fwm-space-4) * 4.5);
+  border: var(--fwm-radar-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-3);
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-line-grid-1) var(--fwm-radar-dot-core),
+        transparent var(--fwm-radar-dot-edge)
+      )
+      0 0 / calc(var(--fwm-space-1) * 1.75) calc(var(--fwm-space-1) * 1.75),
+    var(--fwm-surface-sunk);
+  overflow: hidden; /* keyword */
+}
+
+/* THE NEAR FIELD IS CLEAR, AND SAYS SO. A soft green wash over the stretch the
+   verdict is about, fading out where the verdict stops applying. Without it the
+   panel treats "clear for 1.4 mi" and "nothing known" identically. */
+.fwm-topblock-bar-clear {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    to right,
+    var(--fwm-corridor-clear-wash),
+    var(--fwm-corridor-clear-fade) 70%,
+    transparent
+  );
+  pointer-events: none; /* keyword */
+}
+
+/* AND THE CLUSTER GLOWS. The bars alone give a count; the glow gives the shape
+   of the thing -- which is what a driver reads at a glance. */
+.fwm-topblock-bar-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at 40% 50%,
+    var(--fwm-corridor-hot-glow),
+    transparent 72%
+  );
+  pointer-events: none; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * THE ALERT THRESHOLD, ON THE LADDER
+ *
+ * The one distance on RADAR that a driver chooses and then never sees. The
+ * verdict, the marks and the mile posts are all distances the product measured;
+ * the threshold is the distance at which it will SHOUT, and until this band
+ * existed nothing on the screen drew it. "NEAREST 220 FT" and "CLEAR FOR 1.4
+ * MI" read as the same kind of statement when only one is inside the band.
+ *
+ * WHY A BAND AND NOT A LINE. The whole legal range of the setting -- 100 ft to
+ * 1000 ft -- is 0.63% to 6.3% of a three-mile ladder. A bare line inside the
+ * first twentieth of the panel is a mark two to nineteen pixels from a border
+ * that is already drawn, and reads as an artefact. Filling from NOW to the line
+ * gives the mark a side to belong to: it is the near end of the road, closed
+ * off, and the closing rule is the part that is meant to be found.
+ *
+ * WHY IT IS NEUTRAL AND NOT GREEN. Every other colour on this panel is a
+ * reading. This is a setting. In --fwm-alert-clear it would read as the product
+ * reporting clear road up to that line, which is the opposite of what it says.
+ *
+ * WHY IT IS BELOW THE MARKS. It is drawn before them in the DOM on purpose: a
+ * camera inside the alert band is the more urgent of the two facts and must not
+ * be dimmed by the thing explaining why it matters.
+ * ------------------------------------------------------------------------ */
+
+.fwm-topblock-bar-threshold {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  /* Dashed, because a dashed rule is already this product's word for "a line
+     somebody drew" rather than "a measurement" -- the sweep dial's threshold
+     ring says it the same way. */
+  border-right: var(--fwm-radar-rule-w) dashed var(--fwm-corridor-threshold-rule);
+  background: var(--fwm-corridor-threshold-wash);
+  pointer-events: none; /* keyword */
+}
+
+/* BARS, NOT TICKS. Height is how many cameras are at that distance -- three at
+   one junction is a different fact from one, and a row of identical hairlines
+   cannot say which is which. Anchored to the floor so they read as a chart. */
+/**
+ * A DOT-MATRIX COLUMN, coloured by how close the camera is.
+ *
+ * TWO CHANGES, AND THEY FIX THE SAME COMPLAINT.
+ *
+ * It was a solid bar in one of three ALERT colours. Those states are cut off
+ * the alert threshold -- a few hundred feet -- while the corridor is three
+ * miles, so everything past about a quarter mile fell into `clear` and the
+ * ladder drew one flat green whatever was ahead. Six cameras spread between
+ * one and two miles all looked identical.
+ *
+ * The colour comes off POSITION now, in six steps, using the plasma ramp the
+ * map's heat layer already uses: hot at NOW, cool at 3 MI. A driver has
+ * already learnt that language on the map.
+ *
+ * And the fill is the dot lattice from ASK's listening meter rather than a
+ * solid, so a bar reads as a MEASUREMENT on a grid instead of a painted
+ * block -- the same 5px pitch, quoted from `--fwm-ask-*` rather than
+ * reinvented, so the two instruments stay the same instrument.
+ */
+.fwm-topblock-mark {
+  /* The lattice geometry ASK's meter draws, at the same pitch. Component-scoped
+     locals, NOT new tokens -- see the GAP note on `--fwm-ask-grid-cell`. */
+  --fwm-corridor-cell: calc(var(--fwm-space-1) * 1.25);
+  --fwm-corridor-dot: calc(var(--fwm-space-1) * 0.1875);
+  --fwm-corridor-dot-end: calc(var(--fwm-space-1) * 0.3125);
+  /* The COOL end by default. An unknown bucket must never draw the on-you
+     colour -- a mark that screams "beside you" on no information is the one
+     mistake this ladder cannot make. */
+  --fwm-corridor-heat: var(--fwm-plasma-10);
+
+  position: absolute;
+  bottom: 0;
+  /*
+   * TWO DOT COLUMNS WIDE, not one.
+   *
+   * At 1.5x the lattice pitch a mark held a single file of dots and read as a
+   * hairline -- too thin to carry a colour at a glance, which is the whole
+   * point of colouring it. 2.75x is ASK's own bar width against the same 5px
+   * pitch, so a mark is two dots across and reads as a BAR made of dots rather
+   * than a dotted line.
+   */
+  width: calc(var(--fwm-space-1) * 2.75);
+  margin-left: calc(var(--fwm-space-1) * -1.375);
+  border-radius: var(--fwm-radius-1);
+  background:
+    radial-gradient(
+        circle at center,
+        var(--fwm-corridor-heat) var(--fwm-corridor-dot),
+        transparent var(--fwm-corridor-dot-end)
+      )
+      0 100% / var(--fwm-corridor-cell) var(--fwm-corridor-cell);
+}
+
+/*
+ * Hot at NOW, cool at the far end. Six steps off `CorridorMark.heat`.
+ *
+ * The ramp's own direction, quoted from tokens.css: "0 is ON YOU and 10 is the
+ * edge of the scope. Bright warm yellow reads as near and hot; deep indigo
+ * recedes." The first version of this table had it BACKWARDS -- bucket 0, the
+ * nearest camera, drew `--fwm-plasma-10`, the far-edge blue -- which inverted
+ * the one thing the ramp exists to say.
+ */
+.fwm-topblock-mark[data-fwm-corridor-heat='0'] { --fwm-corridor-heat: var(--fwm-plasma-0); }
+.fwm-topblock-mark[data-fwm-corridor-heat='1'] { --fwm-corridor-heat: var(--fwm-plasma-2); }
+.fwm-topblock-mark[data-fwm-corridor-heat='2'] { --fwm-corridor-heat: var(--fwm-plasma-4); }
+.fwm-topblock-mark[data-fwm-corridor-heat='3'] { --fwm-corridor-heat: var(--fwm-plasma-6); }
+.fwm-topblock-mark[data-fwm-corridor-heat='4'] { --fwm-corridor-heat: var(--fwm-plasma-8); }
+.fwm-topblock-mark[data-fwm-corridor-heat='5'] { --fwm-corridor-heat: var(--fwm-plasma-10); }
+
+/* An IN-RANGE camera still overrides everything. It is the one reading on this
+   ladder that is an alarm rather than a measurement, and the alert hue is what
+   the rest of the app uses to say so. */
+.fwm-topblock-mark[data-fwm-corridor-state='in_range'] {
+  --fwm-corridor-heat: var(--fwm-alert-in-range);
+}
+
+.fwm-topblock-scale {
+  display: flex;
+  justify-content: space-between;
+  margin: calc(var(--fwm-space-1) * 1.25) 0 0;
+  font-size: var(--fwm-text-micro);
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-micro) * -0.04);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-topblock-post {
+  white-space: nowrap; /* keyword */
+}
+
+/* --- the compass --------------------------------------------------------- */
+
+/* THE RIGHT COLUMN, ruled off from the instrument the same way the speed
+   column is. Three columns, two rules, and the instrument in the middle. */
+.fwm-topblock-compass {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--fwm-space-1) / 2);
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding-left: var(--fwm-block-gap);
+  border-left: var(--fwm-radar-rule-w) solid var(--fwm-line);
+}
+
+/* The degrees under the word. Quieter than the cardinal -- it is the precision,
+   not the reading. */
+.fwm-compass-degrees {
+  font-size: var(--fwm-text-micro);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--fwm-text-2);
+}
+
+/* Rides on the caption's line, so the two halves of "how good is this fix" sit
+   together rather than at opposite ends of the block. */
+.fwm-topblock-accuracy {
+  display: flex;
+  gap: calc(var(--fwm-space-1) * 0.75);
+  align-items: center;
+  font-size: var(--fwm-text-micro);
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-micro) * -0.04);
+  color: var(--fwm-text-icon);
+  white-space: nowrap; /* keyword */
+}
+
+/* A LIT LAMP, not a word. The chip says how good the fix is; the dot says
+   there IS one -- which is the question a driver actually has, and it was
+   answerable only by noticing that a number had appeared. */
+.fwm-topblock-accuracy-lamp {
+  width: calc(var(--fwm-space-1) * 1.75);
+  height: calc(var(--fwm-space-1) * 1.75);
+  flex: none;
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-topblock-accuracy[data-fwm-fix='none'] .fwm-topblock-accuracy-lamp {
+  background: var(--fwm-text-disabled);
+}
+
+.fwm-compass {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fwm-space-1);
+  align-items: center;
+}
+
+.fwm-compass-dial {
+  width: var(--fwm-compass-w);
+  height: var(--fwm-compass-w);
+}
+
+/* THE RING NEVER SPINS. No fill, no plate -- the lightest thing in the row. */
+.fwm-compass-ring {
+  fill: none; /* keyword */
+  stroke: var(--fwm-line-compass);
+  stroke-width: var(--fwm-compass-ring-w);
+}
+
+/* The graduations. Quieter than the ring itself: they are what the needle is
+   read against, not something to be read on their own. */
+.fwm-compass-tick {
+  stroke: var(--fwm-line-compass);
+  stroke-width: var(--fwm-compass-ring-w);
+  stroke-linecap: round; /* keyword */
+}
+
+/* TWO HALVES, ONE NEEDLE.
+ *
+ * It was a single crimson kite, which reads as an arrow lying on a circle
+ * rather than as a compass: nothing distinguishes the end that points from the
+ * end that trails, so at 40px the whole thing is a red blob. The design splits
+ * it -- crimson north, pale south, white hub -- which is how every compass
+ * anybody has ever read is drawn. */
+.fwm-compass-needle-north {
+  fill: var(--fwm-alert-in-range);
+}
+
+.fwm-compass-needle-south {
+  fill: var(--fwm-needle-tail);
+}
+
+.fwm-compass-hub {
+  fill: var(--fwm-sign-face);
+}
+
+.fwm-compass-cardinal {
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-cardinal);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--fwm-text-cardinal) * 0.04);
+  color: var(--fwm-text);
+}
+
+
+/* THE WASH AND THE GLOW, placed.
+ *
+ * Same mechanism as the bars: a bucketed data attribute against a generated
+ * table. Five-percent steps -- finer than that is below a pixel on the panel
+ * and would be a hundred rules nobody can see the effect of. */
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="0"] {
+  width: 0%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="1"] {
+  width: 5%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="2"] {
+  width: 10%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="3"] {
+  width: 15%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="4"] {
+  width: 20%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="5"] {
+  width: 25%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="6"] {
+  width: 30%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="7"] {
+  width: 35%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="8"] {
+  width: 40%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="9"] {
+  width: 45%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="10"] {
+  width: 50%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="11"] {
+  width: 55%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="12"] {
+  width: 60%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="13"] {
+  width: 65%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="14"] {
+  width: 70%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="15"] {
+  width: 75%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="16"] {
+  width: 80%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="17"] {
+  width: 85%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="18"] {
+  width: 90%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="19"] {
+  width: 95%;
+}
+
+.fwm-topblock-bar-clear[data-fwm-corridor-span="20"] {
+  width: 100%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="0"] {
+  left: 0%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="1"] {
+  left: 5%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="2"] {
+  left: 10%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="3"] {
+  left: 15%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="4"] {
+  left: 20%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="5"] {
+  left: 25%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="6"] {
+  left: 30%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="7"] {
+  left: 35%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="8"] {
+  left: 40%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="9"] {
+  left: 45%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="10"] {
+  left: 50%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="11"] {
+  left: 55%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="12"] {
+  left: 60%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="13"] {
+  left: 65%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="14"] {
+  left: 70%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="15"] {
+  left: 75%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="16"] {
+  left: 80%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="17"] {
+  left: 85%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="18"] {
+  left: 90%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="19"] {
+  left: 95%;
+}
+
+.fwm-topblock-bar-glow[data-fwm-corridor-span="20"] {
+  left: 100%;
+}
+
+.fwm-topblock-bar-glow {
+  width: 28%;
+}
+
+/* The far edge of the band, in half-percent steps. See `corridorThresholdSpan`
+   -- twentieths would give the whole setting two positions across its travel. */
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="1"] {
+  width: 0.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="2"] {
+  width: 1%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="3"] {
+  width: 1.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="4"] {
+  width: 2%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="5"] {
+  width: 2.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="6"] {
+  width: 3%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="7"] {
+  width: 3.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="8"] {
+  width: 4%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="9"] {
+  width: 4.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="10"] {
+  width: 5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="11"] {
+  width: 5.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="12"] {
+  width: 6%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="13"] {
+  width: 6.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="14"] {
+  width: 7%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="15"] {
+  width: 7.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="16"] {
+  width: 8%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="17"] {
+  width: 8.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="18"] {
+  width: 9%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="19"] {
+  width: 9.5%;
+}
+
+.fwm-topblock-bar-threshold[data-fwm-corridor-threshold="20"] {
+  width: 10%;
+}
+
+/* PASSED, riding with the database counts.
+ *
+ * It was its own element in normal flow while `.fwm-radar-live` is absolutely
+ * centred, so the two drew over each other: `1,263 /0PASSED AMS`. It is inside
+ * that group now, behind a hairline rule. */
+.fwm-radar-live-rule {
+  width: var(--fwm-radar-rule-w);
+  height: var(--fwm-text-micro);
+  margin: 0 calc(var(--fwm-space-1) / 2);
+  background: var(--fwm-line-strong);
+}
+
+.fwm-radar-passed-value {
+  font-size: var(--fwm-text-label);
+  font-weight: 700;
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-radar-passed-label {
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+/* Bar heights, a tenth each. Emitted as an attribute so the measurement
+   stays in the stylesheet -- same arrangement as the offsets above. */
+.fwm-topblock-mark[data-fwm-corridor-h="2"] {
+  height: 20%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="3"] {
+  height: 30%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="4"] {
+  height: 40%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="5"] {
+  height: 50%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="6"] {
+  height: 60%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="7"] {
+  height: 70%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="8"] {
+  height: 80%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="9"] {
+  height: 90%;
+}
+
+.fwm-topblock-mark[data-fwm-corridor-h="10"] {
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * A BAR ON THE LADDER IS A CAMERA, SO IT IS A CONTROL
+ *
+ * The ladder drew forty-odd cameras a driver could read and not reach. Each
+ * bar already stands for a real camera -- the nearest one in its bucket -- and
+ * the map has offered a tap on the same camera since it shipped, so the ladder
+ * offering a different gesture, or none, was the inconsistency.
+ *
+ * THE HIT AREA IS WIDER THAN THE BAR, and has to be. A bar is two dot columns,
+ * about 11px, against a 44px touch minimum. `::before` widens the target
+ * without touching the drawn width: padding would stretch the lattice and a
+ * transform would move it.
+ *
+ * Bars are quantised to whole percent, so two can sit three pixels apart while
+ * their widened targets overlap by far more. The stack order is set inline
+ * from `heat` -- 0 at the near end -- so the camera you reach FIRST is the one
+ * a thumb lands on. Being wrong in that tie means opening a card for a camera
+ * two miles further away than the one under the finger.
+ * ------------------------------------------------------------------------ */
+
+/* A BUTTON RESET THAT MUST NOT RESET THE DRAWING.
+ *
+ * `background: none` was in here, copied from every other button reset in this
+ * file, and it blanked the entire ladder: `.fwm-topblock-mark`'s bar IS a
+ * background -- a repeating radial-gradient that paints the dot lattice -- and
+ * `button.fwm-topblock-mark` outranks `.fwm-topblock-mark` on specificity, so
+ * the reset won and every bar drew nothing. The washes still painted, so the
+ * panel looked live and simply had no cameras on it, which is the worst
+ * possible failure for this instrument: it reads as CLEAR ROAD.
+ *
+ * Nothing here may touch `background`, `width`, `margin-left` or `height`.
+ * Those four are the bar. */
+button.fwm-topblock-mark {
+  padding: 0;
+  border: 0;
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+  cursor: pointer; /* keyword */
+}
+
+button.fwm-topblock-mark::before {
+  content: ""; /* keyword-equivalent: an empty generated box */
+  position: absolute;
+  /* Full height of the field, and half the touch minimum either side, so the
+     whole column is reachable rather than only the tallest bar's cap. */
+  top: 0;
+  bottom: 0;
+  left: calc(var(--fwm-touch-min) / -2);
+  right: calc(var(--fwm-touch-min) / -2);
+}
+
+/* The press. No hover state anywhere in this product -- section 04. */
+button.fwm-topblock-mark:active {
+  filter: brightness(1.35);
+}
+
+button.fwm-topblock-mark:focus-visible {
+  outline: var(--fwm-radar-rule-w) solid var(--fwm-accent-scan);
+  outline-offset: var(--fwm-space-1);
+}

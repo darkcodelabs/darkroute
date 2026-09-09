@@ -1,0 +1,491 @@
+/* A1 · ONBOARDING - PERMISSIONS.
+ *
+ * SOURCE: `Flockys Screens II.dc.html`, the rendered A1 frame. Every rule below
+ * is transcribed from one of those inline styles; the rendered value is written
+ * in the comment beside it and the declaration itself is var(--fwm-*) or a
+ * calc() of tokens. Nothing here invents a value.
+ *
+ *   frame     375x830, background #000, padding 16px, flex column
+ *   header    padding 18px 0 24px, centred
+ *   wordmark  24px / 700 / .04em / uppercase / line-height 1.1,
+ *             second half in #FF2D5E -- "WatchingMe" as the design draws it,
+ *             "Route" as the product is now named. The spec is the geometry
+ *             and the hue, both unchanged; only the word moved.
+ *   tagline   mono 10px / .2em / #6B7381, margin-top 10px
+ *   lede      16px / 1.55 / #A7AFBD
+ *   cards     column, gap 10px, margin-top 20px
+ *   card      border 1px #23262F, border-left 3px <status hue>,
+ *             background #0E0F13, radius 2px, padding 14px 16px
+ *   label row flex, space-between, align centre, gap 10px
+ *   label     15px / 600 / .04em / nowrap
+ *   status    mono 10px / .14em / <status hue> / nowrap
+ *   body      mono 11px / 1.7 / #6B7381, margin-top 8px
+ *   handle    same card shell, margin-top 12px; 56x30 track #23262F,
+ *             24x24 knob #6B7381 at top:3 left:3
+ *   start     56px, #FF2D5E on #000 text, radius 2px, 16px / 700 / .12em
+ *   footer    mono 10px / 1.7 / #6B7381, centred, margin-top 14px
+ *
+ * The ON state of the handle switch is not drawn in A1 (it renders OFF), so it
+ * comes from the canonical toggle in `Flockys Design System.dc.html`, panel
+ * "TOGGLE · SLIDER · CHIPS": track #3DE08A, knob #000 pinned right.
+ *
+ * NO HOVER STATE, EVER. "press: scale .98 + brightness .88 @ 90ms. no hover
+ * states." - Design System, the panel above that toggle. 90ms is
+ * --fwm-dur-instant exactly. A pointer hover never fires on a phone in a car
+ * mount; OnboardingScreen.test.tsx reads this file off disk and fails if a
+ * hover selector ever appears in it.
+ *
+ * The 375x830 frame and its 1px chrome border belong to the design mock, not to
+ * the screen: on a device this fills the viewport.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Stroke widths.
+ *
+ * GAP: see DESIGN-GAPS.md#no-border-width-token
+ * --fwm-space-1 is 4px, so /4 is the 1px hairline the cards are drawn with and
+ * *.75 is the 3px status rule. Derived, so a mode that rescales space rescales
+ * the rules with it. Declared on every root that can mount on its own -- a card
+ * rendered outside the screen must still draw its borders.
+ * ------------------------------------------------------------------------ */
+
+.fwm-onboarding,
+.fwm-permission-card,
+.fwm-handle-toggle,
+.fwm-location-denied {
+  --fwm-onb-rule-w: calc(var(--fwm-space-1) / 4);
+  --fwm-onb-rule-strong-w: calc(var(--fwm-space-1) * 0.75);
+}
+
+/* ---------------------------------------------------------------------------
+ * The screen
+ * ------------------------------------------------------------------------ */
+
+.fwm-onboarding {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--fwm-bg);
+  /* Rendered `padding:16px` on the frame. */
+  padding: var(--fwm-space-4);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+}
+
+.fwm-onboarding-header {
+  flex: none; /* keyword */
+  /* Rendered 18px 0 24px; the space scale steps 16 -> 24.
+   * GAP: see DESIGN-GAPS.md#onboarding-space-steps-10-14-18-20 */
+  padding-top: var(--fwm-space-4);
+  padding-bottom: var(--fwm-space-6);
+  text-align: center; /* keyword */
+}
+
+.fwm-onboarding-wordmark {
+  margin: 0;
+  /* Rendered 24px -- --fwm-text-title is 1.5rem, exactly 24px. */
+  font-size: var(--fwm-text-title);
+  font-weight: 700;
+  /* Rendered .04em. GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-title) * 0.04);
+  line-height: 1.1;
+  text-transform: uppercase; /* keyword */
+  white-space: nowrap; /* keyword */
+}
+
+/* The wordmark's second half -- "Route" -- is drawn in the in-range hue. That is the alert
+ * system's own colour and it is used here as the brand's second half, which is
+ * the one place in the product hue does not mean alert state -- the design
+ * makes that choice on the first screen the driver ever sees. */
+.fwm-onboarding-wordmark-hue {
+  color: var(--fwm-alert-in-range);
+}
+
+.fwm-onboarding-tagline {
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#onboarding-space-steps-10-14-18-20 */
+  margin: var(--fwm-space-3) 0 0;
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px; the phone type floor is 11px.
+   * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  /* Rendered .2em. GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.2);
+  color: var(--fwm-text-muted);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-onboarding-lede {
+  flex: none; /* keyword */
+  margin: 0;
+  /* Rendered 16px; the type scale steps body 15px -> subtitle 17px.
+   * GAP: see DESIGN-GAPS.md#onboarding-lede-16px-has-no-step */
+  font-size: var(--fwm-text-subtitle);
+  line-height: 1.55;
+  color: var(--fwm-text-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * The three permission cards
+ * ------------------------------------------------------------------------ */
+
+.fwm-onboarding-permissions {
+  display: flex;
+  flex: none; /* keyword */
+  flex-direction: column;
+  /* Rendered gap 10px, margin-top 20px.
+   * GAP: see DESIGN-GAPS.md#onboarding-space-steps-10-14-18-20 */
+  gap: var(--fwm-space-2);
+  margin: var(--fwm-space-6) 0 0;
+  padding: 0;
+  list-style: none; /* keyword */
+}
+
+/* Fallback hue pair. Every card carries a [data-fwm-permission-tone], and the
+ * blocks below override both of these. */
+.fwm-permission-card {
+  --fwm-permission-hue: var(--fwm-line);
+  --fwm-permission-word: var(--fwm-text-muted);
+  display: block;
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  border: var(--fwm-onb-rule-w) solid var(--fwm-line);
+  border-left: var(--fwm-onb-rule-strong-w) solid var(--fwm-permission-hue);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  /* Rendered 14px 16px; the space scale has no 14px step. */
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  text-align: left; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * Status tone = what the platform actually said, and nothing else.
+ *
+ * Two custom properties because the design colours the rule and the word
+ * differently in the OPTIONAL case: rule #23262F, word #6B7381.
+ *
+ *   granted      rule #3DE08A  word #3DE08A   (A1, LOCATION / GRANTED)
+ *   allow        rule #FFC02E  word #FFC02E   (A1, NOTIFICATIONS / ALLOW)
+ *   optional     rule #23262F  word #6B7381   (A1, MOTION SENSORS / OPTIONAL)
+ *   denied       -- not drawn. GAP: see
+ *                DESIGN-GAPS.md#permission-denied-and-unavailable-have-no-hue
+ *                --fwm-destructive is the product's non-alert negative token
+ *                (A2 draws the "NO" rows in it), so a denial cannot be confused
+ *                with an alert state.
+ *   unavailable  -- not drawn. Same gap: line-strong rule, muted word, because
+ *                "this phone does not have the hardware" is not a refusal.
+ *   checking     -- not drawn, and deliberately the same neutral pair the card
+ *                falls back to. A row that has not been read yet must not look
+ *                like an answer: no alert hue, no destructive hue, nothing the
+ *                eye reads as a decision. Declared rather than left to the
+ *                fallback so this table stays the whole list.
+ * ------------------------------------------------------------------------ */
+
+[data-fwm-permission-tone="granted"] {
+  --fwm-permission-hue: var(--fwm-alert-clear);
+  --fwm-permission-word: var(--fwm-alert-clear);
+}
+
+[data-fwm-permission-tone="allow"] {
+  --fwm-permission-hue: var(--fwm-alert-approaching);
+  --fwm-permission-word: var(--fwm-alert-approaching);
+}
+
+[data-fwm-permission-tone="optional"] {
+  --fwm-permission-hue: var(--fwm-line);
+  --fwm-permission-word: var(--fwm-text-muted);
+}
+
+[data-fwm-permission-tone="denied"] {
+  --fwm-permission-hue: var(--fwm-destructive);
+  --fwm-permission-word: var(--fwm-destructive);
+}
+
+[data-fwm-permission-tone="unavailable"] {
+  --fwm-permission-hue: var(--fwm-line-strong);
+  --fwm-permission-word: var(--fwm-text-muted);
+}
+
+[data-fwm-permission-tone="checking"] {
+  --fwm-permission-hue: var(--fwm-line);
+  --fwm-permission-word: var(--fwm-text-muted);
+}
+
+.fwm-permission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Rendered 10px. */
+  gap: var(--fwm-space-2);
+}
+
+.fwm-permission-label {
+  /* Rendered 15px -- --fwm-text-body is .9375rem, exactly 15px. */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  /* Rendered .04em. GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-body) * 0.04);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-permission-status {
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  /* Rendered .14em. GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.14);
+  color: var(--fwm-permission-word);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-permission-body {
+  display: block;
+  margin-top: var(--fwm-space-2);
+  font-family: var(--fwm-font-data);
+  /* Rendered 11px -- --fwm-text-micro is .6875rem, exactly 11px. */
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * LOCATION DENIED - explanation + retry.
+ *
+ * Not drawn anywhere in the design sources; see
+ * DESIGN-GAPS.md#onboarding-location-denied-has-no-designed-state. The shape is
+ * borrowed from the one comparable block that IS drawn: the caveat note in
+ * `A2 · OFFLINE - DEGRADED` ("DB last updated 2 days ago…"), which is a left
+ * rule in the state hue, 12px of padding and mono 11px/1.8 body copy. The retry
+ * button copies A2's own RETRY SYNC: 48px, 1px #3A3F4B, 14px / 600 / .1em.
+ * ------------------------------------------------------------------------ */
+
+.fwm-location-denied {
+  margin-top: var(--fwm-space-2);
+  border-left: var(--fwm-onb-rule-strong-w) solid var(--fwm-destructive);
+  padding-left: var(--fwm-space-3);
+}
+
+.fwm-location-denied-title {
+  display: block;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  /* GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-micro) * 0.2);
+  color: var(--fwm-destructive);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-location-denied-body {
+  margin: var(--fwm-space-2) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.8;
+  color: var(--fwm-text-2);
+}
+
+.fwm-location-retry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Rendered 48px. Derived from the touch floor rather than borrowed from a
+   * space step so a 68px-touch surface grows the button with it.
+   * GAP: see DESIGN-GAPS.md#onboarding-button-heights-have-no-token */
+  height: calc(var(--fwm-touch-min) + var(--fwm-space-1));
+  margin-top: var(--fwm-space-3);
+  border: var(--fwm-onb-rule-w) solid var(--fwm-line-strong);
+  border-radius: var(--fwm-radius-1);
+  background: transparent; /* keyword */
+  font-family: var(--fwm-font-ui);
+  /* Rendered 14px; the type scale steps 11px -> 15px. */
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  /* Rendered .1em. GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-body) / 10);
+  color: var(--fwm-text-2);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+/* ---------------------------------------------------------------------------
+ * SHOW A HANDLE
+ *
+ * The whole row is the switch, not just the 56x30 track: a 30px-tall target is
+ * under the 44px touch floor, and this is a screen used one-handed. The track
+ * is decoration on a control the size of the card.
+ * ------------------------------------------------------------------------ */
+
+.fwm-handle-toggle {
+  display: flex;
+  flex: none; /* keyword */
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fwm-space-3);
+  width: 100%;
+  min-height: var(--fwm-touch-min);
+  margin-top: var(--fwm-space-3);
+  border: var(--fwm-onb-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  /* Rendered 14px 16px. */
+  padding: var(--fwm-space-3) var(--fwm-space-4);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  text-align: left; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-handle-text {
+  display: block;
+  min-width: 0;
+}
+
+.fwm-handle-label {
+  display: block;
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  /* GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-body) * 0.04);
+  white-space: nowrap; /* keyword */
+}
+
+.fwm-handle-hint {
+  display: block;
+  /* Rendered 6px. GAP: see
+   * DESIGN-GAPS.md#onboarding-space-steps-10-14-18-20 */
+  margin-top: var(--fwm-space-1);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-handle-track {
+  position: relative;
+  flex: none; /* keyword */
+  /* Rendered 56x30. --fwm-space-12 is 48px and --fwm-space-8 is 32px, the
+   * nearest steps in either direction.
+   * GAP: see DESIGN-GAPS.md#handle-switch-track-has-no-token */
+  width: var(--fwm-space-12);
+  height: var(--fwm-space-8);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-line);
+}
+
+.fwm-handle-knob {
+  position: absolute;
+  /* Rendered top:3 left:3 around a 24px knob. Centring the knob in the track
+   * is the same decision expressed without a raw length, and it stays centred
+   * if a mode rescales the space steps. */
+  top: calc((var(--fwm-space-8) - var(--fwm-space-6)) / 2);
+  left: calc((var(--fwm-space-8) - var(--fwm-space-6)) / 2);
+  /* Rendered 24x24 -- --fwm-space-6 exactly. */
+  width: var(--fwm-space-6);
+  height: var(--fwm-space-6);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+  transition: transform var(--fwm-dur-fast) var(--fwm-ease-out);
+}
+
+/* ON. From the canonical toggle in the Design System: track #3DE08A, knob #000
+ * pinned right. The knob travels the track width less its own width less the
+ * two insets, so the right-hand gap equals the left-hand one exactly. */
+.fwm-handle-toggle[aria-checked="true"] .fwm-handle-track {
+  background: var(--fwm-alert-clear);
+}
+
+.fwm-handle-toggle[aria-checked="true"] .fwm-handle-knob {
+  background: var(--fwm-bg);
+  transform: translateX(
+    calc(var(--fwm-space-12) - var(--fwm-space-6) - (var(--fwm-space-8) - var(--fwm-space-6)))
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * START WATCHING + fine print
+ * ------------------------------------------------------------------------ */
+
+.fwm-onboarding-footer {
+  flex: none; /* keyword */
+  margin-top: auto; /* keyword */
+  padding-top: var(--fwm-space-6);
+}
+
+.fwm-onboarding-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Rendered 56px. Derived from the touch floor for the same reason as the
+   * retry button above.
+   * GAP: see DESIGN-GAPS.md#onboarding-button-heights-have-no-token */
+  height: calc(var(--fwm-touch-min) + var(--fwm-space-3));
+  border: none; /* keyword */
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-alert-in-range);
+  font-family: var(--fwm-font-ui);
+  /* Rendered 16px.
+   * GAP: see DESIGN-GAPS.md#onboarding-lede-16px-has-no-step */
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .12em. GAP: see DESIGN-GAPS.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.12);
+  color: var(--fwm-bg);
+  white-space: nowrap; /* keyword */
+  -webkit-appearance: none; /* keyword */
+  appearance: none; /* keyword */
+  touch-action: manipulation; /* keyword */
+}
+
+.fwm-onboarding-fineprint {
+  /* Rendered 14px; the space scale has no 14px step. */
+  margin: var(--fwm-space-3) 0 0;
+  font-family: var(--fwm-font-data);
+  /* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-muted);
+  text-align: center; /* keyword */
+}
+
+/* The design draws these two as one block split by a <br>. They are separate
+ * elements so each sentence can be asserted on its own, and so a narrow surface
+ * wraps between them rather than inside them. */
+.fwm-onboarding-fineprint-line {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+ * Press feedback.
+ *
+ *   "press: scale .98 + brightness .88 @ 90ms. no hover states."
+ *     -- Flockys Design System.dc.html, section 04
+ *
+ * 90ms is --fwm-dur-instant exactly. THIS FILE DECLARES NO HOVER STATE AND
+ * NEVER WILL. Disabled controls do not depress -- a card whose
+ * permission is already granted has nothing to give back.
+ * ------------------------------------------------------------------------ */
+
+.fwm-permission-card,
+.fwm-handle-toggle,
+.fwm-location-retry,
+.fwm-onboarding-start {
+  transition:
+    transform var(--fwm-dur-instant) var(--fwm-ease-out),
+    filter var(--fwm-dur-instant) var(--fwm-ease-out);
+}
+
+.fwm-permission-card:not([disabled]):active,
+.fwm-handle-toggle:active,
+.fwm-location-retry:active,
+.fwm-onboarding-start:active {
+  transform: scale(0.98);
+  filter: brightness(0.88);
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Launcher label. Android truncates at roughly 12 characters under the
+        icon; "DarkRoute" is nine, so it survives whole - which the previous
+        name did not. The web manifest's `short_name` is the same word, so the
+        launcher and the PWA cannot disagree about what this app is called.
+    -->
+    <string name="app_name">DarkRoute</string>
+
+    <string name="provider_authority">ai.darkroute.app.fileprovider</string>
+
+    <!--
+        `asset_statements` and `fwm_host` are generated from gradle.properties
+        by app/build.gradle (resValue), so they cannot drift from the manifest's
+        deep-link host. Do not add them here.
+    -->
+</resources>

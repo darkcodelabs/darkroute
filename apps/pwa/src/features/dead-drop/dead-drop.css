@@ -1,0 +1,461 @@
+/* DEAD DROP -- the signed queue and the chain that proves its order.
+ *
+ * SOURCE: `Flockys Screens II.dc.html`, panel
+ * `B2 · DEAD DROP - QUEUE + EVIDENCE CHAIN`.
+ *
+ * Every colour, length, radius and easing below is `var(--fwm-*)` or a `calc()`
+ * over one. Values the token set cannot express are marked `GAP:` and filed in
+ * `docs/gaps-inbox/dead-drop.md`. Nothing here is a literal.
+ *
+ * =============================================================================
+ * NO INLINE STYLE
+ * =============================================================================
+ * An inline `style` is the one way a raw length reaches the DOM without passing
+ * `scripts/check-design-values.mjs`, so there is not one in this feature.
+ * State is carried on `data-fwm-dead-drop-*` attributes and every visual
+ * consequence of that state is a rule in this file.
+ * `components/DeadDropView.test.tsx` reads this file off disk and fails if an
+ * inline style appears anywhere in the subtree.
+ *
+ * =============================================================================
+ * NO HOVER, EVER
+ * =============================================================================
+ * Touch-first product; a pointer hover never fires on a phone in a car mount.
+ * The view test fails if the pointer-state selector appears in this file.
+ *
+ * =============================================================================
+ * A DROP IS NEVER DIMMED OUT OF EXISTENCE
+ * =============================================================================
+ * Synced drops take `--fwm-text-2` for their title exactly as the panel draws
+ * them, and that is the only place a state changes a drop's prominence. There
+ * is no rule here that hides, collapses or fades a row for being refused, stuck
+ * or purged: "DEAD LETTER IS NOT DELETION" (`reportChain.ts`), and a queue that
+ * quietly stops drawing the evidence it is holding is the failure mode this
+ * whole screen exists to make impossible.
+ * ========================================================================== */
+
+.fwm-dead-drop {
+  /* GAP: see docs/gaps-inbox/design-value-enforcement.md#no-border-width-token
+   * --fwm-space-1 is 4px: /4 is the 1px hairline the design rules every panel
+   * with. Derived, so a mode that rescales space rescales the rules with it.
+   * A component-scoped local, NOT a new token. */
+  --fwm-dead-drop-rule-w: calc(var(--fwm-space-1) / 4);
+
+  /* The list rows are 60px in the panel: 48 + 12, both token steps.
+   * GAP: see docs/gaps-inbox/dead-drop.md#type-and-spacing-steps-the-token-set-misses */
+  --fwm-dead-drop-row-h: calc(var(--fwm-space-12) + var(--fwm-space-3));
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-ui);
+  color: var(--fwm-text);
+  /* A driver's screen has no reason to rubber-band sideways. */
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header -- 52px, `DEAD DROP` at 17px/700/.1em, `3 HELD` in the approaching hue.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  gap: var(--fwm-space-3);
+  height: var(--fwm-header-h);
+  padding: 0 var(--fwm-space-4);
+  border-bottom: var(--fwm-dead-drop-rule-w) solid var(--fwm-line);
+}
+
+.fwm-dead-drop-title {
+  margin: 0;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  /* Rendered .1em. GAP: see docs/gaps-inbox/repo-tooling.md#type-metrics-not-tokenized */
+  letter-spacing: calc(var(--fwm-text-subtitle) / 10);
+  color: var(--fwm-text);
+  white-space: nowrap;
+}
+
+/* Rendered 10px. GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-dead-drop-status {
+  flex: none;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-alert-approaching);
+  white-space: nowrap;
+}
+
+/* Reading the queue is not a warning, and failing to read it is.
+ * GAP: see docs/gaps-inbox/dead-drop.md#no-empty-or-loading-state-is-drawn */
+.fwm-dead-drop-status[data-fwm-dead-drop-status="loading"] {
+  color: var(--fwm-text-muted);
+}
+
+.fwm-dead-drop-status[data-fwm-dead-drop-status="unavailable"] {
+  color: var(--fwm-destructive);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body -- 16px gutter, 14px stack.
+ * GAP: see docs/gaps-inbox/dead-drop.md#type-and-spacing-steps-the-token-set-misses
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fwm-space-3);
+  min-height: 0;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * The signing statement.
+ *
+ * Outlined in the approaching hue. The panel fills it with that hue at 6%
+ * opacity; there is no tint token and `color-mix` is not available to this
+ * layer, so it takes the same --fwm-surface-1 ground every other card has.
+ * GAP: see docs/gaps-inbox/dead-drop.md#the-callout-tint
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-notice {
+  flex: none;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+  border: var(--fwm-dead-drop-rule-w) solid var(--fwm-alert-approaching);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+  /* Rendered 16px/600/1.45.
+   * GAP: see docs/gaps-inbox/dead-drop.md#type-and-spacing-steps-the-token-set-misses */
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--fwm-text);
+}
+
+/* ---------------------------------------------------------------------------
+ * The detail card -- the newest drop.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-card {
+  flex: none;
+  min-width: 0;
+  padding: var(--fwm-space-4);
+  border: var(--fwm-dead-drop-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-surface-1);
+}
+
+.fwm-dead-drop-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-dead-drop-card-title {
+  flex: none;
+  font-size: var(--fwm-text-subtitle);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-subtitle) * 0.06);
+  color: var(--fwm-text);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * State hues. One rule per queue state, applied to the card badge, the list
+ * badge and the list dot alike, so a state can never read one colour in the
+ * card and another in the list.
+ *
+ * HELD and SYNCED are the panel's. SYNCING takes the scan accent, and the two
+ * terminal failures take the in-range hue, because a drop the backend refused
+ * is the one thing on this screen a driver has to act on.
+ * GAP: see docs/gaps-inbox/dead-drop.md#only-two-queue-states-are-drawn
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-badge {
+  flex: none;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  white-space: nowrap;
+}
+
+.fwm-dead-drop-badge[data-fwm-dead-drop-state="pending"] {
+  color: var(--fwm-alert-approaching);
+}
+.fwm-dead-drop-badge[data-fwm-dead-drop-state="syncing"] {
+  color: var(--fwm-accent-scan);
+}
+.fwm-dead-drop-badge[data-fwm-dead-drop-state="synced"] {
+  color: var(--fwm-alert-clear);
+}
+.fwm-dead-drop-badge[data-fwm-dead-drop-state="rejected"],
+.fwm-dead-drop-badge[data-fwm-dead-drop-state="dead_letter"] {
+  color: var(--fwm-alert-in-range);
+}
+
+/* ---------------------------------------------------------------------------
+ * The five fact rows: label left in the muted hue, value right, 11px mono on a
+ * doubled line so the block reads as a table without any rules in it.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-facts {
+  margin: var(--fwm-space-3) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 2;
+  color: var(--fwm-text-2);
+  min-width: 0;
+}
+
+.fwm-dead-drop-fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fwm-space-2);
+  min-width: 0;
+}
+
+.fwm-dead-drop-fact-key {
+  flex: none;
+  color: var(--fwm-text-muted);
+}
+
+.fwm-dead-drop-fact-value {
+  margin: 0;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The SIGNED row is a verification result, so its hue is the verdict.
+ * GAP: see docs/gaps-inbox/dead-drop.md#signed-row-is-a-verification-not-a-label */
+.fwm-dead-drop-fact-value[data-fwm-dead-drop-verdict="verified"] {
+  color: var(--fwm-alert-clear);
+}
+.fwm-dead-drop-fact-value[data-fwm-dead-drop-verdict="broken"] {
+  color: var(--fwm-alert-in-range);
+}
+.fwm-dead-drop-fact-value[data-fwm-dead-drop-verdict="unverified"],
+.fwm-dead-drop-fact-value[data-fwm-dead-drop-verdict="no-body"] {
+  color: var(--fwm-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * The hash block -- sunk to the page ground, ruled, scan-accent mono, and
+ * allowed to break mid-hash because a truncated hash is worse than a wrapped
+ * one. Two columns so `sha256` and `prev` line their digests up.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-hashes {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--fwm-space-2);
+  margin: var(--fwm-space-3) 0 0;
+  padding: var(--fwm-space-3);
+  border: var(--fwm-dead-drop-rule-w) solid var(--fwm-line);
+  border-radius: var(--fwm-radius-1);
+  background: var(--fwm-bg);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.6;
+  color: var(--fwm-accent-scan);
+  word-break: break-all;
+}
+
+.fwm-dead-drop-hash-key {
+  white-space: nowrap;
+}
+
+/* Rendered 10px in the muted hue.
+ * GAP: see DESIGN-GAPS.md#micro-type-below-stated-floor */
+.fwm-dead-drop-note {
+  margin: var(--fwm-space-3) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  line-height: 1.7;
+  color: var(--fwm-text-muted);
+}
+
+/* `THIS DEVICE CANNOT CHECK A SIGNATURE`.
+ *
+ * The approaching hue, not the in-range one: a platform with no WebCrypto is a
+ * caution about what this screen can tell you, NOT a finding against the
+ * evidence. CHAIN BROKEN owns the in-range hue and nothing else may borrow it.
+ * The panel draws no such line.
+ * GAP: see docs/gaps-inbox/dead-drop.md#a-device-with-no-webcrypto-says-so */
+.fwm-dead-drop-warning {
+  margin: var(--fwm-space-3) 0 0;
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  line-height: 1.7;
+  color: var(--fwm-alert-approaching);
+}
+
+/* ---------------------------------------------------------------------------
+ * The queue list -- the only scrolling region. The action keys stay put.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fwm-dead-drop-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fwm-space-3);
+  flex: none;
+  min-width: 0;
+  min-height: var(--fwm-dead-drop-row-h);
+  border-bottom: var(--fwm-dead-drop-rule-w) solid var(--fwm-line);
+}
+
+/* The panel rules between rows, not under the last one. */
+.fwm-dead-drop-row:last-child {
+  border-bottom: none;
+}
+
+/* Rendered 8px, exactly --fwm-space-2. */
+.fwm-dead-drop-dot {
+  flex: none;
+  width: var(--fwm-space-2);
+  height: var(--fwm-space-2);
+  border-radius: var(--fwm-radius-full);
+  background: var(--fwm-text-muted);
+}
+
+.fwm-dead-drop-dot[data-fwm-dead-drop-state="pending"] {
+  background: var(--fwm-alert-approaching);
+}
+.fwm-dead-drop-dot[data-fwm-dead-drop-state="syncing"] {
+  background: var(--fwm-accent-scan);
+}
+.fwm-dead-drop-dot[data-fwm-dead-drop-state="synced"] {
+  background: var(--fwm-alert-clear);
+}
+.fwm-dead-drop-dot[data-fwm-dead-drop-state="rejected"],
+.fwm-dead-drop-dot[data-fwm-dead-drop-state="dead_letter"] {
+  background: var(--fwm-alert-in-range);
+}
+
+.fwm-dead-drop-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fwm-dead-drop-row-title {
+  font-size: var(--fwm-text-body);
+  font-weight: 600;
+  color: var(--fwm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A drop the backend has already accepted steps back, exactly as drawn. */
+.fwm-dead-drop-row[data-fwm-dead-drop-state="synced"] .fwm-dead-drop-row-title {
+  color: var(--fwm-text-2);
+}
+
+.fwm-dead-drop-row-meta {
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  color: var(--fwm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty and failed states -- undrawn by the design, so they say what they are.
+ * GAP: see DESIGN-GAPS.md#empty-and-loading-states-mostly-undrawn
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-empty {
+  display: flex;
+  align-items: center;
+  flex: none;
+  min-height: var(--fwm-dead-drop-row-h);
+  font-family: var(--fwm-font-data);
+  font-size: var(--fwm-text-micro);
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+  color: var(--fwm-text-muted);
+}
+
+.fwm-dead-drop-empty[data-fwm-dead-drop-empty="unavailable"] {
+  color: var(--fwm-destructive);
+}
+
+/* ---------------------------------------------------------------------------
+ * SEND NOW / EXPORT JSON -- 48px, exactly --fwm-space-12, pinned to the bottom.
+ * ------------------------------------------------------------------------ */
+
+.fwm-dead-drop-actions {
+  display: flex;
+  gap: var(--fwm-space-2);
+  flex: none;
+  margin-top: auto;
+}
+
+.fwm-dead-drop-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: var(--fwm-space-12);
+  border: var(--fwm-dead-drop-rule-w) solid transparent;
+  border-radius: var(--fwm-radius-1);
+  background: transparent;
+  font-family: var(--fwm-font-ui);
+  /* Rendered 13px; --fwm-text-micro is 11px and is the nearest step the token
+   * set has. The substitution is enumerated with the others.
+   * GAP: see docs/gaps-inbox/dead-drop.md#type-and-spacing-steps-the-token-set-misses */
+  font-size: var(--fwm-text-micro);
+  font-weight: 600;
+  letter-spacing: calc(var(--fwm-text-micro) * 0.08);
+  color: var(--fwm-text-2);
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+/* The one filled key on the panel: in-range hue, page ground as its text. */
+.fwm-dead-drop-action[data-fwm-dead-drop-action="SEND NOW"] {
+  background: var(--fwm-alert-in-range);
+  color: var(--fwm-bg);
+  font-weight: 700;
+  letter-spacing: calc(var(--fwm-text-micro) / 10);
+}
+
+.fwm-dead-drop-action[data-fwm-dead-drop-action="EXPORT JSON"] {
+  border-color: var(--fwm-line-strong);
+}
+
+/* Unwired or nothing to act on. The key still draws -- the panel says the
+ * product can do this, and hiding the control would say it cannot. */
+.fwm-dead-drop-action:disabled {
+  background: var(--fwm-surface-2);
+  border-color: var(--fwm-line);
+  color: var(--fwm-text-disabled);
+}

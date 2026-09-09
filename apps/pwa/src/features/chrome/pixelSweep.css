@@ -1,0 +1,426 @@
+/* THE PIXEL SWEEP AND THE TOAST -- sections D and E of
+ * `searchbar_and_buttons.dc.html`.
+ *
+ * A 96x11 grid of pixels laid over the bar, each cell popping and decaying on a
+ * per-COLUMN delay. It is the mark's own pixel vocabulary run across the glass,
+ * and it carries exactly three meanings: something is ahead, you are in it, it
+ * is behind you. Sixteen other dock states say nothing at all, and that silence
+ * is what makes these three readable at a glance on a windscreen mount.
+ *
+ * =============================================================================
+ * 1. LAYERING IS NOT OPTIONAL, AND IT IS THE FIRST THING THAT GOES WRONG
+ * =============================================================================
+ * `mix-blend-mode: screen` brightens everything UNDER it in the same stacking
+ * context. The container is therefore `z-index: 0` and every content child of
+ * the bar is `z-index: 1` -- that half lives in `topBar.css` section 2, which
+ * already declares it. Get either half wrong and the sweep brightens straight
+ * through the wordmark and the read count and both wash out mid-pass, which is
+ * the failure the brief names by name.
+ *
+ * =============================================================================
+ * 2. THE FRONT IS A STRAIGHT VERTICAL LINE
+ * =============================================================================
+ * Delay comes from the COLUMN and nothing else, so all eleven rows of a column
+ * fire together. The spec page's own builder carries a `bow` term that lags the
+ * rows toward the top and bottom of the bar; every call site passes `bow: 0`,
+ * and the brief says in as many words that bowing it by row and tapering its
+ * density vertically were both tried and rejected. Neither is here. The formula
+ * is in `PixelSweep.tsx` and is asserted in `PixelSweep.test.ts`.
+ *
+ * =============================================================================
+ * 3. WHY EVERY DURATION IS A MULTIPLE AND NOT A NUMBER
+ * =============================================================================
+ * `scripts/check-design-values.mjs` fails the build on a raw `3.2s` as hard as
+ * on a raw hex. Each of the spec's five durations is an exact multiple of a
+ * duration token, so nothing is rounded to satisfy the gate:
+ *
+ *   3.2s   = --fwm-dur-alert   (400ms) x 8    approach, cleared, toast
+ *   2.4s   = --fwm-dur-alert   (400ms) x 6    passing
+ *   4s     = --fwm-dur-alert   (400ms) x 10   the easter-egg pulse
+ *   60s    = --fwm-dur-alert   (400ms) x 150  the ambient intro pass
+ *   180ms  = --fwm-dur-instant (90ms)  x 2    the reduced-motion flash
+ *
+ * `PixelSweep.tsx` holds the same five numbers in seconds, because it has to
+ * know when a pass is over in order to unmount it. `PixelSweep.test.ts` reads
+ * this file and asserts the two agree -- a drift between them is a grid that
+ * stays in the tree animating nothing, or one that vanishes mid-pass.
+ *
+ * =============================================================================
+ * 4. COLOUR IS `var(--dr-*)` AND THE PALETTE IS THE MARK'S
+ * =============================================================================
+ * Six literal hues, `--dr-px-1` .. `--dr-px-6` in `tokens.css`. ONE palette for
+ * both themes: light theme changes the BLEND to `multiply`, never the colour.
+ * Section 8 is the whole of the light-theme difference in this file.
+ * ========================================================================== */
+
+/* =========================================================================
+ * 5. THE FOUR KEYFRAME BLOCKS
+ *
+ * TRANSCRIBED, NOT TUNED. Every stop and every opacity below is the brief's,
+ * to the decimal; only the whitespace is this repository's. The comet profile
+ * -- full for ~35ms, then 40%, then 15%, then a 5% trail -- is what makes a
+ * moving front read as a front rather than as a shimmer, and the four differ
+ * from each other only in that profile.
+ * ====================================================================== */
+
+/* APPROACH and CLEARED. The comet. */
+@keyframes dr-px {
+  0% {
+    opacity: 0;
+  }
+
+  1.1% {
+    opacity: 1;
+  }
+
+  3% {
+    opacity: 0.4;
+  }
+
+  9% {
+    opacity: 0.15;
+  }
+
+  27% {
+    opacity: 0.05;
+  }
+
+  36%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* PASSING. A camera flash, not a wave: no travel, so the whole bar is one
+   event. Holds a touch longer at the top than `dr-px` and dies sooner. */
+@keyframes dr-px-flash {
+  0% {
+    opacity: 0;
+  }
+
+  2.5% {
+    opacity: 1;
+  }
+
+  9% {
+    opacity: 0.34;
+  }
+
+  22% {
+    opacity: 0.1;
+  }
+
+  34%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* THE EASTER EGG'S PULSE. The same shape at HALF peak -- 0.5 rather than 1 --
+   because a tap on the logo is a delight and not a warning, and a pulse that
+   peaked as hard as the approach sweep would be indistinguishable from one. */
+@keyframes dr-px-pulse {
+  0% {
+    opacity: 0;
+  }
+
+  1.4% {
+    opacity: 0.5;
+  }
+
+  5% {
+    opacity: 0.2;
+  }
+
+  16% {
+    opacity: 0.08;
+  }
+
+  40% {
+    opacity: 0.02;
+  }
+
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* THE AMBIENT INTRO. 25% peak, and the stops are compressed because this one
+   runs over a 60s duration: 3.4% of 60s is the 2.04s the pass is visible for.
+   It is a first-run delight and NOT a status signal, so it must not read as
+   one -- a quarter of the approach sweep's peak is what keeps it from being
+   mistaken for a camera ahead. */
+@keyframes dr-px-amb {
+  0% {
+    opacity: 0;
+  }
+
+  0.1% {
+    opacity: 0.25;
+  }
+
+  0.28% {
+    opacity: 0.1;
+  }
+
+  0.9% {
+    opacity: 0.04;
+  }
+
+  2.4% {
+    opacity: 0.014;
+  }
+
+  3.4%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================================
+ * 6. THE CONTAINER
+ *
+ * Absolute, inset 0, `z-index: 0`, the bar's own 999px radius, clipped,
+ * transparent to presses and blending in `screen`. Six declarations, all six
+ * load-bearing, and the brief lists them as one block for that reason.
+ *
+ * `overflow: hidden` HERE and nowhere near the bar itself: the grid must be
+ * cut to the pill or its corners paint square over the hairline, while the bar
+ * must NOT clip or the mark that overhangs it is chopped into a rectangle.
+ * ====================================================================== */
+
+.fwm-pxsweep {
+  /* the grid, named once. Unitless -- the cells are sized in percentages of
+     the bar, so the sweep is 96 columns whatever the bar's width turns out to
+     be on a given phone. */
+  --fwm-pxsweep-cols: 96;
+  --fwm-pxsweep-rows: 11;
+
+  /* the five durations, as multiples of the two duration tokens. See the
+     header: `PixelSweep.tsx` mirrors these and the test asserts it. */
+  --fwm-pxsweep-dur-sweep: calc(var(--fwm-dur-alert) * 8); /* 3.2s */
+  --fwm-pxsweep-dur-flash: calc(var(--fwm-dur-alert) * 6); /* 2.4s */
+  --fwm-pxsweep-dur-pulse: calc(var(--fwm-dur-alert) * 10); /* 4s */
+  --fwm-pxsweep-dur-amb: calc(var(--fwm-dur-alert) * 150); /* 60s */
+  --fwm-pxsweep-dur-edge: calc(var(--fwm-dur-instant) * 2); /* 180ms */
+
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--fwm-radius-full);
+  /* the one place in the chrome that clips, and the note above says why */
+  overflow: hidden; /* keyword */
+  /* never eats a press meant for the field or for the mark above it */
+  pointer-events: none; /* keyword */
+  mix-blend-mode: screen; /* keyword */
+}
+
+/* =========================================================================
+ * 7. THE CELL
+ *
+ * One column wide, one row tall, positioned in percentages so the grid is the
+ * bar's own size at any width. `opacity: 0` is the resting state: a cell that
+ * has not fired yet and a cell that has finished are the same thing, and the
+ * keyframes start and end there so no fill-mode is needed.
+ *
+ * The DELAY is the only thing set per element, inline, because it is the only
+ * thing that differs between one cell and the next. Everything else -- name,
+ * duration, timing function, count -- is here, where it can be read.
+ * ====================================================================== */
+
+.fwm-pxsweep-cell {
+  position: absolute;
+  width: calc(100% / var(--fwm-pxsweep-cols));
+  height: calc(100% / var(--fwm-pxsweep-rows));
+  opacity: 0;
+  /* LINEAR, and it is not a placeholder. The comet profile IS the easing --
+     it is written into the keyframe stops -- so an ease on top of it would be
+     a second curve fighting the first and the front would stop being a line. */
+  animation-timing-function: var(--fwm-ease-linear);
+  /* ONCE PER EVENT, NEVER ON A LOOP. The spec page loops all five gestures so
+     every one of them is visible at once on a static page; in the product a
+     sweep is a thing that HAPPENED, and a thing that happened does not repeat
+     until it happens again. The ambient intro's five passes are five mounts,
+     not five iterations -- see `useAmbientIntro` in `PixelSweep.tsx`. */
+  animation-iteration-count: 1;
+}
+
+/* THE SIX HUES. A class rather than an inline `background`, so the palette is
+   readable in one place and a seventh colour cannot arrive from a component. */
+.fwm-pxsweep-c1 {
+  background: var(--dr-px-1);
+}
+
+.fwm-pxsweep-c2 {
+  background: var(--dr-px-2);
+}
+
+.fwm-pxsweep-c3 {
+  background: var(--dr-px-3);
+}
+
+.fwm-pxsweep-c4 {
+  background: var(--dr-px-4);
+}
+
+.fwm-pxsweep-c5 {
+  background: var(--dr-px-5);
+}
+
+.fwm-pxsweep-c6 {
+  background: var(--dr-px-6);
+}
+
+/* THE FIVE GESTURES. Name and duration, and nothing else differs. */
+.fwm-pxsweep--approach .fwm-pxsweep-cell,
+.fwm-pxsweep--cleared .fwm-pxsweep-cell {
+  animation-name: dr-px;
+  animation-duration: var(--fwm-pxsweep-dur-sweep);
+}
+
+.fwm-pxsweep--passing .fwm-pxsweep-cell {
+  animation-name: dr-px-flash;
+  animation-duration: var(--fwm-pxsweep-dur-flash);
+}
+
+.fwm-pxsweep--pulse .fwm-pxsweep-cell {
+  animation-name: dr-px-pulse;
+  animation-duration: var(--fwm-pxsweep-dur-pulse);
+}
+
+.fwm-pxsweep--ambient .fwm-pxsweep-cell {
+  animation-name: dr-px-amb;
+  animation-duration: var(--fwm-pxsweep-dur-amb);
+}
+
+/* THE REDUCED-MOTION DEGRADE, and section 9 is where it is reasoned about. */
+.fwm-pxsweep--edge .fwm-pxsweep-cell {
+  animation-name: dr-px-flash;
+  animation-duration: var(--fwm-pxsweep-dur-edge);
+}
+
+/* =========================================================================
+ * 8. LIGHT THEME BLENDS `multiply`, AND THAT IS THE WHOLE DIFFERENCE
+ *
+ * `screen` on white glass brightens toward white and the sweep disappears
+ * completely -- there is nothing above #fff to lighten to. `multiply` darkens
+ * by the same six colours instead, so the identical grid reads as coloured
+ * pixels on a pale bar rather than as nothing at all.
+ *
+ * The palette does NOT change. Three selectors rather than a `prefers-color-
+ * scheme` query, because this product's light modes are three named skins the
+ * driver chooses, not a system preference -- `topBar.css` inverts the wordmark
+ * off exactly the same triple.
+ * ====================================================================== */
+
+[data-fwm-mode='refinement'] .fwm-pxsweep,
+[data-fwm-mode='paper'] .fwm-pxsweep,
+[data-fwm-mode='e-ink'] .fwm-pxsweep {
+  mix-blend-mode: multiply; /* keyword */
+}
+
+/* =========================================================================
+ * 9. REDUCED MOTION
+ *
+ * `prefers-reduced-motion: reduce` disables all four keyframes. The approach
+ * signal is the one that carries information a driver acts on, so it is the
+ * one that degrades rather than disappears: a single 180ms flash in the grid's
+ * LEADING COLUMN, at the bar's left edge, with no travel and no jitter.
+ *
+ * `PixelSweep.tsx` already refuses to mount the other four under `reduce`, so
+ * this rule is the belt to that braces -- it is what the spec page itself
+ * ships, and it is what catches the case where the preference flips while a
+ * grid is already in the tree. `.fwm-pxsweep--edge` is deliberately not in the
+ * list: it is the degrade, it only ever mounts under `reduce`, and turning it
+ * off here would leave the approach signal silent.
+ *
+ * AND THAT IS NOT ENOUGH ON ITS OWN. `global.css` carries a BLANKET reduce
+ * rule -- `animation-name: none !important` on every element that is not
+ * marked `data-fwm-motion="essential"` -- which outranks anything this file
+ * declares and killed the degrade the first time it was measured in Chromium:
+ * four pixels stuck at the left cap, permanently, instead of a 180ms flash.
+ * `PixelSweep.tsx` puts that attribute on the degrade's cells and on nothing
+ * else, which is the opt-out `global.css` documents for motion that carries
+ * meaning. Neither half works alone.
+ * ====================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .fwm-pxsweep--approach .fwm-pxsweep-cell,
+  .fwm-pxsweep--passing .fwm-pxsweep-cell,
+  .fwm-pxsweep--cleared .fwm-pxsweep-cell,
+  .fwm-pxsweep--pulse .fwm-pxsweep-cell,
+  .fwm-pxsweep--ambient .fwm-pxsweep-cell {
+    animation: none; /* keyword */
+  }
+}
+
+/* =========================================================================
+ * 10. THE TOAST -- section E
+ *
+ * IN THIS FILE BECAUSE IT IS THE SAME GESTURE. The toast has no existence
+ * apart from the pulse it counts: the mark is tapped, a pulse fires, and on
+ * the fourth tap the pulse acquires a sentence. Splitting the two across two
+ * stylesheets would put the halves of one interaction in two places.
+ *
+ * NOT A LITERAL ANDROID TOAST. It is the app's own surface and wears the same
+ * language as everything else: a 999px pill of translucent glass with a 1px
+ * hairline and the blur. The one value that is not the chrome's is its ALPHA,
+ * `--dr-surface-toast` at 0.92 -- see the note on that token.
+ *
+ * `z-index: 4` puts it above the mark's button at 3, which is above the bar's
+ * content at 1 and the sweep at 0. It is bottom-centred on the MAP, not on the
+ * bar, so its stacking is against the map's children and not the bar's.
+ * ====================================================================== */
+
+.fwm-pxtoast {
+  position: absolute;
+  /*
+   * ABOVE THE DOCK, NOT UNDER IT. This was `bottom: 18` of the map, which was
+   * 18px above the bottom of the PHONE -- and the dock is 150px tall in its
+   * quietest state, so every one of the seven haKCer sentences was rendered
+   * behind the tab row. Measured on production: the toast at y=783, the dock's
+   * top at 684, `elementFromPoint` returning a dock tab. The egg fired on every
+   * tap and nobody could see it. Owner: "there is supposed to be an Easter egg
+   * when you tap the logo, it doesn't work."
+   *
+   * `--fwm-dock-h` is the dock's live height, the same token the intel card
+   * and the search panel clear, so this rides up with an expanded pane too.
+   */
+  bottom: calc(var(--fwm-dock-h) + var(--fwm-space-1) * 4.5); /* 18 above the dock */
+  left: 50%;
+  z-index: 4;
+  /*
+   * `width: max-content` IS NOT IN THE SPEC AND THE SPEC DOES NOT WORK WITHOUT
+   * IT. Measured in Chromium at 412px, which is this product's design width:
+   * the spec's own three declarations -- `left: 50%`, `translateX(-50%)`,
+   * `max-width: calc(100% - 36px)` -- gave a pill 206px wide and 69px TALL,
+   * because an absolutely positioned box with `left` set and no `right` is
+   * shrink-to-fit against the space from `left` to the container's right edge.
+   * That is half the screen, 206px, and the transform moves the box AFTERWARDS
+   * without giving any of that width back. "You are now 3 steps away from
+   * being a haKCer." wrapped onto three lines inside a 999px radius.
+   *
+   * `max-content` restores the intent rather than changing it: the box becomes
+   * the sentence's natural width, still capped by the spec's own `max-width`,
+   * and the transform then centres what the spec drew -- one line, 37px tall.
+   */
+  width: max-content; /* keyword */
+  max-width: calc(100% - var(--fwm-space-1) * 9); /* 100% - 36 */
+  padding: calc(var(--fwm-space-1) * 2.75) calc(var(--fwm-space-1) * 4.5); /* 11 18 */
+  transform: translateX(-50%);
+  border: var(--fwm-rule-w) solid var(--dr-hairline);
+  border-radius: var(--fwm-radius-full);
+  background: var(--dr-surface-toast);
+  /* the same read-back the bar does, so the two are visibly one material */
+  backdrop-filter: var(--dr-blur);
+  /* THE LIFT, AND NOT AS AN EDGE. The one rule says no drop shadow doing work
+     a hairline does better -- the hairline above is the edge, and this is the
+     separation a pill floating free over a moving map needs to sit in front of
+     it rather than in it. The spec page draws both on this surface. */
+  box-shadow: var(--dr-lift);
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-forecast); /* 13 */
+  color: var(--dr-ink-2);
+  text-align: center;
+}
