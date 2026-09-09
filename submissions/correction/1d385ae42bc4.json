@@ -1,0 +1,15 @@
+{
+  "schema": "darkroute-community-submission/v1",
+  "status": "unreviewed",
+  "receivedAt": "2026-09-09T19:04:35.211Z",
+  "kind": "correction",
+  "cameraId": "osm:13545338501",
+  "lat": null,
+  "lon": null,
+  "field": "other",
+  "wrong": null,
+  "right": null,
+  "note": "Test - ignore",
+  "photo": null,
+  "contact": null
+}
