@@ -24,6 +24,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'https://darkroute.ai', changeOrigin: true },
       '/cameras': { target: 'https://darkroute.ai', changeOrigin: true },
+      '/records': { target: 'https://darkroute.ai', changeOrigin: true },
     },
   },
   build: { outDir: 'dist', sourcemap: false },

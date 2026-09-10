@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { fetchMonitoring, fetchMonitoringImage } from '../data/api.ts';
 import type { MonitoringKind, MonitoringRecord, MonitoringResult } from '../data/api.ts';
-import { formatCount } from './data.ts';
+import { download, formatCount } from './data.ts';
+import { monitoringCsv } from './exports.ts';
 
 export const MONITORING_KINDS: readonly { id: MonitoringKind; label: string }[] = [
   { id: 'bluetooth_sensor', label: 'Bluetooth sensors' },
@@ -70,6 +71,7 @@ export function MonitoringView(): ReactElement {
         <p>Published inventories of roadside equipment. These records do not establish ALPR capability and are counted separately from the ALPR camera archive.</p>
         {data !== null ? <p className="dc-table-sub">{formatCount(data.total)} inventory records · {data.sources.length} sources · Snapshot {stamp(data.generatedAt)}</p> : null}
         <button type="button" className="dc-chip" disabled={loading} onClick={reload}>{loading ? 'Refreshing…' : 'Refresh'}</button>
+        <p><a className="dc-source" href="/records/road-monitoring.json" target="_blank" rel="noreferrer">Open complete inventory JSON ↗</a> · <a className="dc-source" href="/?tab=api">All datasets and API</a></p>
       </div>
       {error !== null ? <p className="dc-report-warning" role="status">Could not refresh: {error} {data === null ? 'No inventory has loaded yet.' : 'Previously loaded inventory remains visible.'}</p> : null}
       <details className="dc-panel" open={data !== null && data.sources.some((source) => source.status !== 'ok')}>
@@ -91,7 +93,13 @@ export function MonitoringView(): ReactElement {
         {MONITORING_KINDS.map((option) => <button type="button" className="dc-chip" key={option.id} aria-pressed={kind === option.id}
           onClick={() => { setKind(option.id); setLimit(100); }}>{option.label}</button>)}
       </div>
-      {data !== null ? <p className="dc-table-sub" role="status">Showing {Math.min(limit, records.length)} of {formatCount(records.length)} matching inventory records.</p> : null}
+      {data !== null ? <>
+        <p className="dc-table-sub" role="status">Showing {Math.min(limit, records.length)} of {formatCount(records.length)} matching inventory records. CSV includes every match; JSON includes the complete inventory and source metadata.</p>
+        <div className="dc-report-controls">
+          <button type="button" className="dc-chip" disabled={records.length === 0} onClick={() => { download('darkroute-monitoring.csv', monitoringCsv(data, records), 'text/csv;charset=utf-8'); }}>Download all matching CSV</button>
+          <button type="button" className="dc-chip" onClick={() => { download('darkroute-monitoring.json', JSON.stringify(data, null, 2), 'application/json'); }}>Download complete JSON</button>
+        </div>
+      </> : null}
       {records.slice(0, limit).map((record) => <article className="dc-panel" key={record.id}>
         <div className="dc-kicker">{MONITORING_KINDS.find((option) => option.id === record.kind)?.label} · {record.status === 'unknown' ? 'Status unknown' : record.status}</div>
         <h2>{record.name}</h2>

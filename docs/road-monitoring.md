@@ -1,5 +1,8 @@
 # Road monitoring
 
+For the other public datasets, complete download links and separate record
+counts, see the [data inventory](data-inventory.md).
+
 Layers on the map display published traffic CCTV, red-light and speed
 enforcement cameras, Bluetooth detectors, travel-time probe sensors, toll
 gantries and radar sensors. Every category is on by default and has its own

@@ -4,6 +4,10 @@ Every HTTP endpoint DarkRoute serves, every request the client makes, every
 external service the build tooling talks to, and exactly what the service
 worker caches.
 
+For dataset counts, complete exports, app visibility and the distinction
+between live publication and packaged files, start with the
+[data inventory](../data-inventory.md).
+
 This document is written to be **checked against the code**. Every claim carries
 a `path:line`. If a line number has drifted, the symbol name next to it has not, search for that. If a claim here disagrees with the code, the code is right and
 this file is a bug; please open an issue.
@@ -36,7 +40,8 @@ because it is inconvenient.
 
 The deployed app is a static bundle plus Cloudflare Pages Functions.
 `functions/cameras/[[path]].ts` serves camera tiles and sidecars out of R2 (§1.1).
-`functions/records/*` serves shared news, Atlas and road-monitoring inventories.
+`functions/records/*` serves shared Atlas and road-monitoring inventories;
+the independent news snapshot is exposed through `functions/api/v1/news.ts`.
 `functions/api/v1/*` is the **public API** (§1.3): read endpoints, document and
 camera-image proxies, and two routes that accept something, a
 correction, which becomes a public pull request, and a photograph that the
@@ -58,7 +63,8 @@ under `/api/v1/` are answered `404` as JSON by the middleware and a catch-all,
 never by the app's HTML (§1.3).
 
 `https://api.darkroute.ai` is a second Pages project built from `apps/desktop/`, the developer console, whose own Functions proxy `/v1/*` and `/api/v1/*` to
-the canonical API on the apex (§1.4).
+the canonical API on the apex, plus `/cameras/*` and an explicit public
+`/records/*.json` allowlist (§1.4).
 
 The operator tooling contains curation declarations and Node scripts, plus the
 undeployed TypeScript gateway described above. `packages/api-client` remains a
@@ -327,7 +333,8 @@ Project: a second Cloudflare Pages project, built from `apps/desktop/`
 (a Vite single-page app: map, misuse records, stats, and a box to try the API
 in). DNS for `api.darkroute.ai` and `console.darkroute.ai` points at it.
 Files: `apps/desktop/functions/_proxy.ts`, `apps/desktop/functions/v1/[[path]].ts`,
-`apps/desktop/functions/api/v1/[[path]].ts`, `apps/desktop/functions/_middleware.ts`
+`apps/desktop/functions/api/v1/[[path]].ts`, `apps/desktop/functions/cameras/[[path]].ts`,
+`apps/desktop/functions/records/[[path]].ts`, `apps/desktop/functions/_middleware.ts`
 (pass-through), `apps/desktop/public/_headers`.
 
 The proxy forwards `/v1/*` and `/api/v1/*` to `https://darkroute.ai/api/v1/*`:
@@ -340,7 +347,17 @@ plus `access-control-allow-origin: *` and `x-darkroute-upstream`. It
 re-implements no endpoint and caches nothing of its own: `darkroute.ai/api/v1`
 stays canonical, and if the two ever disagree the canonical one is right.
 
-Everything else on the host is the console. Its static responses carry the
+The `/cameras/*` proxy serves the public camera archive. The `/records/*`
+proxy accepts only `road-monitoring.json`, `atlas-counties.json`,
+`counties.json`, `hazards.json`, `candidates.json` and `county-index.json`.
+These are the same public artifacts served by the canonical origin;
+the route does not enumerate storage or publish private operational records.
+News remains a complete feed at `/api/v1/news`. The console presents separate
+dataset counts and links in its API view; Monitoring and Reports have their
+own views and complete exports. See the [data inventory](../data-inventory.md)
+for what each record count means.
+
+Other page paths on the host are the console. Its static responses carry the
 policy in `apps/desktop/public/_headers` (Pages does not apply `_headers` to
 Function responses, so the proxied API keeps the canonical origin's headers).
 The console's own data layer (`apps/desktop/src/data/api.ts`) calls the
@@ -611,7 +628,7 @@ Specifically:
   each one is testable and each one is named in §2.6 or §2.1; the second command
   in §8 finds them.
 
-## 3. the static data endpoints
+## 3. published data files
 
 Everything below is a file on disk in `apps/pwa/public/`. Vite normally copies
 that tree into `apps/pwa/dist/`, but the `fwm-archive-not-in-deploy` plugin
@@ -623,20 +640,36 @@ freshness never commits generated camera state to Git. A publish validates the
 local directory it is given and binds those exact bytes into the new generation
 manifest.
 
+Atlas and road-monitoring files are a second case: their same-path Functions
+select independently published R2 snapshots, with validated packaged fallback
+when the corresponding object is absent. Storage failures return errors.
+Abuse, hazards, county boundaries and candidates remain packaged static
+files. News has no file in this tree: `functions/api/v1/news.ts` reads R2
+`news/feed.json`. These datasets do not share the camera generation or its
+refresh schedule. Inspect their own dates and source status; the
+[data inventory](../data-inventory.md#live-publication-packaged-snapshots-and-freshness)
+describes the fields and known visibility limitations.
+
 ### 3.1 File layout
 
 ```
 apps/pwa/public/
 ├─ cameras/                       ← source/bootstrap only; omitted from dist, served from R2 in production
-│  ├─ 11/                         ← 339 x-directories, 8,605 tile files
+│  ├─ 11/                         ← tile count changes with the camera snapshot
 │  │  └─ {x}/{y}.json
 │  ├─ index.json
 │  ├─ overview.json
 │  ├─ counties.json
 │  ├─ places.json
-│  └─ tombstones.json
+│  ├─ tombstones.json
+│  └─ continuity.json             ← reviewed capture and replication evidence
 ├─ records/
-│  └─ counties.json               ← documented ALPR misuse; candidates.json appears only in a patrol PR
+│  ├─ road-monitoring.json        ← packaged fallback; live R2 snapshot shadows this path
+│  ├─ atlas-counties.json         ← packaged fallback; live R2 snapshot shadows this path
+│  ├─ counties.json               ← documented ALPR misuse, one record per dated source
+│  ├─ hazards.json                ← packaged work-zone snapshot, with its own build date
+│  ├─ county-index.json           ← county boundary lookup on the device
+│  └─ candidates.json             ← historical unpromoted research candidates
 ├─ basemap-assets/                ← vendored from protomaps/basemaps-assets, pinned
 │  ├─ fonts/
 │  │  ├─ Noto Sans Regular/{0-255,…,65280-65535}.pbf (256 ranges)
@@ -656,6 +689,10 @@ apps/pwa/public/
 ├─ manifest.webmanifest
 └─ .well-known/assetlinks.json    ← TWA Digital Asset Links for ai.darkroute.app
 ```
+
+`scripts/build-landmarks.mjs` can also produce `records/landmarks.json` for
+the optional landmark reader. It was absent from the September 10, 2026
+package; reader support does not establish a published dataset.
 
 > **There are two different files called `counties.json`, and they are
 > unrelated.** `/cameras/counties.json` is the **gazetteer**, FIPS codes to
@@ -678,7 +715,13 @@ apps/pwa/public/
 | `/cameras/counties.json`                                   | same | same |
 | `/cameras/places.json`                                     | same | same |
 | `/cameras/tombstones.json`                                 | same | same: **published, not read by the app** |
+| `/cameras/continuity.json`                                 | same | same; camera publication provenance |
 | `/records/counties.json`                                   | Pages static | `application/json`                                                               |
+| `/records/road-monitoring.json`                            | Validated R2 snapshot via Function, packaged fallback if absent | `application/json; charset=utf-8` |
+| `/records/atlas-counties.json`                             | Validated R2 snapshot via Function, packaged fallback if absent | `application/json; charset=utf-8` |
+| `/records/hazards.json`                                    | Pages static | `application/json`; dated work-zone snapshot |
+| `/records/county-index.json`                               | Pages static | `application/json`; reference geometry |
+| `/records/candidates.json`                                 | Pages static | `application/json`; unpromoted candidates, not confirmed cases |
 | `/basemap-assets/fonts/{fontstack}/{range}.pbf`            | Pages static | `application/octet-stream`                                                       |
 | `/basemap-assets/sprites/{flavor}[@2x].{json,png}`         | Pages static | JSON / PNG |
 | `/fonts/{face}.woff2`                                      | Pages static | `font/woff2`                                                                     |

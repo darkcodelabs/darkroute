@@ -179,7 +179,7 @@ export interface AtlasCounty {
 export interface AtlasResult {
   readonly fetchedAt: string;
   readonly checkedAt: string;
-  readonly source: { readonly name: string; readonly home: string; readonly attribution: string };
+  readonly source: { readonly name: string; readonly home: string; readonly attribution: string; readonly licence?: unknown };
   readonly totals: { readonly alprRows: number; readonly agencies: number; readonly counties: number };
   readonly counties: readonly AtlasCounty[];
 }
