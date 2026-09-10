@@ -1,5 +1,5 @@
 /**
- * THE ABUSE MENU'S BEHAVIOUR, WHICH IS THE HALF THE SPEC DOES NOT DRAW.
+ * THE REPORTS MENU'S BEHAVIOUR, WHICH IS THE HALF THE SPEC DOES NOT DRAW.
  *
  * The markup is `features/chrome/Menu.tsx`'s and `Menu.test.tsx` already
  * measures it - the 44px row, the 40x23 switch, the header's 0.14em, the one
@@ -19,9 +19,7 @@
  *      the Layers menu writes and the only place layer state lives.
  *   5. A SHUT PANEL IS UNREACHABLE, and closing hands focus back.
  *
- * `Show only` is checked for being INERT, which is a decision and not an
- * omission: all 93 records are cited, so the filter has one value and no
- * alternative, and what a chevron would open is not in the spec.
+ * News opens ALPR coverage; Abuse opens the complete abuse view. Both close the menu.
  */
 
 import { readFileSync } from 'node:fs';
@@ -40,13 +38,13 @@ import { resetAllStores, useSettingsStore } from '../../stores/index.ts';
 import {
   ABUSE_AGENCY,
   ABUSE_ALERT,
-  ABUSE_HEADER,
-  ABUSE_MENU_LABEL,
+  REPORTS_HEADER,
+  REPORTS_MENU_LABEL,
   ABUSE_NEAR,
   ABUSE_NOTE,
-  ABUSE_ONLY,
-  ABUSE_READ,
-    ABUSE_UNCOUNTED,
+  REPORTS_NEWS,
+  REPORTS_ABUSE,
+  ABUSE_UNCOUNTED,
   AbuseMenu,
   abuseCounts,
   abuseSummary,
@@ -86,6 +84,7 @@ function Harness({ open = true }: { readonly open?: boolean }): ReactElement {
       open={open}
       onClose={() => undefined}
       returnFocusTo={createRef<HTMLButtonElement>()}
+      onReadNews={() => undefined}
       onReadCases={() => undefined}
     />
   );
@@ -154,14 +153,14 @@ describe('the counts, read from the data', () => {
  * ------------------------------------------------------------------------ */
 
 describe('the panel', () => {
-  it('prints the counted sub-line under the abuse header', () => {
+  it('labels the totals as abuse under the Reports header', () => {
     haveRecords([
       record({ agency: 'A', incidents: 2 }),
       record({ agency: 'B', incidents: 3 }),
     ]);
     render(<Harness />);
-    expect(screen.getByText(ABUSE_HEADER)).toBeInTheDocument();
-    expect(screen.getByText('2 cases · 5 incidents · 2 agencies')).toBeInTheDocument();
+    expect(screen.getByText(REPORTS_HEADER)).toBeInTheDocument();
+    expect(screen.getByText('Abuse: 2 cases · 5 incidents · 2 agencies')).toBeInTheDocument();
   });
 
   /**
@@ -176,8 +175,8 @@ describe('the panel', () => {
     render(<Harness />);
     expect(screen.getByText(LOADING)).toBeInTheDocument();
     expect(screen.queryByText(/0 cases/u)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Read the cases/u })).toHaveTextContent(
-      ABUSE_UNCOUNTED,
+    expect(screen.getByRole('button', { name: /^Read reports/u })).toHaveTextContent(
+    ABUSE_UNCOUNTED,
     );
   });
 
@@ -201,8 +200,8 @@ describe('the panel', () => {
       expect.stringContaining(ABUSE_NEAR),
       expect.stringContaining(ABUSE_ALERT),
       expect.stringContaining(ABUSE_AGENCY),
-      expect.stringContaining(ABUSE_ONLY),
-      expect.stringContaining(ABUSE_READ),
+      expect.stringContaining(REPORTS_NEWS),
+      expect.stringContaining(REPORTS_ABUSE),
     ]);
     // THE THREE TOGGLES ARE TOGGLES AND THE TWO NAVIGATES ARE NOT. A toggle
     // drawn as a navigate row would be a switch a driver cannot press.
@@ -306,9 +305,10 @@ describe('the toggles, against the layer registry', () => {
  * THE TWO NAVIGATE ROWS
  * ------------------------------------------------------------------------ */
 
-describe('the archive row', () => {
-  it('prints the case count and pushes the misuse screen', () => {
+describe('the report destinations', () => {
+  it('opens the abuse view, displays its documented count, and closes the menu', () => {
     haveRecords([record(), record({ fips: '20091' })]);
+    const onReadNews = vi.fn();
     const onReadCases = vi.fn();
     const onClose = vi.fn();
     render(
@@ -316,29 +316,39 @@ describe('the archive row', () => {
         open
         onClose={onClose}
         returnFocusTo={createRef<HTMLButtonElement>()}
+        onReadNews={onReadNews}
         onReadCases={onReadCases}
       />,
     );
-    const row = screen.getByRole('button', { name: /Read the cases/u });
+    const row = screen.getByRole('button', { name: /^Read reports/u });
     expect(row).toHaveTextContent('2 documented');
     fireEvent.click(row);
-    expect(onReadCases).toHaveBeenCalledTimes(1);
-    // AND IT SHUTS THE PANEL. The answer is on another screen, and leaving this
-    // open behind it strands a shut panel over the map.
+    expect(onReadCases).toHaveBeenCalledExactlyOnceWith();
+    expect(onReadNews).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * SHOW ONLY HAS NO OTHER SIDE. `parseRecord` drops any uncited row and
-   * `check-record-citations.mjs` fails the build on one, so every record is
-   * sourced: the filter has one value and no alternative. A missing handler is
-   * the menu language's own way of saying "not wired in this build", and it
-   * renders disabled rather than live-looking and inert.
-   */
-  it('renders Show only inert rather than pretending it opens something', () => {
-    haveRecords([record()]);
-    render(<Harness />);
-    expect(screen.getByRole('button', { name: /Show only/u })).toBeDisabled();
+  it('opens news independently from documented cases and closes the menu', () => {
+    haveRecords([], false);
+    const onReadNews = vi.fn();
+    const onReadCases = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <AbuseMenu
+        open
+        onClose={onClose}
+        returnFocusTo={createRef<HTMLButtonElement>()}
+        onReadNews={onReadNews}
+        onReadCases={onReadCases}
+      />,
+    );
+    const row = screen.getByRole('button', { name: /^News/u });
+    expect(row).toHaveTextContent('ALPR coverage');
+    expect(row).toBeEnabled();
+    fireEvent.click(row);
+    expect(onReadNews).toHaveBeenCalledExactlyOnceWith();
+    expect(onReadCases).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -376,7 +386,7 @@ describe('the shut panel', () => {
     haveRecords([record()]);
     expect(render(<Harness />).container.querySelector('.fwm-drive-abuse')).toHaveAttribute(
       'aria-label',
-      ABUSE_MENU_LABEL,
+      REPORTS_MENU_LABEL,
     );
   });
 
@@ -397,6 +407,7 @@ describe('the shut panel', () => {
         open
         onClose={onClose}
         returnFocusTo={ref}
+        onReadNews={() => undefined}
         onReadCases={() => undefined}
       />,
     );
@@ -415,6 +426,7 @@ describe('the shut panel', () => {
         open={false}
         onClose={onClose}
         returnFocusTo={createRef<HTMLButtonElement>()}
+        onReadNews={() => undefined}
         onReadCases={() => undefined}
       />,
     );

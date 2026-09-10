@@ -204,6 +204,10 @@
   color: var(--dr-ink-muted);
 }
 
+.fwm-inteldetailv1-fact[data-fwm-atlas='true'] {
+  flex-wrap: wrap;
+}
+
 .fwm-inteldetailv1-fact-value {
   flex: 1;
   min-width: 0;

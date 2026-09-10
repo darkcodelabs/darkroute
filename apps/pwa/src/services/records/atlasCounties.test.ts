@@ -16,9 +16,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { createAtlasCounties, parseAtlasCounty } from './atlasCounties.ts';
+import { ATLAS_REFRESH_INTERVAL_MS, createAtlasCounties, parseAtlasCounty } from './atlasCounties.ts';
 import type { AtlasIndex } from './atlasCounties.ts';
 
 const PAYLOAD = {
@@ -161,6 +161,66 @@ describe('provenance travels with the data', () => {
   it('reports when the bytes were fetched, which is not when EFF compiled them', async () => {
     const index = await loaded(PAYLOAD);
     expect(index.fetchedAt()).toBe('2026-09-07T13:50:00.991Z');
+    expect(index.checkedAt()).toBe('2026-09-07T13:50:25.927Z');
+  });
+});
+
+describe('refreshing the shared index', () => {
+  it('deduplicates reads and publishes changed agencies to subscribers after the stale interval', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
+    const revised = { ...PAYLOAD, fetchedAt: '2026-09-10T00:00:00Z', checkedAt: '2026-09-10T00:00:01Z',
+      counties: { '29095': { n: 2, agencies: ['Updated agency'], vendors: ['Updated vendor'], vendorKnown: 2 } } };
+    const read = vi.fn().mockResolvedValueOnce(Response.json(PAYLOAD)).mockResolvedValueOnce(Response.json(revised));
+    const index = createAtlasCounties({ fetchImpl: read });
+    const changed = vi.fn();
+    const stop = index.subscribe(changed);
+    const first = index.refreshIfStale();
+    expect(index.refreshIfStale()).toBe(first);
+    await first;
+    await index.refreshIfStale();
+    expect(read).toHaveBeenCalledTimes(1);
+    now.mockReturnValue(1000 + ATLAS_REFRESH_INTERVAL_MS);
+    await index.refreshIfStale();
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(index.forCounty('29095')?.agencies).toEqual(['Updated agency']);
+    expect(index.fetchedAt()).toBe('2026-09-10T00:00:00Z');
+    expect(index.checkedAt()).toBe('2026-09-10T00:00:01Z');
+    expect(index.getRevision()).toBe(2);
+    expect(changed).toHaveBeenCalledTimes(2);
+    expect(read).toHaveBeenCalledWith('/records/atlas-counties.json', expect.objectContaining({
+      credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-cache',
+    }));
+    stop();
+    await index.refresh();
+    expect(changed).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains the last good county data and provenance after failed or malformed refreshes', async () => {
+    const read = vi.fn().mockResolvedValueOnce(Response.json(PAYLOAD))
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(Response.json({ ...PAYLOAD, schema: 'wrong' }))
+      .mockResolvedValueOnce(Response.json({ ...PAYLOAD, counties: {} }));
+    const index = createAtlasCounties({ fetchImpl: read });
+    await index.refresh();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await index.refresh();
+      expect(index.coverageOf('39061')).toBe('recorded');
+      expect(index.forCounty('39061')?.deployments).toBe(26);
+      expect(index.fetchedAt()).toBe(PAYLOAD.fetchedAt);
+      expect(index.checkedAt()).toBe(PAYLOAD.checkedAt);
+    }
+  });
+
+  it('retries an initial unavailable index when it becomes stale', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(0);
+    const read = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(Response.json(PAYLOAD));
+    const index = createAtlasCounties({ fetchImpl: read });
+    await index.refreshIfStale();
+    expect(index.ready()).toBe(true);
+    expect(index.coverageOf('39061')).toBe('unknown');
+    now.mockReturnValue(ATLAS_REFRESH_INTERVAL_MS);
+    await index.refreshIfStale();
+    expect(index.coverageOf('39061')).toBe('recorded');
   });
 });
 

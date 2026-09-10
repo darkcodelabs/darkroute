@@ -29,13 +29,14 @@
  * three DRAWS. This holds only that the screen wired them to the same places.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, renderHook, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_MODE } from '../../app/mode.ts';
 import { initScreenState } from '../../app/screenState.ts';
 import { RAIL_CODE, RAIL_HELP, RAIL_MAIL, RAIL_SETTINGS, RAIL_THEME } from '../chrome/Rail.tsx';
 import { TOPBAR_FOLD, TOPBAR_UNFOLD } from '../chrome/TopBar.tsx';
+import { setMisuseCasesOnly, useMisuseCasesOnly } from '../misuse/misuseView.ts';
 import { useAlertStore } from '../../stores/alert.ts';
 import { useCamerasStore } from '../../stores/cameras.ts';
 import { usePositionStore } from '../../stores/position.ts';
@@ -46,6 +47,7 @@ import { DriveScreen } from './DriveScreen.tsx';
 
 beforeEach(() => {
   initScreenState();
+  setMisuseCasesOnly(false);
   useCamerasStore.setState(useCamerasStore.getInitialState(), true);
   useAlertStore.setState(useAlertStore.getInitialState(), true);
   usePositionStore.setState(usePositionStore.getInitialState(), true);
@@ -54,6 +56,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setMisuseCasesOnly(false);
   document.documentElement.removeAttribute('data-fwm-mode');
 });
 
@@ -61,6 +64,34 @@ afterEach(() => {
 function mode(): string | null {
   return document.documentElement.getAttribute('data-fwm-mode');
 }
+
+describe('Reports on the map', () => {
+  it('keeps the popup and opens News from its news row', () => {
+    render(<DriveScreen />);
+    const reports = screen.getByRole('button', { name: 'Reports' });
+    expect(reports).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(reports);
+    expect(reports).toHaveAttribute('aria-expanded', 'true');
+    const menu = screen.getByRole('group', { name: 'Reports' });
+    expect(within(menu).getAllByRole('switch')).toHaveLength(3);
+    fireEvent.click(within(menu).getByRole('button', { name: /^News/u }));
+    expect(globalThis.location.search).toContain('screen=news');
+    expect(screen.queryByRole('group', { name: 'Reports' })).not.toBeInTheDocument();
+    expect(reports).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('opens all abuse reporting and Atlas context even after a previous cases-only view', () => {
+    setMisuseCasesOnly(true);
+    const { result } = renderHook(useMisuseCasesOnly);
+    render(<DriveScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Reports' }));
+    const menu = screen.getByRole('group', { name: 'Reports' });
+    fireEvent.click(within(menu).getByRole('button', { name: /^Read reports/u }));
+    expect(globalThis.location.search).toContain('screen=reports');
+    expect(result.current).toBe(false);
+    expect(screen.queryByRole('group', { name: 'Reports' })).not.toBeInTheDocument();
+  });
+});
 
 describe('the rail, which absorbed four keys from two other surfaces', () => {
   /*

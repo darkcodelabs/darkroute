@@ -246,6 +246,36 @@ export default defineConfig({
   },
 
   plugins: [
+    {
+      name: 'fwm-static-guide',
+      generateBundle(): void {
+        // The script-free guide uses the same design tokens as the app.
+        this.emitFile({
+          type: 'asset',
+          fileName: 'alpr/tokens.css',
+          source: readFileSync(new URL('./src/styles/tokens.css', import.meta.url)),
+        });
+      },
+      configureServer(server): void {
+        // Pages serves directory indexes; Vite's public middleware only matches files.
+        // Keep this public URL readable in development as well as in the deployment.
+        server.middlewares.use((request, response, next) => {
+          const path = request.url?.split('?')[0];
+          if (path === '/alpr/tokens.css') {
+            response.setHeader('content-type', 'text/css; charset=utf-8');
+            response.end(readFileSync(new URL('./src/styles/tokens.css', import.meta.url)));
+            return;
+          }
+          if (path === '/alpr') {
+            response.writeHead(302, { location: '/alpr/' });
+            response.end();
+            return;
+          }
+          if (path === '/alpr/') request.url = '/alpr/index.html';
+          next();
+        });
+      },
+    },
     /**
      * THE CAMERA ARCHIVE DOES NOT GO IN THE DEPLOY.
      *
@@ -489,9 +519,10 @@ export default defineConfig({
              * NOT PRECACHED EITHER, deliberately: the county index is about a
              * megabyte, and pulling every US county boundary down on first load
              * for a screen most drivers never open is the same mistake as
-             * precaching the tile archive. StaleWhileRevalidate fetches it once
-             * a driver actually opens MISUSE, then answers instantly and
-             * offline forever after.
+             * precaching the tile archive. NetworkFirst asks for current
+             * records when a screen needs them, then falls back to the saved
+             * snapshot after three seconds or when offline. This also lets the
+             * daily Atlas feed update independently from the app bundle.
              *
              * THESE ARE NOT CAMERA DATA and carry no generation. County borders
              * change on a Census vintage and the misuse file changes when a
@@ -506,9 +537,10 @@ export default defineConfig({
              */
             urlPattern: ({ url }: { url: URL }) =>
               url.origin === self.location.origin && /^\/records\/[\w-]+\.json$/.test(url.pathname),
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'fwm-records-v1',
+              networkTimeoutSeconds: 3,
               cacheableResponse: { statuses: [200] },
               expiration: { maxEntries: 8, purgeOnQuotaError: true },
             },

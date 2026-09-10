@@ -1,5 +1,5 @@
 /**
- * THE ABUSE MENU - brief 4 section A, and the seven rows are the whole of it.
+ * THE REPORTS MENU - news, documented abuse and the abuse alert settings.
  *
  * =============================================================================
  * WHAT IT REPLACED
@@ -9,10 +9,9 @@
  * to READ and the wrong one to reach for while the map is up, because none of it
  * changes what the map or the dock is doing.
  *
- * So the chip opens a LAYER MENU, the way Layers does: four toggles that change
- * the map and the alert, and the archive as the last row rather than the whole
- * content. Nothing is deleted - `Read the cases` still pushes MISUSE, and MISUSE
- * is unchanged.
+ * The Reports chip keeps that popup, with three abuse alert toggles and two
+ * explicit destinations: News and Read reports. Reports opens on its Abuse
+ * tab with recent reporting, documented cases and EFF Atlas context.
  *
  * =============================================================================
  * IT IS THE MENU LANGUAGE, NOT A SECOND PANEL LANGUAGE
@@ -74,10 +73,10 @@ import './abuseMenu.css';
  * ------------------------------------------------------------------------ */
 
 /** The group's accessible name. The chip says which panel it opens. */
-export const ABUSE_MENU_LABEL = 'documented abuse';
+export const REPORTS_MENU_LABEL = 'Reports';
 
 /** Drawn in tracked caps by the stylesheet, whatever the case here. */
-export const ABUSE_HEADER = 'DOCUMENTED ABUSE';
+export const REPORTS_HEADER = 'REPORTS';
 
 
 export const ABUSE_NEAR = 'Abuse near me';
@@ -115,10 +114,9 @@ export const ABUSE_ALERT_VALUE = 'sound and haptics';
 export const ABUSE_AGENCY = 'Name the agency';
 export const ABUSE_AGENCY_VALUE = 'in the alert itself';
 
-export const ABUSE_ONLY = 'Show only';
-export const ABUSE_ONLY_VALUE = 'documented cases';
-
-export const ABUSE_READ = 'Read the cases';
+export const REPORTS_NEWS = 'News';
+export const REPORTS_NEWS_VALUE = 'ALPR coverage';
+export const REPORTS_ABUSE = 'Read reports';
 
 /**
  * THE ONE SENTENCE THAT KEEPS THE LAYER HONEST, and it is not a row.
@@ -219,7 +217,8 @@ export interface AbuseMenuProps {
    * find their way back. Making it optional would let a caller forget, silently.
    */
   readonly returnFocusTo: RefObject<HTMLButtonElement | null>;
-  /** Push the MISUSE screen. Routing is the host's - see `MapControlPanel`. */
+  readonly onReadNews: () => void;
+  /** Open the complete abuse view, including recent reporting and Atlas. */
   readonly onReadCases: () => void;
 }
 
@@ -227,6 +226,7 @@ export function AbuseMenu({
   open,
   onClose,
   returnFocusTo,
+  onReadNews,
   onReadCases,
 }: AbuseMenuProps): ReactElement {
   /*
@@ -317,7 +317,7 @@ export function AbuseMenu({
     <div
       className="fwm-drive-abuse"
       role="group"
-      aria-label={ABUSE_MENU_LABEL}
+      aria-label={REPORTS_MENU_LABEL}
       data-fwm-open={String(open)}
       /* CSS hides it with `visibility`, which is enough in a browser. These two
          are for everything that does not run the stylesheet - the test
@@ -327,7 +327,7 @@ export function AbuseMenu({
       inert={!open}
     >
       <Menu tone="abuse">
-        <MenuHeader label={ABUSE_HEADER} sub={loaded ? abuseSummary(counts) : LOADING} />
+        <MenuHeader label={REPORTS_HEADER} sub={loaded ? `Abuse: ${abuseSummary(counts)}` : LOADING} />
 
         <MenuToggle
           label={ABUSE_NEAR}
@@ -357,22 +357,20 @@ export function AbuseMenu({
 
         <MenuRule />
 
-        {/* SHOW ONLY HAS NO OTHER SIDE, so it reports nothing and renders inert.
-            `parseRecord` drops any uncited row and
-            `scripts/check-record-citations.mjs` fails the build on one, so all
-            of them are sourced: the filter has one value and no alternative, and
-            what would be in the submenu a chevron promises is not in the spec.
-            A missing handler is the menu language's own way of saying "not wired
-            in this build" - the row draws disabled rather than live-looking and
-            inert, which is the idiom `TextSizePicker` and `SettingsSwitch`
-            already run on. */}
-        <MenuNavigate label={ABUSE_ONLY} value={ABUSE_ONLY_VALUE} />
+        <MenuNavigate
+          label={REPORTS_NEWS}
+          value={REPORTS_NEWS_VALUE}
+          onOpen={() => {
+            closeAndRestore();
+            onReadNews();
+          }}
+        />
 
         {/* THE ARCHIVE, AS THE LAST ROW RATHER THAN THE WHOLE CONTENT.
             It shuts the panel first: the answer is on another screen, and
             leaving this open behind it would strand a shut panel over the map. */}
         <MenuNavigate
-          label={ABUSE_READ}
+          label={REPORTS_ABUSE}
           value={loaded ? `${String(counts.cases)} documented` : ABUSE_UNCOUNTED}
           onOpen={() => {
             closeAndRestore();

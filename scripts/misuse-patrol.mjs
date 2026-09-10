@@ -33,6 +33,13 @@ export const GDELT_QUERIES = [
   '"license plate recognition" "improper access" police sourcelang:english',
 ];
 
+/** Broader reporting for the automatic News feed, using the same fetcher. */
+export const NEWS_GDELT_QUERIES = [
+  '"license plate reader" sourcelang:english',
+  '"Flock Safety" sourcelang:english',
+  '"automatic number plate recognition" sourcelang:english',
+];
+
 const DEFAULT_DAYS = 14;
 const MAX_DAYS = 90;
 const MAX_RECORDS = 100;
@@ -171,7 +178,9 @@ export function buildGdeltUrl(days, query) {
   if (!Number.isInteger(days) || days < 1 || days > MAX_DAYS) {
     throw new Error(`days must be an integer from 1 through ${String(MAX_DAYS)}`);
   }
-  if (!GDELT_QUERIES.includes(query)) throw new Error('query is not in the reviewed standing set');
+  if (![...GDELT_QUERIES, ...NEWS_GDELT_QUERIES].includes(query)) {
+    throw new Error('query is not in the reviewed standing set');
+  }
   const url = new URL(GDELT_DOC_ENDPOINT);
   url.searchParams.set('query', query);
   url.searchParams.set('mode', 'artlist');

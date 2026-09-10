@@ -74,7 +74,9 @@ const NON_ROOT_V1_SCREENS: Readonly<Record<string, string>> = {
   ask: 'features/ask/components/AskViewV1.tsx',
   triage: 'features/triage/components/TriageViewV1.tsx',
   admin: 'features/admin/AdminV1Screen.tsx',
-  misuse: 'features/misuse/MisuseScreen.tsx',
+  misuse: 'features/reports/ReportsScreen.tsx',
+  news: 'features/reports/ReportsScreen.tsx',
+  reports: 'features/reports/ReportsScreen.tsx',
 };
 
 /** The v1 dock destinations, and the file that draws each. */

@@ -165,6 +165,7 @@ interface TileCamera {
   readonly tags?: unknown;
   readonly locality?: unknown;
   readonly streetM?: unknown;
+  readonly countyFips?: unknown;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -298,6 +299,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             ? entry.tags['camera:mount']
             : null,
         locality: typeof entry.locality === 'string' ? entry.locality : null,
+        countyFips: typeof entry.countyFips === 'string' && /^\d{5}$/u.test(entry.countyFips) ? entry.countyFips : null,
         streetM: typeof entry.streetM === 'number' ? entry.streetM : null,
       });
     }

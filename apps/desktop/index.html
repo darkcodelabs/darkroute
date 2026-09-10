@@ -3,11 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>DarkRoute Console</title>
-    <meta name="description" content="Desk-side console for the DarkRoute ALPR archive." />
+    <title>DarkRoute | ALPR Camera Archive &amp; Map</title>
+    <meta name="description" content="Explore DarkRoute's mapped ALPR and ANPR cameras, OpenStreetMap source records, camera coverage, and public API from your desktop." />
+    <link rel="canonical" href="https://api.darkroute.ai/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DarkRoute" />
+    <meta property="og:title" content="DarkRoute | ALPR Camera Archive &amp; Map" />
+    <meta property="og:description" content="Explore mapped license plate readers, camera coverage, source records, and the public API." />
+    <meta property="og:url" content="https://api.darkroute.ai/" />
+    <meta property="og:image" content="https://darkroute.ai/icons/icon-512.png" />
+    <meta property="og:image:alt" content="DarkRoute logo" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main>
+        <h1>DarkRoute ALPR camera archive and map</h1>
+        <p>Browse community-mapped automated license plate readers, also known as ALPR or
+          ANPR cameras. DarkRoute's archive uses OpenStreetMap contributions and provides
+          camera coverage, source records, and a public API.</p>
+        <p>These are mapped camera locations, not records of license plates or vehicle sightings.
+          Coverage may be incomplete or out of date.</p>
+        <p><a href="https://darkroute.ai/alpr/">Read the ALPR camera guide</a> for camera types,
+          Flock readers, routing, and privacy limits.</p>
+        <p><a href="https://darkroute.ai/?app">Open the driving app</a></p>
+      </main>
+    </div>
+    <noscript>Enable JavaScript to browse the interactive archive, or read the ALPR guide above.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

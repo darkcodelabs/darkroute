@@ -121,6 +121,8 @@ export const SECONDARY_SCREENS = [
    * reachable by URL in v0.
    */
   'misuse',
+  'news',
+  'reports',
   /**
    * DOCS - the route out to the documentation and, more importantly, to the
    * commit this bundle was built from.

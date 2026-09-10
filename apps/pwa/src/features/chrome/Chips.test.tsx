@@ -131,7 +131,7 @@ describe('the chip row', () => {
   it('draws the spec’s three chips, in the spec’s order, with the spec’s words', () => {
     render(<Chips active="layers" />);
     expect(screen.getAllByRole('button').map((chip) => chip.textContent)).toEqual([
-      'Abuse',
+      'Reports',
       'Layers',
       'Map view',
     ]);
@@ -153,7 +153,7 @@ describe('the chip row', () => {
       'aria-pressed',
       'true',
     );
-    expect(screen.getByRole('button', { name: 'Abuse' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Reports' })).toHaveAttribute(
       'aria-pressed',
       'false',
     );
@@ -192,7 +192,7 @@ describe('the chip row', () => {
       expect(mark).toHaveAttribute('stroke-linejoin', 'round');
       expect(mark).toHaveAttribute('aria-hidden', 'true');
     }
-    expect(container.textContent).toBe('AbuseLayersMap view');
+    expect(container.textContent).toBe('ReportsLayersMap view');
   });
 
   /* 16 px, WHICH IS THE BRIEF'S NUMBER AND THE SPEC'S. They agree; this is the

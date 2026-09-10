@@ -34,7 +34,7 @@ import { OverlayClose } from '../../../components/overlay/OverlayClose.tsx';
 import { MOUNT_KINDS, MOUNT_LABEL } from '../reportDraft.ts';
 import { OFFSET_LABEL, SUBJECT_OFFSETS_FT } from '../subjectPosition.ts';
 import { FacingDialV1 } from './FacingDialV1.tsx';
-import { WHERE_NO_HEADING, WHERE_UNSET } from './WhereChips.tsx';
+import { WHERE_DISTANCE_UNSET, WHERE_NO_HEADING } from './WhereChips.tsx';
 import type { PhotoAttachment, PhotoRejection, ReportViewModel } from './ReportView.tsx';
 
 import '../reportDetailV1.css';
@@ -162,6 +162,11 @@ export function ReportDetailV1({
      The row is REMOVED rather than disabled, so the sheet asks exactly the
      questions that have an answer - which is what `WhereChips` does and why. */
   const needsOffset = model.side !== null && model.side !== 'overhead';
+  const missingPosition = !model.hasHeading
+    ? WHERE_NO_HEADING
+    : needsOffset
+      ? WHERE_DISTANCE_UNSET
+      : 'Camera position missing · close Add detail and choose left, right, or overhead.';
 
   return (
     <section className="fwm-reportdetailv1" aria-label="report detail">
@@ -207,15 +212,13 @@ export function ReportDetailV1({
           </section>
         ) : null}
 
-        {/* THE STATE OF THE ANSWER, in the driver's own words or the reason
-            there is not one yet. Never blank: an empty line reads as "fine",
-            and "NOT SAID · THIS REPORT CANNOT BE MAPPED" is the only place the
-            product says out loud that a filed report may be unpublishable. */}
+        {/* Name the missing camera position and the next action. Side selection
+            is on the parent report; the distance choices are on this sheet. */}
         <p
           className="fwm-reportdetailv1-where fwm-data"
           data-fwm-report-where={model.whereSummary === null ? 'unset' : 'set'}
         >
-          {model.whereSummary ?? (model.hasHeading ? WHERE_UNSET : WHERE_NO_HEADING)}
+          {model.whereSummary ?? missingPosition}
         </p>
 
         <section className="fwm-reportdetailv1-group" aria-label="mount">

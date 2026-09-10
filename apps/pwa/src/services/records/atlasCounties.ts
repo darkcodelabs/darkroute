@@ -60,6 +60,7 @@
    sat here for one commit and was never read - it would have pinned this store
    to the unversioned path while everything around it followed the generation. */
 const SCHEMA = 'darkroute-atlas-counties/v1';
+export const ATLAS_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 /** What the Atlas has to say about one county. */
 export interface AtlasCounty {
@@ -112,9 +113,15 @@ export interface AtlasIndex {
   coverageOf(fips: string | null | undefined): AtlasCoverage;
   /** When the bytes were downloaded from EFF. Never a compilation date. */
   fetchedAt(): string | null;
+  /** Last upstream source check carried by the published snapshot. */
+  checkedAt(): string | null;
   totals(): AtlasTotals | null;
   source(): AtlasSource | null;
   ready(): boolean;
+  getRevision(): number;
+  subscribe(listener: () => void): () => void;
+  refresh(): Promise<void>;
+  refreshIfStale(): Promise<void>;
 }
 
 export interface AtlasOptions {
@@ -165,16 +172,26 @@ export function createAtlasCounties(options: AtlasOptions = {}): AtlasIndex {
 
   let byFips: Map<string, AtlasCounty> | null = null;
   let retrievedAt: string | null = null;
+  let sourceCheckedAt: string | null = null;
   let counts: AtlasTotals | null = null;
   let credit: AtlasSource | null = null;
   let loading: Promise<void> | null = null;
+  let lastAttemptAt: number | null = null;
+  let revision = 0;
+  const listeners = new Set<() => void>();
 
   const load = (): Promise<void> => {
-    loading ??= (async (): Promise<void> => {
+    if (loading !== null) return loading;
+    lastAttemptAt = Date.now();
+    const controller = new AbortController();
+    const timer = globalThis.setTimeout(() => { controller.abort(); }, 15_000);
+    loading = (async (): Promise<void> => {
       const parsed = new Map<string, AtlasCounty>();
       try {
         const res = await doFetch(`${base}/atlas-counties.json`, {
           headers: { accept: 'application/json' },
+          credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-cache',
+          signal: controller.signal,
         });
         if (res.ok) {
           const body: unknown = await res.json();
@@ -189,9 +206,14 @@ export function createAtlasCounties(options: AtlasOptions = {}): AtlasIndex {
               const county = parseAtlasCounty(fips, raw);
               if (county !== null) parsed.set(fips, county);
             }
-            if (typeof body['fetchedAt'] === 'string' && body['fetchedAt'] !== '') {
-              retrievedAt = body['fetchedAt'];
+            if (parsed.size === 0) throw new Error('Atlas snapshot is empty');
+            const stamp = body['fetchedAt'];
+            if (typeof stamp !== 'string' || !Number.isFinite(Date.parse(stamp))) {
+              throw new Error('Atlas retrieval date is missing');
             }
+            retrievedAt = stamp;
+            const checked = body['checkedAt'];
+            sourceCheckedAt = typeof checked === 'string' && Number.isFinite(Date.parse(checked)) ? checked : null;
             const totals = isRecord(body['totals']) ? body['totals'] : {};
             counts = {
               alprRows: count(totals['alprRows']),
@@ -210,6 +232,7 @@ export function createAtlasCounties(options: AtlasOptions = {}): AtlasIndex {
               licenceConfirmed: licence['confirmed'] === true,
               licenceUrl: String(licence['url'] ?? ''),
             };
+            byFips = parsed;
           }
         }
       } catch {
@@ -221,8 +244,14 @@ export function createAtlasCounties(options: AtlasOptions = {}): AtlasIndex {
          * must not be rendered as "the Atlas records nothing here".
          */
       }
-      byFips = parsed;
-    })();
+      // A failed refresh keeps the last usable snapshot and its original dates.
+      byFips ??= new Map();
+    })().finally(() => {
+      globalThis.clearTimeout(timer);
+      loading = null;
+      revision += 1;
+      for (const listener of listeners) listener();
+    });
     return loading;
   };
 
@@ -259,6 +288,11 @@ export function createAtlasCounties(options: AtlasOptions = {}): AtlasIndex {
       return retrievedAt;
     },
 
+    checkedAt() {
+      if (byFips === null) void load();
+      return sourceCheckedAt;
+    },
+
     totals() {
       if (byFips === null) void load();
       return counts;
@@ -271,6 +305,20 @@ export function createAtlasCounties(options: AtlasOptions = {}): AtlasIndex {
 
     ready() {
       return byFips !== null;
+    },
+
+    getRevision: () => revision,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
+    refresh: load,
+    refreshIfStale() {
+      if (loading !== null) return loading;
+      if (lastAttemptAt !== null && Date.now() - lastAttemptAt < ATLAS_REFRESH_INTERVAL_MS) {
+        return Promise.resolve();
+      }
+      return load();
     },
   };
 }

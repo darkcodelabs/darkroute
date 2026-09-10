@@ -19,21 +19,21 @@ import { ApiRefView } from './ApiRefView.tsx';
 import { CoverageView } from './CoverageView.tsx';
 import { fetchCounties, fetchIndex, fetchTombstones, formatCount } from './data.ts';
 import type { CountyRow } from './data.ts';
-import { MisuseView } from './MisuseView.tsx';
+import { ReportsView } from './ReportsView.tsx';
 import './console.css';
 
-export type TabId = 'archive' | 'misuse' | 'api' | 'coverage';
+export type TabId = 'archive' | 'reports' | 'api' | 'coverage';
 
 export const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
   { id: 'archive', label: 'Archive' },
-  { id: 'misuse', label: 'Misuse' },
+  { id: 'reports', label: 'Reports' },
   { id: 'api', label: 'API' },
   { id: 'coverage', label: 'Coverage' },
 ];
 
 const RAILS: Readonly<Record<TabId, 'both' | 'left' | 'none'>> = {
   archive: 'both',
-  misuse: 'left',
+  reports: 'none',
   api: 'none',
   coverage: 'left',
 };
@@ -42,6 +42,7 @@ const THEME_KEY = 'darkroute.console.theme';
 
 function tabFromLocation(): TabId {
   const wanted = new URLSearchParams(globalThis.location?.search ?? '').get('tab');
+  if (wanted === 'misuse') return 'reports';
   return TABS.some((t) => t.id === wanted) ? (wanted as TabId) : 'archive';
 }
 
@@ -228,12 +229,13 @@ export function Console(): ReactElement {
       </header>
 
       {tab === 'archive' ? <ArchiveView archive={archive} query={query} theme={theme} /> : null}
-      {tab === 'misuse' ? <MisuseView archive={archive} query={query} /> : null}
+      {tab === 'reports' ? <ReportsView archive={archive} query={query} /> : null}
       {tab === 'api' ? <ApiRefView archive={archive} /> : null}
       {tab === 'coverage' ? <CoverageView archive={archive} query={query} /> : null}
 
       <footer className="dc-status" aria-label="Archive status">
         <span>Map data © OpenStreetMap contributors</span>
+        <a href="https://darkroute.ai/alpr/">ALPR camera guide</a>
         <span className="dc-mono">ODbL-1.0</span>
         <span className="dc-spacer" />
         <span>build {built}</span>

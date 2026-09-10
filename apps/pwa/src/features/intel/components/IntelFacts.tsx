@@ -18,13 +18,15 @@
 
 import type { ReactElement } from 'react';
 
-import type { IntelFact } from '../intelState.ts';
+import type { IntelAtlasContext, IntelFact } from '../intelState.ts';
+import { IntelAtlasDetails } from './IntelAtlasDetails.tsx';
 
 export interface IntelFactsProps {
   readonly facts: readonly IntelFact[];
+  readonly atlas?: IntelAtlasContext | null | undefined;
 }
 
-export function IntelFacts({ facts }: IntelFactsProps): ReactElement {
+export function IntelFacts({ facts, atlas = null }: IntelFactsProps): ReactElement {
   return (
     <dl className="fwm-intel-facts fwm-data">
       {facts.map((fact) => (
@@ -38,6 +40,9 @@ export function IntelFacts({ facts }: IntelFactsProps): ReactElement {
           <dd className="fwm-intel-fact-value" data-fwm-intel-tone={fact.tone}>
             {fact.value}
           </dd>
+          {fact.label === 'EFF ATLAS' && atlas !== null ? (
+            <dd className="fwm-intel-atlas-content"><IntelAtlasDetails atlas={atlas} /></dd>
+          ) : null}
         </div>
       ))}
     </dl>

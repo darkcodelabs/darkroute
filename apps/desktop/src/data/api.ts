@@ -50,6 +50,8 @@ export interface Camera {
   readonly mount?: string | null;
   /** The town, or "<Name> County", from the pinned release context. */
   readonly locality?: string | null;
+  /** Join to the public Atlas and abuse endpoints for county context. */
+  readonly countyFips?: string | null;
   /** Metres from the camera to `street`. */
   readonly streetM?: number | null;
 }
@@ -93,6 +95,9 @@ export class ApiError extends Error {
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     headers: { accept: 'application/json' },
+    credentials: 'omit',
+    referrerPolicy: 'no-referrer',
+    cache: 'no-cache',
     signal: signal ?? null,
   });
   const body: unknown = await response.json().catch(() => null);
@@ -134,10 +139,48 @@ export interface AbuseRecord {
 export interface AbuseResult {
   readonly count: number;
   readonly records: readonly AbuseRecord[];
+  readonly generatedAt?: string | null;
 }
 
 export function fetchAbuse(signal?: AbortSignal): Promise<AbuseResult> {
   return get<AbuseResult>('/api/v1/abuse', signal);
+}
+
+export interface NewsArticle {
+  readonly id: string;
+  readonly title: string;
+  readonly url: string;
+  readonly publisher: string;
+  /** Upstream observation time, not a verified publication date. */
+  readonly publishedAt: string;
+  readonly topic: 'abuse' | 'news';
+}
+export interface NewsResult {
+  readonly updatedAt: string;
+  readonly lastAttemptAt: string;
+  readonly coverage: { readonly status: 'complete' | 'partial' | 'unavailable'; readonly attempted: number; readonly succeeded: number };
+  readonly articles: readonly NewsArticle[];
+}
+export function fetchNews(signal?: AbortSignal): Promise<NewsResult> {
+  return get<NewsResult>('/api/v1/news', signal);
+}
+
+export interface AtlasCounty {
+  readonly fips: string;
+  readonly deployments: number;
+  readonly agencies: readonly string[];
+  readonly vendors: readonly string[];
+  readonly vendorKnown: number;
+}
+export interface AtlasResult {
+  readonly fetchedAt: string;
+  readonly checkedAt: string;
+  readonly source: { readonly name: string; readonly home: string; readonly attribution: string };
+  readonly totals: { readonly alprRows: number; readonly agencies: number; readonly counties: number };
+  readonly counties: readonly AtlasCounty[];
+}
+export function fetchAtlas(signal?: AbortSignal): Promise<AtlasResult> {
+  return get<AtlasResult>('/api/v1/atlas', signal);
 }
 
 export interface Stats {

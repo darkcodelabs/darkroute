@@ -68,6 +68,7 @@ vi.hoisted(() => {
 import { positionActions } from '../../stores/position.ts';
 
 import { MisuseScreen } from './MisuseScreen.tsx';
+import { setMisuseCasesOnly } from './misuseView.ts';
 
 /** The same bytes the stub above serves, for comparing the screen against. */
 const RECORDS_JSON = readFileSync(
@@ -105,10 +106,12 @@ function cardOf(item: HTMLElement | undefined): HTMLElement {
 }
 
 beforeEach(() => {
+  setMisuseCasesOnly(false);
   positionActions.reset();
 });
 
 afterEach(() => {
+  setMisuseCasesOnly(false);
   positionActions.reset();
 });
 

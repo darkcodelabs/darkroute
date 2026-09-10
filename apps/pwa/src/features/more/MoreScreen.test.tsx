@@ -126,12 +126,13 @@ describe('the Admin row', () => {
 });
 
 describe('what everybody gets', () => {
-  it('draws the seven rows of the four groups, and only those', async () => {
+  it('draws the public destinations including automatic News', async () => {
     await mountAs({ email: null, admin: false });
 
     expect(rowTitles()).toEqual([
-      'Misuse',
+      'Reports',
       'Report abuse',
+      'News',
       'Alert diet',
       'Hands free',
       'What it knows',
@@ -148,7 +149,7 @@ describe('what everybody gets', () => {
         (node) => node.textContent ?? '',
       );
 
-    expect(under(GROUP_ACCOUNTABILITY)).toEqual(['Misuse', 'Report abuse']);
+    expect(under(GROUP_ACCOUNTABILITY)).toEqual(['Reports', 'Report abuse', 'News']);
     expect(under(GROUP_ALERTS)).toEqual(['Alert diet', 'Hands free']);
     expect(under(GROUP_THIS_PHONE)).toEqual(['What it knows', 'Settings']);
     expect(under(GROUP_ABOUT)).toEqual(['How this works']);
@@ -183,11 +184,11 @@ describe('what everybody gets', () => {
      * `countyRecords` is empty in a mount - the record index is a file the app
      * loads at runtime. "0 documented cases" would be this app making a claim
      * about American policing that it has not earned, so the meta is empty and
-     * the row still says `Misuse`.
+     * the row still says `Reports`.
      */
     await mountAs({ email: null, admin: false });
 
-    expect(screen.getByText('Misuse')).toBeInTheDocument();
+    expect(screen.getByText('Reports')).toBeInTheDocument();
     expect(screen.queryByText(/documented cases/)).not.toBeInTheDocument();
   });
 });
