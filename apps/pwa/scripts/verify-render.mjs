@@ -124,7 +124,12 @@ try {
     };
   });
 
-  if (seen.title !== 'DarkRoute') failures.push(`title is ${JSON.stringify(seen.title)}, not DarkRoute`);
+  const expectedTitle = 'DarkRoute | ALPR Camera Map & License Plate Reader Alerts';
+  // This render probe also checks hosts still serving the previous title.
+  // The deploy script verifies the production version by its bundle hash.
+  if (seen.title !== expectedTitle && seen.title !== 'DarkRoute') {
+    failures.push(`unexpected title: ${JSON.stringify(seen.title)}`);
+  }
   if (seen.bodyChars < 40) failures.push(`the page rendered ${String(seen.bodyChars)} characters - effectively blank`);
   if (!seen.hasCanvas) failures.push('no map canvas: MapLibre never built');
   if (!seen.canvasPainted) failures.push('the map canvas has no size: nothing was drawn into it');

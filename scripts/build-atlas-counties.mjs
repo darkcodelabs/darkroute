@@ -86,12 +86,25 @@ import {
 } from './atlas-counties.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'apps/pwa/public/records/atlas-counties.json');
+const options = { dry: false, offline: false, output: join(ROOT, 'apps/pwa/public/records/atlas-counties.json'), cache: join(ROOT, '.cache/atlas') };
+const args = process.argv.slice(2);
+for (let index = 0; index < args.length; index += 1) {
+  const arg = args[index];
+  if (arg === '--dry') options.dry = true;
+  else if (arg === '--offline') options.offline = true;
+  else if (arg === '--output' || arg === '--cache') {
+    const value = args[++index];
+    if (!value || value.startsWith('--')) throw new Error(`${arg} requires a path`);
+    options[arg === '--output' ? 'output' : 'cache'] = resolve(value);
+  } else throw new Error(`Unknown argument: ${arg}`);
+}
+const { dry, offline } = options;
+const OUT = options.output;
 const GEOJSON = join(ROOT, 'scripts/data/us-counties.geojson');
 const CAMERA_COUNTIES = join(ROOT, 'apps/pwa/public/cameras/counties.json');
 
 /** Gitignored, like every other `.cache` directory in this repo. */
-const CACHE = join(ROOT, '.cache/atlas');
+const CACHE = options.cache;
 const CACHE_CSV = join(CACHE, 'download.csv');
 const CACHE_META = join(CACHE, 'meta.json');
 
@@ -133,10 +146,6 @@ const LICENCE = Object.freeze({
     'rows are which, so this layer republishes only facts (agency, city, county, state, ' +
     'vendor, technology) and never the Summary column.',
 });
-
-const args = new Set(process.argv.slice(2));
-const dry = args.has('--dry');
-const offline = args.has('--offline');
 
 function say(message) {
   process.stdout.write(`${message}\n`);

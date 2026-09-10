@@ -67,8 +67,7 @@ machine-readable contract is the served `openapi.json`, not a package.
 
 ## 1. Cloudflare Functions
 
-Source of truth: everything under `functions/`. Twelve route files, one shared
-module (`functions/_shared/access.ts`), one route table
+Source of truth: everything under `functions/`, with shared modules, one route table
 (`functions/api/v1/_routes.ts`) and one middleware (`functions/api/v1/_middleware.ts`).
 
 | Route | Methods | File | Auth / notes |
@@ -76,7 +75,10 @@ module (`functions/_shared/access.ts`), one route table
 | `/cameras/*`                          | `GET`, `HEAD` | `functions/cameras/[[path]].ts`                            | Public; no CORS, no rate-limit headers (§1.1) |
 | `/api/v1/cameras`                     | `GET`, `HEAD` | `functions/api/v1/cameras.ts`                              | Public (§1.3). Every `/api/v1/*` row below shares the middleware's CORS and limit |
 | `/api/v1/stats`                       | `GET`, `HEAD` | `functions/api/v1/stats.ts`                                | Public |
-| `/api/v1/abuse`                       | `GET`, `HEAD` | `functions/api/v1/abuse.ts`                                | Public |
+| `/api/v1/abuse`                       | `GET`, `HEAD` | `functions/api/v1/abuse.ts`                                | Public; optional county `fips` |
+| `/api/v1/news` | `GET`, `HEAD` | `functions/api/v1/news.ts` | Public; current article feed and collection status |
+| `/api/v1/atlas` | `GET`, `HEAD` | `functions/api/v1/atlas.ts` | Public; EFF Atlas county context |
+| `/records/atlas-counties.json` | `GET`, `HEAD` | `functions/records/atlas-counties.json.ts` | Shared live Atlas snapshot, with packaged fallback before initial publication |
 | `/api/v1/place`                       | `GET`, `HEAD` | `functions/api/v1/place.ts`                                | Public; proxies Nominatim |
 | `/api/v1/route`                       | `GET`, `HEAD` | `functions/api/v1/route.ts`                                | Public; proxies Valhalla; `no-store`                                               |
 | `/api/v1/openapi.json`                | `GET`, `HEAD` | `functions/api/v1/openapi.json.ts`                         | Public; the contract |
@@ -254,9 +256,11 @@ Runs before any handler, for every `/api/v1/*` request. Nothing under
 
 | Route | Request | `200` body | Refusals | Cache |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `GET /api/v1/cameras`                     | `bbox=west,south,east,north` **required**: longitude −180..180, latitude −85..85, east > west, north > south, at most **1.5°** a side. `owner` ∈ `police, inter_agency, hoa, private, unverified`. `limit` integer 1..1000, default 200. A box may open at most **24** z11 tiles, checked on its own terms | `{ attribution, licence: "ODbL-1.0", query: { bbox, owner, limit }, count, truncated, emptyTiles, cameras: [{ id, lat, lon, ownerType, street, cross, directionDeg, operator }] }`. `truncated` = more exist than were returned; `emptyTiles` = squares holding no mapped camera. They mean opposite things | `400 bad_bbox · bad_owner · bad_limit · too_many_tiles`; `503 archive_unavailable`                                                                                                                                    | 300 s |
+| `GET /api/v1/cameras`                     | `bbox=west,south,east,north` **required**: longitude −180..180, latitude −85..85, east > west, north > south, at most **1.5°** a side. `owner` ∈ `police, inter_agency, hoa, private, unverified`. `limit` integer 1..1000, default 200. A box may open at most **24** z11 tiles, checked on its own terms | `{ attribution, licence: "ODbL-1.0", query: { bbox, owner, limit }, count, truncated, emptyTiles, cameras: [{ id, lat, lon, ownerType, street, cross, directionDeg, operator, countyFips }] }`. `truncated` = more exist than were returned; `emptyTiles` = squares holding no mapped camera. They mean opposite things | `400 bad_bbox · bad_owner · bad_limit · too_many_tiles`; `503 archive_unavailable`                                                                                                                                    | 300 s |
 | `GET /api/v1/stats`                       | none | `{ cameras, generation, generatedAt, upstream, zoom, bbox, source, attribution, licence, abuseRecords, scope, caveat }`. `generation` is the `x-darkroute-camera-generation` the tile route stamped on `index.json`                                                                                          | `503 archive_unavailable · archive_malformed`                                                                                                                                                                         | 300 s |
-| `GET /api/v1/abuse`                       | none | `{ note, count, uncited, records: [{ fips, agency, incidents, year, sourceName, summary, sourceUrl }] }`. Uncited rows are returned and counted, never dropped | `503 records_unavailable · records_malformed`                                                                                                                                                                         | 300 s |
+| `GET /api/v1/abuse` | optional five-digit `fips` | `{ note, generatedAt, countyFips, counties, count, uncited, records: [{ fips, agency, incidents, year, sourceName, summary, sourceUrl }] }`; uncited rows remain visible | `400 bad_fips`; `503 records_unavailable · records_malformed` | 300 s |
+| `GET /api/v1/news` | none | `{ schema, updatedAt, lastAttemptAt, coverage: { status, attempted, succeeded }, articles: [{ id, title, url, publisher, publishedAt, topic }] }`; `publishedAt` holds upstream observation time, displayed as Seen; topic is `abuse` or `news` | `503 news_unavailable · news_malformed` | 60 s |
+| `GET /api/v1/atlas` | optional five-digit `fips` | `{ schema, note, fetchedAt, checkedAt, source, totals, countyFips, coverage, count, counties: [{ fips, deployments, agencies, vendors, vendorKnown }] }`; county coverage is `recorded`, `none`, or null for unfiltered responses | `400 bad_fips`; `503 atlas_unavailable · atlas_malformed` | 300 s |
 | `GET /api/v1/place`                       | `q` **required**, trimmed, ≤ 120 chars. `near=lat,lon` optional, a _preference_: a 2°-wide `viewbox` with `bounded=0`; malformed is ignored. Upstream Nominatim (`NOMINATIM_URL` overrides), `countrycodes=us,pr`, `limit=6`, a User-Agent naming a contact; the upstream fetch is edge-cached 3600 s by query | `{ query, places: [{ name, detail, lat, lon }] (≤ 6), attribution }`                                                                                                                                                                                                                                             | `400 missing_query · query_too_long`; `502 geocoder_unreachable · geocoder_failed · geocoder_unreadable`                                                                                                                | 3600 s |
 | `GET /api/v1/route`                       | `from`, `to` required `lat,lon` (lat −90..90, lon −180..180), at most **12°** apart in either axis. `avoid`: up to **60** `lat,lon` separated by `;`, each a 60 m half-width square the router may not enter; malformed entries dropped. Upstream Valhalla `POST` (`VALHALLA_URL` overrides), `costing: auto`, miles | `{ shape: [{ lat, lon }], miles, seconds, avoided, maneuvers: [{ instruction, street, miles, seconds, turn, beginShapeIndex }], attribution }`. `beginShapeIndex` indexes the whole `shape`, not a leg | `400 missing_points · too_far`; `409 no_route` (the router refused every road, a real answer); `502 router_unreachable · router_failed · router_unreadable · router_empty`                                          | **`no-store`**, always |
 | `GET /api/v1/openapi.json`                | none | OpenAPI 3.1. `servers` is the origin being called, plus `https://api.darkroute.ai` when called from the canonical origin | - | 300 s |
@@ -1022,23 +1026,31 @@ GeoJSON handed to it by path (`:10`).
 
 ### 4.7 `scripts/misuse-patrol.mjs`, new documented ALPR abuse
 
-| | |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Calls | Six sequential credential-free `GET https://api.gdeltproject.org/api/v2/doc/doc` requests using the fixed standing query set, `mode=artlist`, `format=json`, `maxrecords=100`, `timespan={1..90}d`, and `sort=datedesc`. GDELT's primary [DOC 2.0 documentation](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) defines those parameters and Article List JSON output |
-| Auth | None. The workflow intentionally receives no news-provider secret |
-| User-Agent | `DarkRoute-misuse-patrol/1.0 (+https://darkroute.ai)`                                                                                                                                                                                                                                                                                                                           |
-| Network guards | Exact HTTPS host/path, redirects forbidden, 45-second timeout, 1 MiB decoded-body ceiling, required JSON media type, fatal UTF-8 decoding, and strict Article List field/date/source-URL validation |
-| Politeness | Queries run serially with a two-second pause. There is no retry storm: any failed query fails the patrol, and the next scheduled attempt is the following day |
-| Failure policy | Any provider, HTTP, timeout, size, JSON, or schema failure exits nonzero. Only a successful search with zero matches is a quiet success |
-| Normalization | Tracking parameters and fragments are removed, remaining query parameters sorted, duplicates resolved independent of provider order, and the queue sorted by publication time then canonical URL |
-| Cadence / scope | Daily, `cron: '20 7 * * *'`; schedules also require `FWM_MISUSE_PATROL_ENABLED=true`. Both schedules and dispatches are skipped unless the protected private operational repository is at `refs/heads/main`                                                                                                                                                             |
+The old candidate-review workflow is retired. Its GDELT fetching code is
+reused by `scripts/news-patrol.mjs`, which publishes articles automatically
+through `scripts/news-publish.mjs`. Nothing waits for a review PR to appear in
+News or recent abuse reporting. The existing cited case archive remains a
+separate dataset; headlines do not invent agencies, incidents or camera owners.
 
-It never writes a record. It writes `apps/pwa/public/records/candidates.json`
-with `fips`, `agency`, `summary`, `incidents` and `year` left **empty**, and opens
-a pull request. A human opens each `sourceUrl`, reads it, and fills those in.
-Six candidates have been rejected by exactly that pass, one claimed a guilty
-plea where the article said the officer pleaded _not_ guilty. The automation does
-the watching; it does not do the vouching.
+| Property | Current behavior |
+| --- | --- |
+| Collection | Nine fixed GDELT queries: three broad ALPR searches and six abuse searches. No news-provider credentials. |
+| Limits | Serial queries, 20-second spacing, at most three attempts per query, bounded timeouts and response sizes. |
+| Publication | A validated, deduplicated feed in production object storage, exposed at `/api/v1/news`; maximum 1,000 articles retained for up to 180 days. |
+| Failure | Partial searches retain useful articles and report partial coverage. Total failure retains the prior feed, marks the failed attempt, and exits nonzero. |
+| Schedule | Four times daily at 01:37, 07:37, 13:37 and 19:37 UTC, with up to five minutes of jitter. |
+| Dates | `publishedAt` is GDELT's observation timestamp, shown as **Seen**; `updatedAt` and `lastAttemptAt` describe collection. |
+
+EFF Atlas uses the existing `scripts/build-atlas-counties.mjs` county builder.
+`scripts/atlas-refresh.mjs` checks its source daily and
+`scripts/atlas-publish.mjs` conditionally publishes the validated snapshot.
+The app's `/records/atlas-counties.json` and `/api/v1/atlas` read the same
+artifact. A failed refresh preserves the previous publication and its dates.
+`fetchedAt` records retrieval; `checkedAt` records the source check, including
+an unchanged conditional response. Neither is a claimed date of investigation.
+
+See [Reports and data freshness](../reports.md) for the app's refresh behavior
+and the distinction between news, documented cases, and Atlas operator records.
 
 ### 4.8 `scripts/cost-patrol.mjs`, the budget circuit breaker
 
@@ -1081,17 +1093,18 @@ the app and not published.
 
 ### 4.10 `scripts/deploy.mjs` and `scripts/preflight.mjs`
 
-`deploy.mjs`: invokes the repository-pinned Wrangler with
-`pnpm exec wrangler pages deploy` against project `flockyswatchingme` (`:68`  -
-the Pages project name is _not_ the product name, and renaming it changes its
-`*.pages.dev` hostname). Then verifies against
-`https://dev.darkroute.ai` (`:72`): the document (`:178`) and each hashed asset
-(`:131`), up to 10 attempts 4 s apart (`:74-75`). It can also ask Cloudflare
-directly, `GET /accounts/{a}/pages/projects/{p}/deployments?per_page=5` (`:296`).
+`deploy.mjs` invokes the repository-pinned Wrangler against Pages project
+`darkroute`, production branch `main`. It verifies the apex's exact bundle and
+assets, then opens both `https://darkroute.ai` and `https://dev.darkroute.ai` in
+a browser to verify the shell, painted map, basemap ranges and camera tiles.
+A verification that cannot complete fails the release check.
 
-Behind Access the HTTP checks are blind, and the script says so explicitly rather
-than reporting a false failure (`:183-195`); a service token restores sight
-(`:166-171`).
+`--prebuilt` validates existing output before upload and runs no build scripts
+with deployment credentials. The public desktop console is a separate Pages
+project, `darkroute-console`; its build and deployment run from `apps/desktop`
+so the console's API proxy Functions are included. Both surfaces must be
+updated when their source changes. Published source is a curated snapshot of
+the same release, without private history or operator-only files.
 
 The private operational `deploy-dev.yml` workflow is the only automated Direct
 Upload path. It is deliberately excluded from the curated public seed. It has

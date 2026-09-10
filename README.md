@@ -120,14 +120,18 @@ proxy. The machine-readable contract is `GET /api/v1/openapi.json`; the prose is
 | --------------------------- | ------------------------------------------------------------------------------------------------- |
 | `GET /api/v1/cameras`       | cameras in a `bbox` (≤ 1.5° a side, ≤ 24 tiles, ≤ 1000 rows), optional `owner` filter |
 | `GET /api/v1/stats`         | archive size, generation, build and upstream timestamps |
-| `GET /api/v1/abuse`         | the documented-misuse record set, every row cited |
+| `GET /api/v1/abuse`         | documented cases and generation date; optional county `fips` |
+| `GET /api/v1/news`          | automatically collected ALPR headlines, source links and collection status |
+| `GET /api/v1/atlas`         | EFF Atlas agencies and vendors by county, with retrieval/check dates; optional `fips` |
 | `GET /api/v1/place`         | a US/PR place lookup, proxied so the geocoder never sees a driver's address |
 | `GET /api/v1/route`         | a driving route that avoids up to 60 points; never cached |
 | `GET /api/v1/doc/{name}`    | a published document from the public mirror, as Markdown |
 | `POST /api/v1/submit`       | a correction, turned into an `[unreviewed]` pull request, nothing is written to the archive |
 | `PUT /api/v1/photo`         | a photograph a submission refers to, keyed by its bytes; `GET /api/v1/photo/{key}` serves it back |
 
-Every response carries OpenStreetMap attribution; every error is JSON with a stable `error` code; unknown
+Camera responses carry OpenStreetMap attribution and Atlas responses carry their source attribution.
+See [Reports and data freshness](docs/reports.md) for collection schedules and how the app and API share data.
+Every error is JSON with a stable `error` code; unknown
 paths under `/api/v1/` are `404` JSON, not the app. 60 requests a minute per address is a speed bump, not
 the ceiling, the per-request caps are. An empty answer means no camera is **mapped** there, never that
 none is present. The whole archive is published as a dataset; use that for bulk work.

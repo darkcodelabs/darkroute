@@ -1,0 +1,45 @@
+.fwm-intel-atlas {
+  flex-basis: 100%;
+  min-width: 0;
+  font-family: var(--fwm-font-ui);
+  font-size: var(--fwm-text-forecast);
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: var(--dr-ink-muted);
+}
+
+.fwm-intel-atlas summary,
+.fwm-intel-atlas a {
+  color: var(--dr-verdict-keep);
+  cursor: pointer;
+}
+
+.fwm-intel-atlas summary {
+  padding-block: var(--fwm-space-2);
+}
+
+.fwm-intel-atlas p,
+.fwm-intel-atlas ul {
+  margin-block: var(--fwm-space-2);
+}
+
+.fwm-intel-atlas ul {
+  padding-left: var(--fwm-space-4);
+  list-style: disc;
+}
+
+.fwm-intel-atlas-credit {
+  font-size: var(--fwm-text-micro);
+}
+
+.fwm-intel-fact[data-fwm-intel-fact='EFF ATLAS'] {
+  flex-wrap: wrap;
+}
+
+.fwm-intel-atlas-content {
+  flex-basis: 100%;
+  margin: 0;
+}

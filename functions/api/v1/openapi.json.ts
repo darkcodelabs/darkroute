@@ -109,11 +109,11 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
     openapi: '3.1.0',
     info: {
       title: 'DarkRoute public API',
-      version: '1.1.0',
-      summary: 'Read access to the published ALPR camera archive, and a reviewed way to correct it.',
+      version: '1.2.0',
+      summary: 'The ALPR camera archive, documented abuse, automatic news and EFF Atlas county context.',
       description:
         'No key and no account. The archive is OpenStreetMap data under ODbL and every response ' +
-        'repeats the attribution, because the obligation travels with the data.\n\n' +
+        'repeats the attribution, because the obligation travels with the data. News links remain the publishers’ work; EFF Atlas carries its own source attribution and licence observation.\n\n' +
         'READS are GET. The archive itself is never written through this API: the two non-GET routes ' +
         'open a public pull request (`POST /api/v1/submit`) and store a photograph that a pull request ' +
         'refers to (`PUT /api/v1/photo`). Nothing either of them does changes the published data ' +
@@ -223,6 +223,7 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
                             'mount',
                             'locality',
                             'streetM',
+                            'countyFips',
                           ],
                           properties: {
                             id: { type: 'string' },
@@ -238,6 +239,7 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
                                 'facing, and a default would invent coverage nobody recorded.',
                             },
                             operator: { type: ['string', 'null'] },
+                            countyFips: { type: ['string', 'null'], pattern: '^\\d{5}$', description: 'Mapped county code. Join to /api/v1/atlas?fips= and /api/v1/abuse?fips= for county context. Neither dataset establishes this camera’s operator or misuse.' },
                             manufacturer: {
                               type: ['string', 'null'],
                               description: 'The `manufacturer` tag as mapped, e.g. "Flock Safety".',
@@ -328,14 +330,46 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
           },
         },
       },
+      '/api/v1/news': {
+        get: {
+          operationId: 'listNews',
+          summary: 'Automatically collected ALPR reporting',
+          description: 'Source-linked headlines, newest first, with abuse-reporting and general-news topics. publishedAt is the upstream seen time, not a verified publication date. Partial searches retain earlier articles and expose coverage.',
+          responses: {
+            200: {
+              description: 'News snapshot, cached for 60 seconds.',
+              content: { 'application/json': { schema: {
+                type: 'object', required: ['schema', 'updatedAt', 'lastAttemptAt', 'coverage', 'articles'],
+                properties: {
+                  schema: { type: 'string', const: 'darkroute-news/v1' },
+                  updatedAt: { type: 'string', format: 'date-time' },
+                  lastAttemptAt: { type: 'string', format: 'date-time' },
+                  coverage: { type: 'object', required: ['status', 'attempted', 'succeeded'], properties: {
+                    status: { type: 'string', enum: ['complete', 'partial', 'unavailable'] },
+                    attempted: { type: 'integer' }, succeeded: { type: 'integer' },
+                  } },
+                  articles: { type: 'array', maxItems: 1000, items: { type: 'object', required: ['id', 'title', 'url', 'publisher', 'publishedAt', 'topic'], properties: {
+                    id: { type: 'string' }, title: { type: 'string' }, url: { type: 'string', format: 'uri' },
+                    publisher: { type: 'string' }, publishedAt: { type: 'string', format: 'date-time' },
+                    topic: { type: 'string', enum: ['abuse', 'news'] },
+                  } } },
+                },
+              } } },
+            },
+            429: RATE_LIMITED,
+            503: refusal('The feed is unavailable; this is not an empty news result.', ['news_unavailable', 'news_malformed']),
+          },
+        },
+      },
       '/api/v1/abuse': {
         get: {
           operationId: 'listAbuseRecords',
           summary: 'Documented ALPR misuse records',
           description:
-            'One row per county, each naming an agency and citing a source URL. Returned whole ' +
+            'One row per published finding, located by county and citing a source URL. Returned whole ' +
             'because splitting a citation set across pages makes it harder to check. Rows missing ' +
-            'a citation are returned, not hidden, and counted in `uncited`.',
+            'a citation are returned, not hidden, and counted in `uncited`. generatedAt is the dataset build date, not a guarantee of complete coverage. County absence is not evidence of no abuse.',
+          parameters: [{ name: 'fips', in: 'query', required: false, schema: { type: 'string', pattern: '^\\d{5}$' }, description: 'Optional five-digit county code, including leading zeros.' }],
           responses: {
             200: {
               description: 'The record set. `cache-control: public, max-age=300`.',
@@ -343,9 +377,12 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
                 'application/json': {
                   schema: {
                     type: 'object',
-                    required: ['note', 'count', 'uncited', 'records'],
+                    required: ['note', 'generatedAt', 'countyFips', 'counties', 'count', 'uncited', 'records'],
                     properties: {
                       note: { type: 'string' },
+                      generatedAt: { type: ['string', 'null'], description: 'Dataset build date.' },
+                      countyFips: { type: ['string', 'null'] },
+                      counties: { type: 'integer' },
                       count: { type: 'integer' },
                       uncited: { type: 'integer', description: 'Rows whose `sourceUrl` is empty. Should be 0.' },
                       records: {
@@ -370,10 +407,47 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
               },
             },
             429: RATE_LIMITED,
+            400: refusal('The county code is not five digits.', ['bad_fips']),
             503: refusal('The record set did not answer, or was not the expected shape.', [
               'records_unavailable',
               'records_malformed',
             ]),
+          },
+        },
+      },
+      '/api/v1/atlas': {
+        get: {
+          operationId: 'listAtlasCounties',
+          summary: 'EFF Atlas ALPR agencies and vendors by county',
+          description: 'Reads the same live Atlas artifact as the app. Each county names agencies recorded as operating ALPR, not agencies accused of abuse and not operators of individual mapped cameras. fetchedAt is retrieval from EFF; checkedAt is the latest successful upstream check. Neither is the compilation date of the source. Vendors are partial: vendorKnown counts deployments with a vendor named.',
+          parameters: [{ name: 'fips', in: 'query', required: false, schema: { type: 'string', pattern: '^\\d{5}$' }, description: 'Optional five-digit county code, including leading zeros. Omit for all covered counties.' }],
+          responses: {
+            200: {
+              description: 'Atlas county context, cached for five minutes. coverage=none is no Atlas entry, never proof that no ALPR operates there.',
+              content: { 'application/json': { schema: {
+                type: 'object', required: ['schema', 'note', 'fetchedAt', 'checkedAt', 'source', 'totals', 'countyFips', 'coverage', 'count', 'counties'],
+                properties: {
+                  schema: { type: 'string', const: 'darkroute-atlas-api/v1' }, note: { type: 'string' },
+                  fetchedAt: { type: 'string', format: 'date-time' }, checkedAt: { type: 'string', format: 'date-time' },
+                  countyFips: { type: ['string', 'null'] }, coverage: { type: ['string', 'null'], enum: ['recorded', 'none', null], description: 'null when all counties were requested.' },
+                  count: { type: 'integer', description: 'Counties returned, not cameras.' },
+                  source: { type: 'object', required: ['name', 'home', 'attribution', 'licence'], properties: {
+                    name: { type: 'string' }, home: { type: 'string', format: 'uri' }, attribution: { type: 'string' },
+                    licence: { type: 'object', properties: { observed: { type: 'string' }, confirmed: { type: 'boolean' }, url: { type: 'string', format: 'uri' } } },
+                  } },
+                  totals: { type: 'object', description: 'Entire source snapshot totals, independent of the county filter.', properties: {
+                    alprRows: { type: 'integer' }, placed: { type: 'integer' }, unplaced: { type: 'integer' }, counties: { type: 'integer' }, agencies: { type: 'integer' },
+                  } },
+                  counties: { type: 'array', maxItems: 4000, items: { type: 'object', required: ['fips', 'deployments', 'agencies', 'vendors', 'vendorKnown'], properties: {
+                    fips: { type: 'string', pattern: '^\\d{5}$' }, deployments: { type: 'integer', description: 'Recorded ALPR deployments, not a camera count.' },
+                    agencies: { type: 'array', items: { type: 'string' } }, vendors: { type: 'array', items: { type: 'string' } }, vendorKnown: { type: 'integer' },
+                  } } },
+                },
+              } } },
+            },
+            400: refusal('The county code is not five digits.', ['bad_fips']),
+            429: RATE_LIMITED,
+            503: refusal('The Atlas snapshot is unavailable or malformed, not an empty county result.', ['atlas_unavailable', 'atlas_malformed']),
           },
         },
       },

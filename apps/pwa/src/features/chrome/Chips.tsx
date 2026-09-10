@@ -1,7 +1,7 @@
 /**
  * THE CHIP ROW. Section B of `searchbar_and_buttons.dc.html`, and nothing else.
  *
- * Three 36px pills centred under the bar: Abuse, Layers, Map view, in that
+ * Three 36px pills centred under the bar: Reports, Layers, Map view, in that
  * order, with Layers drawn active. That is the whole set the spec renders, in
  * both themes, and it is transcribed rather than merged with whatever the app
  * currently shows -- the brief says so in as many words.
@@ -43,7 +43,7 @@
  * =============================================================================
  * DRIVE mounted these over the map in place of `SearchPills`, and two of the
  * three turned out to OPEN A PANEL: `Layers` raises the map-control panel and
- * `Map view` raises the map-view panel. Abuse navigates.
+ * `Map view` raises the map-view panel. Reports raises the reports menu.
  *
  * That does not change the drawing and it does not change this file's default:
  * handed nothing but `active`, a chip is still the picture, still
@@ -76,7 +76,7 @@ export interface Chip {
 /**
  * THE SET, IN THE SPEC'S ORDER.
  *
- * Abuse, Layers, Map view -- left to right in both panels. Exported so a test
+ * Reports, Layers, Map view -- left to right in both panels. Exported so a test
  * and a host read the same list, and frozen in shape by `readonly` so a caller
  * cannot quietly add a fourth on its way past.
  *
@@ -84,7 +84,7 @@ export interface Chip {
  * `Map View`.
  */
 export const CHIPS: readonly Chip[] = [
-  { id: 'abuse', label: 'Abuse', icon: 'abuse' },
+  { id: 'abuse', label: 'Reports', icon: 'abuse' },
   { id: 'layers', label: 'Layers', icon: 'layers' },
   { id: 'map-view', label: 'Map view', icon: 'map-view' },
 ];

@@ -52,6 +52,7 @@ import type { ReactElement } from 'react';
 import { gazetteer } from '../../services/cameras/gazetteer.ts';
 import type { CameraOwnerType, CameraRecord } from '../../services/db/schema.ts';
 import { atlasCounties } from '../../services/records/atlasCounties.ts';
+import { useAtlasRevision } from '../../services/records/useAtlasRevision.ts';
 import { useCachedCameraCount, useCachedCameras, useCurrentFix } from '../../stores/index.ts';
 import { openIntelCard } from '../intel';
 
@@ -188,6 +189,7 @@ export function LookupV1Screen(): ReactElement {
    * `aroundSummary` treats `unknown` as nothing to say, never as "none".
    */
   const [recordsReady, setRecordsReady] = useState(() => atlasCounties.ready() && gazetteer.ready());
+  const atlasRevision = useAtlasRevision();
   useEffect(() => {
     if (recordsReady) return;
     /* ASKING IS WHAT STARTS THE LOAD. Neither store fetches until something
@@ -213,7 +215,7 @@ export function LookupV1Screen(): ReactElement {
           county: recordsReady ? atlasCounties.forCounty(fips) : null,
         }),
       }),
-    [hits, fix, recordsReady],
+    [hits, fix, recordsReady, atlasRevision],
   );
   const makerLine = around === null ? null : makerLineOf(around.makers);
 

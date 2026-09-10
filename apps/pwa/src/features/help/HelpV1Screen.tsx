@@ -64,6 +64,11 @@ export function HelpV1Screen(): ReactElement {
         <p className="fwm-helpv1-promise-sub">{HELP_V1_PROMISE_SUB}</p>
       </div>
 
+      <a className="fwm-helpv1-terms" href="/alpr/">
+        <span className="fwm-helpv1-terms-title">ALPR camera guide</span>
+        <span className="fwm-helpv1-terms-sub">camera maps, Flock readers, routing, and privacy</span>
+      </a>
+
       {HELP_SECTIONS.map((section) => (
         <div className="fwm-helpv1-section" key={section.title}>
           <h2 className="fwm-helpv1-section-title fwm-data">{section.title}</h2>

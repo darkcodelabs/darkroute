@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>ALPR Camera Map, Flock Cameras &amp; Route Privacy | DarkRoute</title>
+    <meta name="description" content="Find mapped ALPR and Flock camera locations with DarkRoute. Understand license plate readers, camera-aware routes, OpenStreetMap coverage, and privacy limits." />
+    <link rel="canonical" href="https://darkroute.ai/alpr/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DarkRoute" />
+    <meta property="og:title" content="ALPR camera awareness. A clearer view of the road." />
+    <meta property="og:description" content="A guide to mapped license plate readers, Flock cameras, route planning, and what DarkRoute does with your data." />
+    <meta property="og:url" content="https://darkroute.ai/alpr/" />
+    <meta property="og:image" content="https://darkroute.ai/icons/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="DarkRoute" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ALPR Camera Map &amp; Route Privacy | DarkRoute" />
+    <meta name="twitter:description" content="Understand mapped ALPR and Flock cameras, camera-aware routing, and privacy limits." />
+    <meta name="twitter:image" content="https://darkroute.ai/icons/icon-512.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="stylesheet" href="/alpr/tokens.css" />
+    <link rel="stylesheet" href="/alpr/guide.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="brand" href="/" aria-label="DarkRoute home"><img src="/icons/icon-32.png" width="32" height="32" alt="" />DarkRoute<span class="brand-dot" aria-hidden="true">.</span></a>
+      <a class="header-link" href="/?app">Open app <span aria-hidden="true">↗</span></a>
+    </header>
+    <main id="main" class="wrap">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="signal" aria-hidden="true"></span> The DarkRoute field guide</p>
+          <h1 id="page-title">ALPR cameras.<br />Know the road<br /><span>ahead.</span></h1>
+          <p class="intro">DarkRoute maps known license plate readers and helps you consider routes around mapped cameras. Understand the coverage, the technology, and the privacy tradeoffs before you travel.</p>
+          <div class="actions">
+            <a class="button button-primary" href="/?app">Open the driving app <span aria-hidden="true">↗</span></a>
+            <a class="button button-secondary" href="https://api.darkroute.ai/">Explore the camera map <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <aside class="brief" aria-labelledby="brief-title">
+          <p class="eyebrow" id="brief-title">At a glance</p>
+          <dl>
+            <div><dt>The source</dt><dd>OpenStreetMap<br /><span>Community-mapped camera locations</span></dd></div>
+            <div><dt>The coverage</dt><dd>United States + Puerto Rico<br /><span>Coverage varies by place</span></dd></div>
+            <div><dt>The purpose</dt><dd>Awareness + route planning<br /><span>No account required</span></dd></div>
+          </dl>
+          <p class="brief-note">An empty map is not evidence that a road has no cameras.</p>
+        </aside>
+      </section>
+      <div class="guide-layout">
+        <nav class="contents" aria-label="Guide contents">
+          <p class="eyebrow">In this guide</p>
+          <ol>
+            <li><a href="#what-is-alpr">What is ALPR?</a></li>
+            <li><a href="#find-cameras">Find cameras nearby</a></li>
+            <li><a href="#flock-cameras">Flock camera locations</a></li>
+            <li><a href="#camera-aware-routes">Camera-aware routes</a></li>
+            <li><a href="#privacy">Your data &amp; privacy</a></li>
+            <li><a href="#coverage">Coverage &amp; corrections</a></li>
+          </ol>
+        </nav>
+        <article class="guide" aria-label="ALPR camera map and privacy guide">
+          <section id="what-is-alpr">
+            <p class="section-number" aria-hidden="true">01 / The technology</p>
+            <h2>What are ALPR and ANPR cameras?</h2>
+            <p>ALPR means automated or automatic license plate recognition. ANPR, automatic number plate recognition, describes the same general technology. A camera captures a vehicle, and software extracts its plate characters. Systems can associate a plate read with a time and location. Readers may be fixed beside a road or mounted on a vehicle.</p>
+            <p>Repeated plate sightings can reveal travel patterns. Retention, access, and sharing practices matter as much as the hardware. The Electronic Frontier Foundation explains these issues in its <a href="https://www.eff.org/pages/automated-license-plate-readers-alpr">ALPR technology and privacy overview</a>.</p>
+          </section>
+          <section id="find-cameras">
+            <p class="section-number" aria-hidden="true">02 / The map</p>
+            <h2>How can I find license plate cameras near me?</h2>
+            <p>Open the <a href="https://api.darkroute.ai/">DarkRoute camera map</a> to explore an area, or use the <a href="/?app">driving app</a> for camera awareness on your phone. DarkRoute publishes camera locations contributed to OpenStreetMap across the 50 states, Washington, DC, and Puerto Rico. Availability depends on what people have mapped.</p>
+            <p>The archive describes camera locations and their mapped attributes. It contains no plate reads or vehicle sighting histories. A point shows where a camera was mapped; it does not establish whether that device is working today, its exact field of view, or whether it recorded a particular car. DarkRoute does not detect camera radio signals.</p>
+          </section>
+          <section id="flock-cameras">
+            <p class="section-number" aria-hidden="true">03 / Camera identification</p>
+            <h2>Does DarkRoute show Flock Safety cameras?</h2>
+            <p>Yes, where the OpenStreetMap record identifies a mapped ALPR camera as a Flock Safety device. Flock is one manufacturer represented in the data. A manufacturer's name describes who made the equipment; an operator tag describes who operates it. Those are different facts, and either may be missing.</p>
+            <p>DarkRoute does not connect to Flock's plate-search system or expose its vehicle records. Camera information comes from community mapping. The <a href="https://wiki.openstreetmap.org/wiki/Tag:surveillance:type%3DALPR">OpenStreetMap ALPR tagging guide</a> explains the location, manufacturer, direction, and operator fields that mappers can document.</p>
+          </section>
+          <section id="camera-aware-routes">
+            <p class="section-number" aria-hidden="true">04 / Route planning</p>
+            <h2>Can I plan a route around ALPR cameras?</h2>
+            <p>DarkRoute can request a driving route that avoids selected known camera locations. Its route endpoint passes exclusion areas to the Valhalla routing engine. Where the road network allows it, this can help you consider a route with less exposure to those mapped locations.</p>
+            <p>A suggested route cannot guarantee avoiding every license plate reader. Unmapped cameras, inaccurate positions, mobile readers, and changed road conditions remain possible. Excluding a location may also leave no usable route. The map supports your decision; it cannot prevent a camera from reading a plate that passes in front of it.</p>
+          </section>
+          <section id="privacy">
+            <p class="section-number" aria-hidden="true">05 / Privacy</p>
+            <h2>What does DarkRoute know about my visit or route?</h2>
+            <p>The app requires no account and includes no analytics SDK or visitor-tracking beacon. Its local camera alerts do not require uploading a continuous GPS trail. This guide loads without JavaScript and has no tracking scripts.</p>
+            <p>Requesting a route sends your starting point and destination to DarkRoute's route endpoint, which forwards coordinates to Valhalla on your behalf. Route responses use <code>no-store</code>. That limits caching; it does not make the network request invisible.</p>
+            <p>Hosting and network providers, including Cloudflare, can see request metadata such as IP addresses and timestamps. Map tile and archive requests can reveal the area being viewed. DarkRoute does not claim that provider logging is disabled. Read the <a href="/api/v1/doc/threat-model">published threat model</a> for the boundaries of its privacy protections.</p>
+          </section>
+          <section id="coverage">
+            <p class="section-number" aria-hidden="true">06 / Check the evidence</p>
+            <h2>How current and complete is the camera data?</h2>
+            <p>The production pipeline imports OpenStreetMap camera data and runs scheduled updates. An update schedule is not a guarantee that every recently installed or removed camera appears correctly. Camera counts and upstream timestamps belong to the current archive, so check the <a href="/api/v1/stats">live archive statistics</a> when freshness matters.</p>
+            <p>Inspect the <a href="/api/v1/doc/data-provenance">data provenance documentation</a> to understand the source, geographic scope, and publication process. If you have verifiable camera information, follow <a href="https://wiki.openstreetmap.org/wiki/Tag:surveillance:type%3DALPR">OpenStreetMap's mapping guidance</a>. Corrections to the underlying map can improve subsequent imports; a local observation does not instantly update the published archive.</p>
+          </section>
+        </article>
+      </div>
+      <section class="closing" aria-labelledby="closing-title">
+        <div><p class="eyebrow">Start with the map</p><h2 id="closing-title">See what is known.<br />Understand what is missing.</h2></div>
+        <a class="button button-primary" href="https://api.darkroute.ai/">Explore camera locations <span aria-hidden="true">↗</span></a>
+      </section>
+    </main>
+    <footer class="site-footer wrap">
+      <p>DarkRoute · Camera awareness for drivers</p>
+      <p>Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL.</p>
+      <nav aria-label="Further reading"><a href="/api/v1/doc/data-provenance">Data provenance</a><a href="/api/v1/doc/threat-model">Privacy &amp; threat model</a><a href="/api/v1/doc/transparency">Transparency</a></nav>
+    </footer>
+  </body>
+</html>

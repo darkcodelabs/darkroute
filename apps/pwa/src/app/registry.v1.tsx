@@ -49,7 +49,7 @@ import { ReportV1Screen } from '../features/report/ReportV1Screen.tsx';
 import { AskV1Screen } from '../features/ask/AskV1Screen.tsx';
 import { OnboardingV1Screen } from '../features/onboarding/OnboardingV1Screen.tsx';
 import { DocsScreen } from '../features/docs/DocsScreen.tsx';
-import { MisuseScreen } from '../features/misuse/MisuseScreen.tsx';
+import { MisuseReportsScreen, NewsReportsScreen, ReportsScreen } from '../features/reports/ReportsScreen.tsx';
 import { InstallInvite } from '../features/install/InstallInvite.tsx';
 import { DetourOffer } from '../features/drive/DetourOffer.tsx';
 import { ArcadeOverlay } from '../features/arcade/ArcadeOverlay.tsx';
@@ -119,12 +119,12 @@ export const V1_SCREENS: ScreenRegistry = {
   onboarding: OnboardingV1Screen,
 
   /**
-   * MISUSE. Forty-seven cited records across thirty-eight counties, every one
-   * fact-checked before it was written and gated by
-   * `scripts/check-record-citations.mjs`. `scripts/misuse-patrol.mjs` watches
-   * for new reporting daily and opens a review PR; it never writes a record.
+   * MISUSE combines automatically collected reporting with the existing
+   * county case archive. NEWS includes broader ALPR coverage from that feed.
    */
-  misuse: MisuseScreen,
+  misuse: MisuseReportsScreen,
+  news: NewsReportsScreen,
+  reports: ReportsScreen,
   docs: DocsScreen,
 };
 

@@ -74,6 +74,7 @@ import {
   stopDemoDrive,
 } from '../../services/adapters/demoGeolocation.ts';
 import { AbuseMenu } from '../map/AbuseMenu.tsx';
+import { setMisuseCasesOnly } from '../misuse/misuseView.ts';
 import { MapControlPanel } from '../map/MapControlPanel.tsx';
 import { MapViewPanel } from '../map/MapViewPanel.tsx';
 import { LIGHT_MODES, toggleDayNight } from '../../app/dayNight.ts';
@@ -710,13 +711,13 @@ export function DriveScreen(): ReactElement {
   const mapViewKeyRef = useRef<HTMLButtonElement | null>(null);
 
   /*
-   * AND A THIRD, WHICH IS THE ABUSE CHIP'S.
+   * AND A THIRD, WHICH IS THE REPORTS CHIP'S.
    *
    * It used to navigate - one press off the map and onto the MISUSE archive -
    * and it opens a panel now, for the reason the other two do: what the chip
    * controls is the map and the alert, and neither of those is on the screen you
-   * were sent to. `AbuseMenu` is the panel and `Read the cases` is the row that
-   * still pushes MISUSE.
+   * were sent to. `AbuseMenu` keeps those controls alongside News and Abuse
+   * rows that open the corresponding screens.
    *
    * Transient, and never persisted, exactly like the two above. Which panel was
    * open is not a preference; it is where a thumb was a second ago.
@@ -1567,9 +1568,9 @@ export function DriveScreen(): ReactElement {
               not they are open so the slide can animate both ways;
               `data-fwm-open` is what shows one.
 
-              WHAT THE MAP SAYS ABOUT DOCUMENTED ABUSE, under its own chip, and
+              NEWS AND DOCUMENTED ABUSE, under the Reports chip, and
               it is the one anchored to the LEFT inset rather than clear of the
-              rail: Abuse is the leftmost chip and the rail is on the far edge,
+              rail: Reports is the leftmost chip and the rail is on the far edge,
               so this pane takes the edge the search bar above it takes. See
               `abuseMenu.css`. */}
           <AbuseMenu
@@ -1578,8 +1579,12 @@ export function DriveScreen(): ReactElement {
               setAbusePanelOpen(false);
             }}
             returnFocusTo={abusePanelKeyRef}
+            onReadNews={() => {
+              openScreen('news');
+            }}
             onReadCases={() => {
-              openScreen('misuse');
+              setMisuseCasesOnly(false);
+              openScreen('reports');
             }}
           />
 

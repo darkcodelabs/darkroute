@@ -35,7 +35,9 @@ const FILES: readonly Endpoint[] = [
 const QUERIES: readonly Endpoint[] = [
   { method: 'GET', path: '/api/v1/cameras?bbox=w,s,e,n[&owner=][&limit=]', note: 'cameras in a box up to 1.5°, 24 tiles, 1000 rows' },
   { method: 'GET', path: '/api/v1/stats', note: 'the live generation: count, hash, build time, replication watermark' },
-  { method: 'GET', path: '/api/v1/abuse', note: 'documented misuse, one record per dated source' },
+  { method: 'GET', path: '/api/v1/abuse[?fips=]', note: 'documented abuse by county, one record per dated source, with dataset freshness' },
+  { method: 'GET', path: '/api/v1/news', note: 'automatic ALPR headlines, abuse/news topics, source links, last collection and partial coverage' },
+  { method: 'GET', path: '/api/v1/atlas[?fips=]', note: 'EFF Atlas agencies and partial vendors by county, retrieval/check dates and attribution; no camera ownership inference' },
   { method: 'GET', path: '/api/v1/place?q=&near=', note: 'a place search, US and PR only, six results' },
   { method: 'GET', path: '/api/v1/route?from=&to=[&avoid=]', note: 'a drive that keeps the listed cameras off the line' },
   { method: 'POST', path: '/api/v1/submit', note: 'a correction — opens a public pull request, never writes the archive; 6 an hour' },
@@ -129,8 +131,8 @@ export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
             <pre>{CURL}</pre>
           </div>
           <div className="dc-licence">
-            Licence <strong>ODbL-1.0</strong>. Attribute "Map data © OpenStreetMap contributors", and publish
-            your changes under the same terms. The contract lives at{' '}
+            Camera data: <strong>ODbL-1.0</strong>. Attribute "Map data © OpenStreetMap contributors", and publish
+            your changes under the same terms. News links belong to their publishers. Atlas responses carry EFF attribution and the source licence observation. The contract lives at{' '}
             <a className="dc-mono" href="/api/v1/openapi.json">
               /api/v1/openapi.json
             </a>{' '}
@@ -138,7 +140,7 @@ export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
             <a className="dc-mono" href="/api/v1/doc/api">
               /api/v1/doc/api
             </a>
-            .
+            . Read the <a className="dc-source" href="https://github.com/darkcodelabs/darkroute/blob/main/docs/reports.md" target="_blank" rel="noreferrer">Reports data and freshness guide</a> for News, Abuse and EFF Atlas.
           </div>
         </div>
       </div>

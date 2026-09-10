@@ -28,6 +28,7 @@ import type { GeoFix } from '../../services/adapters';
 import { positionActions } from '../../stores/position.ts';
 
 import { MisuseScreen } from './MisuseScreen.tsx';
+import { setMisuseCasesOnly } from './misuseView.ts';
 
 const INDEX = readFileSync(resolve(process.cwd(), 'public/records/county-index.json'), 'utf8');
 const RECORDS = readFileSync(resolve(process.cwd(), 'public/records/counties.json'), 'utf8');
@@ -64,11 +65,13 @@ function nearMeChip(): HTMLButtonElement {
 }
 
 beforeEach(() => {
+  setMisuseCasesOnly(false);
   positionActions.reset();
   serveFiles();
 });
 
 afterEach(() => {
+  setMisuseCasesOnly(false);
   vi.unstubAllGlobals();
   positionActions.reset();
 });

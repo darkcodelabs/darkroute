@@ -4,3 +4,14 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Permissions-Policy: accelerometer=(self), bluetooth=(self), camera=(), clipboard-write=(self), display-capture=(), fullscreen=(self), geolocation=(self), gyroscope=(self), magnetometer=(self), microphone=(self), payment=(), screen-wake-lock=(self), serial=(self), usb=(), web-share=(self)
+
+# Prevent the CDN from inserting a Web Analytics beacon into public HTML.
+# Keep this in the source so a deploy cannot silently re-enable injection.
+/
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+/alpr/
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+/alpr/index.html
+  Cache-Control: public, max-age=0, must-revalidate, no-transform

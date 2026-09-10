@@ -42,7 +42,9 @@ import {
 import type { SubjectOffsetFt, SubjectSide } from '../subjectPosition.ts';
 
 export const WHERE_LABEL = 'WHERE WAS IT';
-export const WHERE_UNSET = 'NOT SAID · THIS REPORT CANNOT BE MAPPED';
+export const WHERE_UNSET = 'Camera position missing · choose left, right, or overhead.';
+export const WHERE_DISTANCE_UNSET =
+  'Camera position missing · choose how far over to place it on the map.';
 export const WHERE_NO_HEADING = 'NO HEADING · ONLY OVERHEAD CAN BE PLACED';
 
 const SIDES: readonly SubjectSide[] = ['left', 'overhead', 'right'];
@@ -128,7 +130,7 @@ export function WhereChips({
         className="fwm-report-detail fwm-data"
         data-fwm-report-where={summary === null ? 'unset' : 'set'}
       >
-        {summary ?? (hasHeading ? WHERE_UNSET : WHERE_NO_HEADING)}
+        {summary ?? (hasHeading ? (needsOffset ? WHERE_DISTANCE_UNSET : WHERE_UNSET) : WHERE_NO_HEADING)}
       </p>
     </section>
   );

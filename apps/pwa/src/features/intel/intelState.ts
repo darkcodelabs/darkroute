@@ -25,7 +25,7 @@
  * engine's `CameraAssessment` and YOUR READS from this device's own alert log.
  *
  * SIX DO NOT: the hardware name the title reads ("FALCON"), the cross street,
- * MOUNT, the EFF Atlas cross-reference, the inter-agency sharing count and a
+ * MOUNT, a per-camera EFF Atlas cross-reference, the inter-agency sharing count and a
  * first-reported date.
  *
  * FOUR OF THOSE SIX RENDER {@link NO_VALUE} -- MOUNT and the three fact rows.
@@ -43,6 +43,9 @@
  * fixture up as a camera the driver is looking at.
  * GAP: intel / camerarecord-carries-six-of-the-cards-twelve-fields
  *
+ * The EFF row now uses the shared county register. It describes agencies in
+ * the selected camera's county, without asserting a per-camera cross-reference.
+ *
  * =============================================================================
  * A FLAG COLOURS THE OPERATOR, NOT THE CAMERA
  * =============================================================================
@@ -57,6 +60,7 @@
  */
 
 import { catalogue } from '../../services/cameras/catalogue.ts';
+import type { AtlasCounty, AtlasCoverage } from '../../services/records/atlasCounties.ts';
 import { FEATURES } from '../../config/features.ts';
 import type { CameraAssessment, CameraOwnerType, CameraRecord } from '../../stores';
 import { addDays, isCameraPass, localDayStart } from '../log';
@@ -714,6 +718,7 @@ export interface IntelFactsInput {
   readonly windowDays: number;
   /** Resolved by the caller from `countyFips`. See `IntelInput.county`. */
   readonly county?: { readonly label: string; readonly cameras: number } | null | undefined;
+  readonly atlas?: IntelAtlasContext | null | undefined;
   /**
    * The archive's UPSTREAM timestamp - `index.json.upstream`, the moment the
    * OpenStreetMap snapshot behind this record was taken. ISO-8601.
@@ -725,10 +730,38 @@ export interface IntelFactsInput {
   readonly upstreamIso?: string | null | undefined;
 }
 
+/** County context from the shared Atlas index; never evidence of camera ownership. */
+export interface IntelAtlasContext {
+  readonly ready: boolean;
+  readonly coverage: AtlasCoverage;
+  readonly county: AtlasCounty | null;
+  readonly countyLabel: string | null;
+  readonly fetchedAt: string | null;
+  readonly attribution: string | null;
+}
+
+function atlasFact(input: IntelFactsInput): IntelFact {
+  const atlas = input.atlas;
+  if (atlas == null) return intelFact('EFF ATLAS', null);
+  let value: string;
+  if (!input.record?.countyFips) value = 'Camera county not recorded';
+  else if (!atlas.ready) value = 'Loading county data…';
+  else if (atlas.coverage === 'recorded' && atlas.county !== null) {
+    const count = atlas.county.agencies.length;
+    value = `${formatCount(count)} ${count === 1 ? 'agency' : 'agencies'} in this county`;
+  } else if (atlas.coverage === 'none') value = 'No agencies listed in this county';
+  else value = 'County data unavailable';
+  return {
+    ...intelFact('EFF ATLAS', value, 'default'),
+    known: atlas.ready && atlas.coverage !== 'unknown',
+  };
+}
+
 /**
  * The five rows, always all five, in the drawn order.
  *
- * Three of them have no field behind them in this build and render an em dash.
+ * Sharing and first-reported have no field behind them and render an em dash.
+ * EFF Atlas reads county context supplied by the same index Lookup uses.
  * They are still drawn: a card that quietly dropped `INTER-AGENCY SHARING`
  * would read as "this camera does not share", which is the opposite of unknown
  * and is the single most consequential fact on the card.
@@ -772,7 +805,7 @@ export function dataAsOf(iso: string | null, nowMs: number = Date.now()): string
 export function intelFacts(input: IntelFactsInput): readonly IntelFact[] {
   const confirmations = input.record?.confirmations;
   return [
-    intelFact('EFF ATLAS', null),
+    atlasFact(input),
     intelFact('INTER-AGENCY SHARING', null),
     intelFact('FIRST REPORTED', null),
     /*
@@ -899,6 +932,7 @@ export function operatorRecordVisible(record: OperatorRecord | null): record is 
 
 export interface IntelInput {
   readonly cameraId: string;
+  readonly atlas?: IntelAtlasContext | null | undefined;
   /** The cached tile record, when one is cached. */
   readonly record: CameraRecord | null;
   /**
@@ -1071,6 +1105,7 @@ export interface IntelViewModel {
   readonly muteCountdown: string | null;
   readonly tiles: readonly IntelTile[];
   readonly facts: readonly IntelFact[];
+  readonly atlas: IntelAtlasContext | null;
   readonly operatorRecord: OperatorRecord | null;
   readonly photoAvailable: boolean;
 }
@@ -1156,6 +1191,7 @@ export function intelModel(input: IntelInput): IntelViewModel {
       reads: input.reads,
       windowDays: input.windowDays,
       county: input.county,
+      atlas: input.atlas,
       /*
        * WHAT IS SERVED, OR UNKNOWN.
        *
@@ -1166,6 +1202,7 @@ export function intelModel(input: IntelInput): IntelViewModel {
        */
       upstreamIso: catalogue.upstream(),
     }),
+    atlas: input.atlas ?? null,
     operatorRecord: operatorRecordVisible(input.operatorRecord) ? input.operatorRecord : null,
     photoAvailable: input.photoAvailable,
   };

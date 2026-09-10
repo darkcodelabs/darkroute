@@ -163,12 +163,13 @@ export function MoreScreen(): ReactElement {
       hue: 'red',
       rows: [
         {
-          title: 'Misuse',
+          title: 'Reports',
           // NOTHING until the file is loaded. See the header.
           meta: misuseCount === 0 ? SILENT : `${String(misuseCount)} documented cases`,
-          go: 'misuse',
+          go: 'reports',
         },
         { title: 'Report abuse', meta: 'with a source', go: 'report-sheet' },
+        { title: 'News', meta: 'ALPR reporting, updated automatically', go: 'news' },
       ],
     },
     {

@@ -40,6 +40,7 @@ import { OverlayClose } from '../../../components/overlay/OverlayClose.tsx';
 import { GROUND_NOTE } from '../../map/miniMap.ts';
 import { CorrectionSheet } from '../CorrectionSheet.tsx';
 import type { IntelViewModel } from '../intelState.ts';
+import { IntelAtlasDetails } from './IntelAtlasDetails.tsx';
 
 import '../intelDetailsV1.css';
 
@@ -125,9 +126,11 @@ export function IntelDetailsV1({
               key={fact.label}
               data-fwm-tone={fact.tone}
               data-fwm-known={String(fact.known)}
+              data-fwm-atlas={fact.label === 'EFF ATLAS' ? 'true' : undefined}
             >
               <span className="fwm-inteldetailv1-fact-label fwm-data">{fact.label}</span>
               <span className="fwm-inteldetailv1-fact-value">{fact.value}</span>
+              {fact.label === 'EFF ATLAS' ? <IntelAtlasDetails atlas={model.atlas} /> : null}
             </li>
           ))}
         </ul>

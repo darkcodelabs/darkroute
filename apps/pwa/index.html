@@ -38,8 +38,17 @@
     -->
     <meta name="color-scheme" content="dark" />
 
-    <title>DarkRoute</title>
-    <meta name="description" content="ALPR camera awareness for drivers. See them before they see you." />
+    <title>DarkRoute | ALPR Camera Map &amp; License Plate Reader Alerts</title>
+    <meta name="description" content="Explore mapped ALPR and ANPR cameras with DarkRoute. Get license plate reader alerts, compare routes around known cameras, and understand the privacy limits." />
+    <link rel="canonical" href="https://darkroute.ai/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DarkRoute" />
+    <meta property="og:title" content="DarkRoute | ALPR Camera Map &amp; License Plate Reader Alerts" />
+    <meta property="og:description" content="Know where license plate readers are mapped. Explore camera locations, alerts, routing, and the limits of the data." />
+    <meta property="og:url" content="https://darkroute.ai/" />
+    <meta property="og:image" content="https://darkroute.ai/icons/icon-512.png" />
+    <meta property="og:image:alt" content="DarkRoute logo" />
+    <meta name="twitter:card" content="summary" />
 
     <!--
       THE MANIFEST LINK. Without this line the app cannot be installed, and it
@@ -121,9 +130,25 @@
       default mode `night-watch` IS the :root block of tokens.css, so the
       document renders correctly before either attribute is applied.
     -->
-    <div id="root"></div>
+    <div id="root">
+      <main>
+        <h1>DarkRoute: ALPR camera map and license plate reader alerts</h1>
+        <p>DarkRoute helps you understand where automated license plate readers are mapped.
+          Explore community-mapped ALPR and ANPR cameras, receive nearby camera alerts,
+          and compare driving routes around known readers.</p>
+        <p>Camera locations come from OpenStreetMap contributors. Coverage can be incomplete
+          or out of date; an empty map does not mean there are no cameras.</p>
+        <p>No account or analytics SDK is required. The interactive app uses JavaScript;
+          the guide below works without it.</p>
+        <nav aria-label="Learn about DarkRoute">
+          <a href="/alpr/">ALPR camera guide: maps, Flock readers, routing, and privacy</a>
+          <a href="https://api.darkroute.ai/">Browse the camera archive</a>
+          <a href="/alpr/#privacy">What DarkRoute sends and stores</a>
+        </nav>
+      </main>
+    </div>
 
-    <noscript>darkroute needs javascript. nothing here works without it.</noscript>
+    <noscript>Enable JavaScript to open the interactive map, or read the ALPR guide above.</noscript>
 
     <!--
       ENTRY CONTRACT for src/main.tsx (owned by the app agent):

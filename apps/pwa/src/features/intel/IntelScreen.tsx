@@ -73,6 +73,7 @@ import {
   useAlertLog,
   useCachedCameras,
   useCameraAssessments,
+  useCameraGeneration,
   useGpsStatus,
   useIsMuted,
   useLocationPermission,
@@ -86,6 +87,8 @@ import type { ClipboardAdapter } from '../../services/adapters/clipboard.ts';
 import { createShareAdapter } from '../../services/adapters/share.ts';
 import type { ShareAdapter } from '../../services/adapters/share.ts';
 import { gazetteer } from '../../services/cameras/gazetteer.ts';
+import { atlasCounties } from '../../services/records/atlasCounties.ts';
+import { useAtlasRevision } from '../../services/records/useAtlasRevision.ts';
 import { resolveRadarState } from '../radar';
 
 import { placeOf, titleOf } from '../lookup/search.ts';
@@ -207,6 +210,7 @@ export function IntelScreen({
   // --- what the engine and the cache say about it --------------------------
   const assessments = useCameraAssessments();
   const cameras = useCachedCameras();
+  const generation = useCameraGeneration();
   const entries = useAlertLog();
 
   // --- the gates -----------------------------------------------------------
@@ -266,6 +270,28 @@ export function IntelScreen({
    */
   const selected = cameraId === null ? null : (cameras.find((item) => item.id === cameraId) ?? null);
 
+  // The same lazy indexes Lookup uses. Each settling index must refresh the
+  // card, including when it was opened directly before Lookup or the map.
+  const [atlasReady, setAtlasReady] = useState(() => atlasCounties.ready());
+  const atlasRevision = useAtlasRevision();
+  const [geographyReady, setGeographyReady] = useState(() => gazetteer.ready());
+  useEffect(() => {
+    if (cameraId === null) return;
+    atlasCounties.coverageOf(undefined);
+    gazetteer.county(undefined);
+    gazetteer.place(undefined);
+    const refresh = (): void => {
+      const atlasSettled = atlasCounties.ready();
+      const geographySettled = gazetteer.ready();
+      setAtlasReady(atlasSettled);
+      setGeographyReady(geographySettled);
+      if (atlasSettled && geographySettled) clearInterval(timer);
+    };
+    const timer = setInterval(refresh, 400);
+    refresh();
+    return () => { clearInterval(timer); };
+  }, [cameraId, generation]);
+
   const model: IntelViewModel | null = useMemo(() => {
     if (cameraId === null) return null;
 
@@ -299,6 +325,14 @@ export function IntelScreen({
       // same arrangement as `streetFallback`. The gazetteer is already loaded
       // for RADAR's zone strip, so this costs no request.
       county: gazetteer.county(record?.countyFips),
+      atlas: {
+        ready: atlasReady,
+        coverage: atlasCounties.coverageOf(record?.countyFips),
+        county: atlasCounties.forCounty(record?.countyFips),
+        countyLabel: gazetteer.county(record?.countyFips)?.label ?? null,
+        fetchedAt: atlasCounties.fetchedAt(),
+        attribution: atlasCounties.source()?.attribution ?? null,
+      },
       place: gazetteer.place(record?.placeGeoid)?.label ?? null,
       assessment,
       state: resolveRadarState({ alertState, gps, locationPermission, muted, mutePierced }),
@@ -322,6 +356,10 @@ export function IntelScreen({
     mutedCameras,
     mutePierced,
     operatorRecord,
+    atlasReady,
+    atlasRevision,
+    geographyReady,
+    generation,
     now,
   ]);
 

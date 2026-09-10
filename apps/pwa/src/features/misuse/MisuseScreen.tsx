@@ -82,12 +82,15 @@ import type { ReactElement } from 'react';
 
 import { BACK_TO_MORE, BackKey, ReloadTitle } from '../../components/nav';
 import { atlasCounties } from '../../services/records/atlasCounties.ts';
+import { useAtlasRevision } from '../../services/records/useAtlasRevision.ts';
 import { countyLocator } from '../../services/records/countyLocate.ts';
 import { countyRecords } from '../../services/records/countyRecords.ts';
 import type { CountyMisuseRecord } from '../../services/records/countyRecords.ts';
 import { gazetteer } from '../../services/cameras/gazetteer.ts';
 import { dataAsOf } from '../intel/intelState.ts';
+import { LatestAbuseNews } from '../news/LatestAbuseNews.tsx';
 import { useCurrentFix, useNearestCamera, useCamerasStore } from '../../stores/index.ts';
+import { setMisuseCasesOnly, useMisuseCasesOnly } from './misuseView.ts';
 
 import './misuse.css';
 
@@ -225,7 +228,11 @@ export function vendorLabel(
   return `vendor recorded for ${String(vendorKnown)} of ${String(deployments)}: ${names}.`;
 }
 
-export function MisuseScreen(): ReactElement {
+export function MisuseScreen({ embedded = false, onViewNews }: {
+  readonly embedded?: boolean;
+  readonly onViewNews?: (() => void) | undefined;
+} = {}): ReactElement {
+  const casesOnly = useMisuseCasesOnly();
   const fix = useCurrentFix();
   const nearest = useNearestCamera();
   const cameras = useCamerasStore((s) => s.cameras);
@@ -249,21 +256,21 @@ export function MisuseScreen(): ReactElement {
   /*
    * THE ATLAS LOADS ON THE SAME TIMER, not a second one.
    *
-   * Both files are fetched on demand by services with no subscription, and two
-   * pollers would mean two re-renders a quarter-second apart - which on this
-   * screen reads as the counts correcting themselves, and a count that visibly
-   * changes after a reader has accepted it is worse than a count that arrives
-   * late. The tick waits for BOTH before it stops.
+   * Both files are fetched on demand by services with no subscription. One
+   * poller publishes each index as it becomes ready and stops once both settle.
+   * A slow Atlas must not hold back loaded case records, especially when the
+   * reader has chosen cases only and the Atlas is hidden.
    */
   const [atlasReady, setAtlasReady] = useState(() => atlasCounties.ready());
-  const [atlasAt, setAtlasAt] = useState<string | null>(() => dataAsOf(atlasCounties.fetchedAt()));
+  const atlasRevision = useAtlasRevision();
+  const atlasAt = dataAsOf(atlasCounties.fetchedAt());
+  const atlasCheckedAt = dataAsOf(atlasCounties.checkedAt());
   useEffect(() => {
     const settled = (): boolean => countyRecords.ready() && atlasCounties.ready();
     const read = (): void => {
       setRecords(countyRecords.all());
       setBuiltAt(dataAsOf(countyRecords.generatedAt()));
       setAtlasReady(atlasCounties.ready());
-      setAtlasAt(dataAsOf(atlasCounties.fetchedAt()));
     };
     if (settled()) {
       read();
@@ -271,9 +278,8 @@ export function MisuseScreen(): ReactElement {
     }
     let live = true;
     const timer = globalThis.setInterval(() => {
-      if (!settled()) return;
       if (live) read();
-      globalThis.clearInterval(timer);
+      if (settled()) globalThis.clearInterval(timer);
     }, 250);
     return () => {
       live = false;
@@ -364,18 +370,18 @@ export function MisuseScreen(): ReactElement {
    */
   const atlasCoverage = useMemo(
     () => (atlasReady ? atlasCounties.coverageOf(myFips) : 'unknown'),
-    [atlasReady, myFips],
+    [atlasReady, myFips, atlasRevision],
   );
   const atlas = useMemo(
     () => (atlasReady ? atlasCounties.forCounty(myFips) : null),
-    [atlasReady, myFips],
+    [atlasReady, myFips, atlasRevision],
   );
-  const atlasSource = useMemo(() => (atlasReady ? atlasCounties.source() : null), [atlasReady]);
+  const atlasSource = useMemo(() => (atlasReady ? atlasCounties.source() : null), [atlasReady, atlasRevision]);
   const countyLabel = myFips === null ? null : (gazetteer.county(myFips)?.label ?? `FIPS ${myFips}`);
 
   return (
     <section className="fwm-misuse" aria-label="misuse">
-      <header className="fwm-misuse-header">
+      {embedded ? null : <header className="fwm-misuse-header">
         {/* THE ORIGINAL OF THIS CONTROL, now the shared one. It used to be a
             local button labelled "back", which said that something would move
             and not where to. Same circle, same glyph, same destination - it is
@@ -384,7 +390,7 @@ export function MisuseScreen(): ReactElement {
             of it. */}
         <BackKey to="more" label={BACK_TO_MORE} />
         <ReloadTitle title={MISUSE_TITLE} className="fwm-misuse-title" />
-      </header>
+      </header>}
 
       {/* THE HERO, AND IT DOES NOT SCROLL. Three lines: the claim, what a case
           is, and the size of the file - which is measured, never written. */}
@@ -411,8 +417,19 @@ export function MisuseScreen(): ReactElement {
         <button
           type="button"
           className="fwm-misuse-chip"
-          data-fwm-selected={String(!near && year === null)}
+          aria-pressed={casesOnly}
+          data-fwm-selected={String(casesOnly)}
+          title={casesOnly ? 'Include news and Atlas' : 'Hide news and Atlas'}
+          onClick={() => { setMisuseCasesOnly(!casesOnly); }}
+        >
+          Documented cases only
+        </button>
+        <button
+          type="button"
+          className="fwm-misuse-chip"
+          data-fwm-selected={String(!casesOnly && !near && year === null)}
           onClick={() => {
+            setMisuseCasesOnly(false);
             setNear(false);
             setYear(null);
           }}
@@ -454,6 +471,7 @@ export function MisuseScreen(): ReactElement {
           fixed; everything below moves under them, and 150px at its foot keeps
           the last card clear of the dock. */}
       <div className="fwm-misuse-band">
+        {casesOnly ? null : <LatestAbuseNews onViewNews={onViewNews} />}
         {records.length === 0 ? <p className="fwm-misuse-note fwm-data">{LOADING}</p> : null}
         {records.length > 0 && shown.length === 0 ? (
           <p className="fwm-misuse-note fwm-data">{NO_MATCHES}</p>
@@ -534,7 +552,7 @@ export function MisuseScreen(): ReactElement {
             technology, a record says a named agency did a specific thing, and
             an edge nobody can tell apart would have left it looking like one
             more case. */}
-        <section className="fwm-misuse-atlas" aria-label="atlas of surveillance">
+        {casesOnly ? null : <section className="fwm-misuse-atlas" aria-label="atlas of surveillance">
           <h3 className="fwm-misuse-atlas-title">{ATLAS_TITLE}</h3>
           <p className="fwm-misuse-atlas-lede fwm-data">{ATLAS_LEDE}</p>
 
@@ -599,6 +617,7 @@ export function MisuseScreen(): ReactElement {
             <p className="fwm-misuse-atlas-credit fwm-data">
               {atlasSource.attribution}
               {atlasAt === null ? null : <> · retrieved {atlasAt}</>}
+              {atlasCheckedAt === null ? null : <> · source checked {atlasCheckedAt}</>}
               {atlasSource.licenceUrl === '' ? null : (
                 <>
                   {' · '}
@@ -615,7 +634,7 @@ export function MisuseScreen(): ReactElement {
               )}
             </p>
           )}
-        </section>
+        </section>}
 
         {/* THE LAST THING READ, and the most important sentence on the screen:
             a county with nothing on file is UNDOCUMENTED, not clean. It sits

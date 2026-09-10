@@ -213,7 +213,7 @@ export function IntelView({
 
             <IntelTiles tiles={model.tiles} />
 
-            <IntelFacts facts={model.facts} />
+            <IntelFacts facts={model.facts} atlas={model.atlas} />
 
             <IntelPhoto available={model.photoAvailable} onDropPhoto={handlers.onDropPhoto} />
 

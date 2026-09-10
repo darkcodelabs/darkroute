@@ -127,6 +127,8 @@ describe('the screen list', () => {
       // The documented-abuse feed. Its records are the same citation-gated file
       // RADAR's county strip reads.
       'misuse',
+      'news',
+      'reports',
       'docs',
     ]);
   });

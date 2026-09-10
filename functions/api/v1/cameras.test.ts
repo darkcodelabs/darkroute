@@ -65,6 +65,16 @@ describe('refusals, each naming the constraint', () => {
 });
 
 describe('reading through the tile route', () => {
+  it('exposes the mapped county code for Atlas and abuse joins without inferring a camera operator', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => tile([
+      { id: 'osm:1', lat: 39.06, lon: -94.59, countyFips: '29095' },
+      { id: 'osm:2', lat: 39.06, lon: -94.59, countyFips: 'bad' },
+    ]));
+    const body = await (await get(`?bbox=${KC}`)).json() as { cameras: { countyFips: string | null; operator: string | null }[] };
+    expect(body.cameras[0]).toMatchObject({ countyFips: '29095', operator: null });
+    expect(body.cameras[1]).toMatchObject({ countyFips: null, operator: null });
+  });
+
   it('fetches zoom-11 tiles same-origin, filters to the box, and reports attribution', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       tile([
@@ -105,6 +115,7 @@ describe('reading through the tile route', () => {
       manufacturer: null,
       mount: null,
       locality: null,
+      countyFips: null,
       streetM: null,
     });
   });
