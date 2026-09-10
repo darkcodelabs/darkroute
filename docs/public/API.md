@@ -1146,6 +1146,12 @@ the code instead.
 
 ### 4.11 Road-monitoring inventories
 
+All road-monitoring categories are enabled by default. Existing installations
+enable all categories once when upgraded, then preserve later per-category
+choices. With these defaults, the app loads inventory metadata automatically
+while the map is visible. Camera photos are requested only when a camera is
+opened.
+
 `scripts/build-road-monitoring.mjs` reads the official equipment inventories
 configured in `scripts/road-monitoring-sources.mjs` and its source modules.
 ArcGIS requests retrieve service metadata, a count and every page of point

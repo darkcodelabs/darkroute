@@ -16,9 +16,15 @@ export const MONITORING_OFF: MonitoringTypes = Object.freeze({
   bluetooth_sensor: false, probe_sensor: false, traffic_camera: false,
   red_light_camera: false, speed_camera: false, toll_reader: false, radar_sensor: false,
 });
+export const MONITORING_ON: MonitoringTypes = Object.freeze({
+  bluetooth_sensor: true, probe_sensor: true, traffic_camera: true,
+  red_light_camera: true, speed_camera: true, toll_reader: true, radar_sensor: true,
+});
 export function readMonitoringTypes(raw: unknown): MonitoringTypes {
   const bag = raw !== null && typeof raw === 'object' ? raw as Record<string, unknown> : {};
-  return Object.fromEntries(MONITORING_KINDS.map((kind) => [kind, bag[kind] === true])) as Record<MonitoringKind, boolean>;
+  return Object.fromEntries(MONITORING_KINDS.map((kind) => [kind,
+    typeof bag[kind] === 'boolean' ? bag[kind] : MONITORING_ON[kind],
+  ])) as Record<MonitoringKind, boolean>;
 }
 export function monitoringEnabled(types: MonitoringTypes): boolean {
   return MONITORING_KINDS.some((kind) => types[kind]);

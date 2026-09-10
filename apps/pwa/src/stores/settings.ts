@@ -27,7 +27,7 @@
  */
 
 import { create } from 'zustand';
-import { MONITORING_KINDS, MONITORING_OFF, readMonitoringTypes } from '../services/records/monitoringCatalog.ts';
+import { MONITORING_KINDS, MONITORING_ON, readMonitoringTypes } from '../services/records/monitoringCatalog.ts';
 import type { MonitoringTypes } from '../services/records/monitoringCatalog.ts';
 import type { MonitoringKind } from './fwmCore.ts';
 import { persist } from 'zustand/middleware';
@@ -222,7 +222,7 @@ export interface PersistedSettings {
    * how somebody learns it exists and therefore learns what it does not cover.
    */
   readonly showHazards: boolean;
-  /** Optional infrastructure display; never used by ALPR alerts or routing. */
+  /** Infrastructure layers start enabled; never used by ALPR alerts or routing. */
   readonly monitoringTypes: MonitoringTypes;
   /**
    * Count documented abuse in the nearby query, and let the dock resolve which
@@ -578,7 +578,7 @@ export const DEFAULT_SETTINGS: PersistedSettings = Object.freeze({
   immersiveOnLaunch: false,
   // Off until asked for. See `showHazards`.
   showHazards: false,
-  monitoringTypes: MONITORING_OFF,
+  monitoringTypes: MONITORING_ON,
   abuseNearMe: true,
   abuseAlertOnEntry: false,
   abuseNameAgency: true,
@@ -766,7 +766,7 @@ export function mergePersistedSettings(stored: unknown): PersistedSettings {
 
 export const SETTINGS_STORAGE_KEY = 'fwm.settings';
 /** Bump when a stored field changes meaning. `migrate` then re-reads it. */
-export const SETTINGS_STORAGE_VERSION = 1;
+export const SETTINGS_STORAGE_VERSION = 2;
 
 export interface SettingsStoreOptions {
   readonly storageName?: string;
@@ -1043,6 +1043,12 @@ export function createSettingsStore(options: SettingsStoreOptions = {}) {
       {
         name: options.storageName ?? SETTINGS_STORAGE_KEY,
         version: SETTINGS_STORAGE_VERSION,
+        migrate: (persisted, version): PersistedSettings => {
+          const settings = mergePersistedSettings(persisted);
+          // Apply the new defaults once to existing installations. Subsequent
+          // version-2 reads preserve every deliberate per-layer selection.
+          return version < 2 ? { ...settings, monitoringTypes: MONITORING_ON } : settings;
+        },
         storage,
         skipHydration: options.skipHydration ?? false,
         partialize: (state): PersistedSettings => ({

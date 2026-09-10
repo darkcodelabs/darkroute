@@ -133,7 +133,7 @@ proxy. The machine-readable contract is `GET /api/v1/openapi.json`; the prose is
 
 Camera responses carry OpenStreetMap attribution and Atlas responses carry their source attribution.
 See [Reports and data freshness](docs/reports.md) for collection schedules and how the app and API share data.
-See [Road monitoring](docs/road-monitoring.md) for optional equipment layers, source coverage and on-demand camera photos.
+See [Road monitoring](docs/road-monitoring.md) for equipment layers enabled by default, source coverage and on-demand camera photos.
 Every error is JSON with a stable `error` code; unknown
 paths under `/api/v1/` are `404` JSON, not the app. 60 requests a minute per address is a speed bump, not
 the ceiling, the per-request caps are. An empty answer means no camera is **mapped** there, never that

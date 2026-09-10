@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_MODE } from '../app/mode.ts';
+import { MONITORING_KINDS, MONITORING_OFF, MONITORING_ON } from '../services/records/monitoringCatalog.ts';
 import {
   ALERT_THRESHOLD_MAX_FT,
   ALERT_THRESHOLD_MIN_FT,
@@ -81,6 +82,39 @@ describe('settings persistence', () => {
     expect(store.getState().thresholdFt).toBe(DEFAULT_ALERT_THRESHOLD_FT);
     expect(store.getState().mode).toBe(DEFAULT_MODE);
     expect(store.getState().ownerTypesEnabled).toEqual(DEFAULT_SETTINGS.ownerTypesEnabled);
+    expect(store.getState().monitoringTypes).toEqual(MONITORING_ON);
+  });
+
+  it('upgrades old monitoring defaults once without resetting other preferences', async () => {
+    const port = createMemoryPersistPort();
+    const name = 'fwm.test.monitoring-upgrade';
+    await port.setItem(name, JSON.stringify({ version: 1,
+      state: { ...DEFAULT_SETTINGS, monitoringTypes: MONITORING_OFF, thresholdFt: 750, mode: 'pursuit' } }));
+    const first = isolatedStore(port, name);
+    await first.persist.rehydrate();
+    expect(first.getState().monitoringTypes).toEqual(MONITORING_ON);
+    expect(first.getState().thresholdFt).toBe(750);
+    expect(first.getState().mode).toBe('pursuit');
+    await flush();
+    expect(JSON.parse((await port.getItem(name))!).version).toBe(2);
+
+    first.getState().setMonitoringType('traffic_camera', false);
+    await flush();
+    const second = isolatedStore(port, name);
+    await second.persist.rehydrate();
+    expect(second.getState().monitoringTypes).toEqual({ ...MONITORING_ON, traffic_camera: false });
+    expect(second.getState().thresholdFt).toBe(750);
+  });
+
+  it('keeps an explicit all-off choice across subsequent launches', async () => {
+    const port = createMemoryPersistPort();
+    const name = 'fwm.test.monitoring-off';
+    const first = isolatedStore(port, name);
+    for (const kind of MONITORING_KINDS) first.getState().setMonitoringType(kind, false);
+    await flush();
+    const second = isolatedStore(port, name);
+    await second.persist.rehydrate();
+    expect(second.getState().monitoringTypes).toEqual(MONITORING_OFF);
   });
 });
 
