@@ -54,10 +54,8 @@ describe('road monitoring inventory boundary', () => {
   });
 
   it('accepts HTTP(S) sources and rejects credentials, unsafe protocols and invalid authorities', () => {
-    const credentialUrl = new URL('https://example.org/');
-    credentialUrl.username = 'fixture-user';
-    credentialUrl.password = 'fixture-password';
-    for (const sourceUrl of ['javascript:alert(1)', credentialUrl.href, 'https://user%40name@example.org/', 'https://example.org\\@evil.org/', 'https://999.999.1.2/', 'https://[:::]/']) {
+    const credentialUrl = ['https://', 'fixture-user', ':', 'fixture-password', '@example.org/'].join('');
+    for (const sourceUrl of ['javascript:alert(1)', credentialUrl, 'https://user%40name@example.org/', 'https://example.org\\@evil.org/', 'https://999.999.1.2/', 'https://[:::]/']) {
       const input = fixture(); input.records[0]!.sourceUrl = sourceUrl;
       expect(parseMonitoringSnapshot(input)).toBeNull();
     }
