@@ -19,7 +19,19 @@ export function officialImageUrl(record: MonitoringRecord): string | null {
     const caltrans = district !== undefined && url.hostname === 'cwwp2.dot.ca.gov'
       && path.startsWith(`/data/d${district}/cctv/image/`)
       && /^\/data\/d\d{1,2}\/cctv\/image\/(?:[a-z0-9_ .()-]+\/)*[a-z0-9_ .()-]+\.jpg$/iu.test(path);
-    if (!op && !caltrans) return null;
+    const kansas = record.sourceId === 'kansas-traffic' && url.search === '' && (
+      (url.hostname === 'www.kcscout.net' && /^\/TransSuite\.VCS\.CameraSnapshots\/[a-z0-9_-]+\.jpg$/iu.test(path))
+      || (url.hostname === 'kscam.carsprogram.org' && /^\/(?:snapshots\/)?[a-z0-9_.&-]+\.jpe?g$/iu.test(path))
+    );
+    const austin = record.sourceId === 'austin-traffic' && url.search === ''
+      && url.hostname === 'cctv.austinmobility.io' && /^\/image\/\d+\.jpg$/u.test(path);
+    const iowa = record.sourceId === 'iowa-traffic' && url.search === ''
+      && url.hostname === 'atmsqf.iowadot.gov'
+      && /^\/snapshots\/public\/(?:metro|wwd|rural)\/[a-z0-9_ .()-]+\.jpe?g$/iu.test(path);
+    const washington = record.sourceId === 'wsdot-traffic' && url.search === ''
+      && url.hostname === 'images.wsdot.wa.gov'
+      && /^\/(?:nw|sw|orflow|rweather|spokane|nc|sc)\/[a-z0-9_ .()@-]+\.jpg$/iu.test(path);
+    if (!op && !caltrans && !kansas && !austin && !iowa && !washington) return null;
     url.hash = '';
     return url.href;
   } catch { return null; }

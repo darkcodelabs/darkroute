@@ -1,5 +1,7 @@
 /** Official equipment inventories only. No images, Bluetooth identifiers or vehicle observations. */
 import { createHash } from 'node:crypto';
+import { kcTrafficSources } from './kc-traffic-sources.mjs';
+import { additionalTrafficSources } from './traffic-camera-sources.mjs';
 
 const text = (value) => value == null ? null : String(value).replace(/[\u0000-\u001f\u007f]/gu, ' ').replace(/\s+/gu, ' ').trim().slice(0, 1000) || null;
 export const iso = (value) => {
@@ -37,6 +39,8 @@ const NY = 'https://services2.arcgis.com/gubH6kG9JCAsMX2M/arcgis/rest/services/N
 const DELDOT = 'https://enterprise.firstmap.delaware.gov/arcgis/rest/services/Transportation/DE_Boundary_and_Point/FeatureServer/25';
 
 export const MONITORING_SOURCES = [
+  ...kcTrafficSources({ record, point, key }),
+  ...additionalTrafficSources({ record, point, key }),
   {
     id: 'delaware-bluetooth', name: 'Delaware Bluetooth detectors', kind: 'bluetooth_sensor',
     format: 'arcgis', endpoint: DELDOT, where: '1=1',

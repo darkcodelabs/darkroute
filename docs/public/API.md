@@ -34,10 +34,11 @@ because it is inconvenient.
 
 ## 0. the one-paragraph summary
 
-The deployed app is a static bundle plus twelve Cloudflare Pages Functions in
-three groups. `functions/cameras/[[path]].ts` serves camera tiles and sidecars
-out of R2 (§1.1). `functions/api/v1/*` is the **public API** (§1.3): six read
-endpoints, a document proxy, and two routes that accept something, a
+The deployed app is a static bundle plus Cloudflare Pages Functions.
+`functions/cameras/[[path]].ts` serves camera tiles and sidecars out of R2 (§1.1).
+`functions/records/*` serves shared news, Atlas and road-monitoring inventories.
+`functions/api/v1/*` is the **public API** (§1.3): read endpoints, document and
+camera-image proxies, and two routes that accept something, a
 correction, which becomes a public pull request, and a photograph that the
 correction refers to, all behind one middleware that applies CORS, a
 per-isolate rate limit and a method gate, with the contract served live at
@@ -1142,6 +1143,28 @@ so an unobservable deployment never starts.
 (`:63`) or a URL you pass. It tests the _deployed artefact_, the built bundle,
 the service worker, the real headers, the CDN, because a local dev server tests
 the code instead.
+
+### 4.11 Road-monitoring inventories
+
+`scripts/build-road-monitoring.mjs` reads the official equipment inventories
+configured in `scripts/road-monitoring-sources.mjs` and its source modules.
+ArcGIS requests retrieve service metadata, a count and every page of point
+features in WGS84; Socrata requests retrieve dataset metadata, a count and the
+complete bounded inventory. Publisher JSON feeds use source-specific record
+extractors. These calls carry a collector user agent and request equipment
+metadata only. No viewer location, browser headers or camera images are sent
+or collected by this job.
+
+`scripts/road-monitoring-refresh.mjs` runs daily, reads the previous snapshot
+and publishes through `scripts/road-monitoring-publish.mjs`. R2 writes use the
+fixed `records/road-monitoring.json` key and require the prior ETag. Source
+failures retain the previous valid records with a stale status. The shared
+inventory is capped at 20,000 locations and 8 MiB; upstream requests have a
+30-second deadline and the same byte bound. Camera photos use the separate,
+on-demand `/api/v1/monitoring/image` route (§1.3).
+
+See [Road monitoring](../road-monitoring.md) for individual publisher links,
+coverage, attribution, photo availability and local reproduction commands.
 
 ## 5. Service worker
 
