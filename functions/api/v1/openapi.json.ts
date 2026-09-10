@@ -35,9 +35,11 @@
  * can be the origin actually being called rather than one hard-coded here.
  */
 
+import { MONITORING_KINDS, MONITORING_MAX_RECORDS, MONITORING_SCHEMA } from '../../../packages/core/src/roadMonitoring.ts';
 import { json } from './_middleware.ts';
 import { DEFAULT_LIMIT, MAX_LIMIT, MAX_SPAN_DEG, MAX_TILES, OWNER_TYPES } from './cameras.ts';
 import { DOCS } from './doc/[name].ts';
+import { IMAGE_MAX_BYTES, IMAGE_TIMEOUT_MS } from './monitoring/image.ts';
 import { MAX_QUERY, MAX_RESULTS } from './place.ts';
 import { MAX_BYTES, TYPES as PHOTO_TYPES } from './photo/[[key]].ts';
 import { MAX_EXCLUSIONS, MAX_SPAN_DEG as MAX_ROUTE_SPAN_DEG } from './route.ts';
@@ -109,8 +111,8 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
     openapi: '3.1.0',
     info: {
       title: 'DarkRoute public API',
-      version: '1.2.0',
-      summary: 'The ALPR camera archive, documented abuse, automatic news and EFF Atlas county context.',
+      version: '1.3.0',
+      summary: 'ALPR cameras, road monitoring inventories, documented abuse, news and EFF Atlas county context.',
       description:
         'No key and no account. The archive is OpenStreetMap data under ODbL and every response ' +
         'repeats the attribution, because the obligation travels with the data. News links remain the publishers’ work; EFF Atlas carries its own source attribution and licence observation.\n\n' +
@@ -448,6 +450,68 @@ export const onRequestGet: PagesFunction<Env> = (context) => {
             400: refusal('The county code is not five digits.', ['bad_fips']),
             429: RATE_LIMITED,
             503: refusal('The Atlas snapshot is unavailable or malformed, not an empty county result.', ['atlas_unavailable', 'atlas_malformed']),
+          },
+        },
+      },
+      '/api/v1/monitoring': {
+        get: {
+          operationId: 'listRoadMonitoring',
+          summary: 'Public road monitoring equipment inventories',
+          description: 'Bluetooth/probe sensors, traffic CCTV, red-light and speed cameras, toll readers and radar sensors from attributed public inventories. These records are independent of the ALPR camera archive and do not change ALPR totals. Source and equipment status are separate: an unknown equipment status is not a claim that a device is active. No image bytes, plates, MAC addresses or observations are returned. Available official image URLs are metadata; the separate image endpoint retrieves an image only when requested. Sources remain in every response with their full inventory counts, including stale or unavailable sources; count is the filtered result and total is the full snapshot. generatedAt is snapshot generation, fetchedAt is retrieval, checkedAt is an attempted check, and sourceUpdatedAt is the source’s own date when available. No result means no matching published record, not an absence of monitoring equipment.',
+          parameters: [
+            { name: 'bbox', in: 'query', required: false, schema: { type: 'string', example: '-94.72,38.90,-94.58,39.02' }, description: 'Optional west,south,east,north; longitude -180..180 and latitude -90..90. East and north must exceed west and south. Omit for the full inventory. Antimeridian-crossing boxes must be split.' },
+            { name: 'kind', in: 'query', required: false, schema: { type: 'string', enum: [...MONITORING_KINDS] }, description: 'Optional single equipment kind.' },
+          ],
+          responses: {
+            200: {
+              description: 'Current published inventory with source provenance. Cached for five minutes. A failed collector may retain a last-good source inventory explicitly marked stale.',
+              content: { 'application/json': { schema: {
+                type: 'object', required: ['schema', 'generatedAt', 'sources', 'records', 'query', 'count', 'total'],
+                properties: {
+                  schema: { type: 'string', const: MONITORING_SCHEMA }, generatedAt: { type: 'string', format: 'date-time' },
+                  query: { type: 'object', required: ['bbox', 'kind'], properties: {
+                    bbox: { type: ['array', 'null'], minItems: 4, maxItems: 4, items: { type: 'number' } },
+                    kind: { type: ['string', 'null'], enum: [...MONITORING_KINDS, null] },
+                  } },
+                  count: { type: 'integer', description: 'Matching records returned.' }, total: { type: 'integer', description: 'All records in the unfiltered snapshot.' },
+                  sources: { type: 'array', maxItems: 500, items: { type: 'object', required: ['id', 'name', 'url', 'attribution', 'licence', 'licenceUrl', 'coverage', 'checkedAt', 'fetchedAt', 'sourceUpdatedAt', 'status', 'count'], properties: {
+                    id: { type: 'string' }, name: { type: 'string' }, url: { type: 'string', format: 'uri' }, attribution: { type: 'string' },
+                    licence: { type: ['string', 'null'] }, licenceUrl: { type: ['string', 'null'], format: 'uri' }, coverage: { type: 'string' },
+                    checkedAt: { type: 'string', format: 'date-time' }, fetchedAt: { type: ['string', 'null'], format: 'date-time' }, sourceUpdatedAt: { type: ['string', 'null'], format: 'date-time' },
+                    status: { type: 'string', enum: ['ok', 'stale', 'unavailable', 'retired'] }, count: { type: 'integer', description: 'Records from this source in the full inventory, before request filters.' },
+                  } } },
+                  records: { type: 'array', maxItems: MONITORING_MAX_RECORDS, items: { type: 'object', required: ['id', 'sourceId', 'kind', 'lat', 'lon', 'name', 'operator', 'road', 'direction', 'status', 'sourceUrl', 'imageUrl', 'sourceUpdatedAt'], properties: {
+                    id: { type: 'string' }, sourceId: { type: 'string', description: 'References one of the supplied sources.' }, kind: { type: 'string', enum: [...MONITORING_KINDS] },
+                    lat: { type: 'number', minimum: -90, maximum: 90 }, lon: { type: 'number', minimum: -180, maximum: 180 }, name: { type: 'string' },
+                    operator: { type: ['string', 'null'] }, road: { type: ['string', 'null'] }, direction: { type: ['string', 'null'] },
+                    status: { type: 'string', enum: ['active', 'inactive', 'unknown'] }, sourceUrl: { type: 'string', format: 'uri' }, imageUrl: { type: ['string', 'null'], format: 'uri', description: 'Available official image metadata. Clients should fetch /api/v1/monitoring/image?id= on opening details, not request this upstream URL directly.' }, sourceUpdatedAt: { type: ['string', 'null'], format: 'date-time' },
+                  } } },
+                },
+              } } },
+            },
+            400: refusal('The bbox or equipment kind is invalid.', ['bad_bbox', 'bad_kind']),
+            429: RATE_LIMITED,
+            503: refusal('The inventory is unavailable or malformed, not an empty coverage result.', ['monitoring_unavailable', 'monitoring_malformed']),
+          },
+        },
+      },
+      '/api/v1/monitoring/image': {
+        get: {
+          operationId: 'getMonitoringImage',
+          summary: 'Retrieve an available official traffic-camera image on demand',
+          description: `Resolves id through the validated published monitoring inventory. The caller cannot supply an upstream URL. Only pinned Overland Park and matching Caltrans district image paths are allowed; redirects are refused. JPEG, PNG and WebP require matching media types and magic bytes. At most ${String(IMAGE_MAX_BYTES)} bytes and ${String(IMAGE_TIMEOUT_MS / 1000)} seconds per upstream request. Requests forward no browser credentials or referrer. Images are never archived and responses are no-store. Clients should request an image only when opening details for a record whose imageUrl is non-null.`,
+          parameters: [{ name: 'id', in: 'query', required: true, schema: { type: 'string', minLength: 1, maxLength: 300 }, description: 'The exact published monitoring record id.' }],
+          responses: {
+            200: { description: 'Official image bytes, cache-control: no-store.', content: {
+              'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+              'image/png': { schema: { type: 'string', format: 'binary' } },
+              'image/webp': { schema: { type: 'string', format: 'binary' } },
+            } },
+            400: refusal('The inventory record id is missing or invalid.', ['bad_id']),
+            404: refusal('No official image is recorded for this inventory entry.', ['image_not_found']),
+            429: RATE_LIMITED,
+            502: refusal('The official image has an invalid media type, mismatching bytes or excessive size.', ['image_invalid']),
+            503: refusal('The inventory or image is unavailable, malformed, timed out, redirected, or outside approved official sources.', ['monitoring_unavailable', 'monitoring_malformed', 'image_source_refused', 'image_unavailable']),
           },
         },
       },

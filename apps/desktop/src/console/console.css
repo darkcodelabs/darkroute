@@ -1012,6 +1012,14 @@ a {
 .dc-reports .dc-chip[aria-pressed='true'] { border-color: var(--dc-accent-line); color: var(--dc-accent); background: var(--dc-accent-fill); }
 .dc-reports .dc-chip:disabled { opacity: .6; cursor: default; }
 .dc-reports .dc-chip:focus-visible, .dc-reports a:focus-visible { outline: 2px solid var(--dc-accent); outline-offset: 3px; }
+.dc-monitoring-search { display: grid; gap: 8px; margin: 16px 0; }
+.dc-monitoring-search input { min-width: 0; width: 100%; padding: 12px; border: 1px solid var(--dc-line); border-radius: 12px; color: var(--dc-ink-1); background: var(--dc-panel); font: inherit; }
+.dc-monitoring-search input:focus-visible, .dc-monitoring summary:focus-visible { outline: 2px solid var(--dc-accent); outline-offset: 3px; }
+.dc-monitoring summary { cursor: pointer; }
+.dc-monitoring-source + .dc-monitoring-source { border-top: 1px solid var(--dc-line); margin-top: 16px; padding-top: 12px; }
+.dc-monitoring-photo { margin: 16px 0 0; }
+.dc-monitoring-photo img { display: block; width: 100%; max-width: 800px; height: auto; border-radius: 12px; }
+.dc-monitoring-photo figcaption { margin-top: 8px; color: var(--dc-ink-3); line-height: 1.6; }
 .dc-table {
   border-radius: 16px;
   border: 1px solid var(--dc-line);
@@ -1569,4 +1577,9 @@ a {
 .dc-menu-sheet .dc-tab {
   height: 44px;
   border-radius: 12px;
+}
+/* Five main tabs fit in the menu on narrow tablets as well as phones. */
+@media (max-width: 900px) {
+  .dc-tabs { display: none; }
+  .dc-menu { display: grid; }
 }

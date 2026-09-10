@@ -111,6 +111,21 @@ afterEach(() => {
 });
 
 describe('the map owner filter against the alert engine', () => {
+  it('keeps road monitoring type selections outside ALPR assessment and warnings', () => {
+    putCameras(AHEAD);
+    const loop = loopUnderTest();
+    loop.tick(FIX);
+    const before = assessmentSnapshot();
+    const alert = useAlertStore.getState().state;
+    useSettingsStore.getState().setMonitoringType('bluetooth_sensor', true);
+    useSettingsStore.getState().setMonitoringType('traffic_camera', true);
+    useSettingsStore.getState().setMonitoringType('red_light_camera', true);
+    loop.tick({ ...FIX, timestampMs: FIX.timestampMs + 2000 });
+    expect(assessmentSnapshot()).toEqual(before);
+    expect(useAlertStore.getState().state).toBe(alert);
+    expect(useCamerasStore.getState().cameras).toHaveLength(AHEAD.length);
+  });
+
   it('changes what is drawn', () => {
     putCameras(AHEAD);
 

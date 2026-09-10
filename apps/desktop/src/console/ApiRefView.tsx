@@ -38,6 +38,8 @@ const QUERIES: readonly Endpoint[] = [
   { method: 'GET', path: '/api/v1/abuse[?fips=]', note: 'documented abuse by county, one record per dated source, with dataset freshness' },
   { method: 'GET', path: '/api/v1/news', note: 'automatic ALPR headlines, abuse/news topics, source links, last collection and partial coverage' },
   { method: 'GET', path: '/api/v1/atlas[?fips=]', note: 'EFF Atlas agencies and partial vendors by county, retrieval/check dates and attribution; no camera ownership inference' },
+  { method: 'GET', path: '/api/v1/monitoring[?bbox=w,s,e,n][&kind=]', note: 'road monitoring equipment inventory, separate from ALPR cameras; kind filters, coordinates, source provenance, status and freshness' },
+  { method: 'GET', path: '/api/v1/monitoring/image?id=', note: 'source photo for a published inventory record, fetched on demand through DarkRoute; no image archive' },
   { method: 'GET', path: '/api/v1/place?q=&near=', note: 'a place search, US and PR only, six results' },
   { method: 'GET', path: '/api/v1/route?from=&to=[&avoid=]', note: 'a drive that keeps the listed cameras off the line' },
   { method: 'POST', path: '/api/v1/submit', note: 'a correction — opens a public pull request, never writes the archive; 6 an hour' },
@@ -132,7 +134,7 @@ export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
           </div>
           <div className="dc-licence">
             Camera data: <strong>ODbL-1.0</strong>. Attribute "Map data © OpenStreetMap contributors", and publish
-            your changes under the same terms. News links belong to their publishers. Atlas responses carry EFF attribution and the source licence observation. The contract lives at{' '}
+            your changes under the same terms. News links belong to their publishers. Atlas responses carry EFF attribution and the source licence observation. Monitoring inventory carries attribution and licence details per source; its counts do not change the ALPR archive. The contract lives at{' '}
             <a className="dc-mono" href="/api/v1/openapi.json">
               /api/v1/openapi.json
             </a>{' '}

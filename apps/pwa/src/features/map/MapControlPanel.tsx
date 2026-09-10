@@ -100,6 +100,7 @@ import {
 import type { CameraOwnerType } from '../../stores/index.ts';
 import { OWNER_LABELS } from '../triage/triage.ts';
 
+import { MonitoringControls } from './MonitoringControls.tsx';
 import './mapControlPanel.css';
 
 /** The group's accessible name. The rail key says which panel it opens. */
@@ -240,6 +241,7 @@ export interface MapControlPanelProps {
   readonly onOpenTheme: () => void;
   /** Whether the roadwork layer is on. */
   readonly hazards: boolean;
+  readonly monitoringVisibleCount?: number | null;
   /** Toggle the roadwork layer. */
   readonly onToggleHazards: () => void;
   /**
@@ -257,6 +259,7 @@ export function MapControlPanel({
   returnFocusTo,
   onOpenTheme,
   hazards,
+  monitoringVisibleCount,
   onToggleHazards,
   hazardCoverage,
 }: MapControlPanelProps): ReactElement {
@@ -431,6 +434,9 @@ export function MapControlPanel({
             is the one divider `menu.css` section 9 says the spec's own panel
             draws and this is the panel it draws it in. Above it, six answers to
             one question; below it, two controls that are not that question. */}
+        <MenuRule />
+
+        <MonitoringControls visibleCount={monitoringVisibleCount ?? null} />
         <MenuRule />
 
         {/* ROADWORK, under the filters because it changes what the map draws.

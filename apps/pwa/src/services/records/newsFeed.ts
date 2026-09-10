@@ -53,6 +53,23 @@ function sourceUrl(value: unknown): string {
   return url.href;
 }
 
+/** Old/offline feed snapshots may contain the same publisher story under several section URLs. */
+export function deduplicateNewsArticles(articles: readonly NewsArticle[]): NewsArticle[] {
+  const seen = new Set<string>();
+  return [...articles].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.url.localeCompare(b.url))
+    .filter((article) => {
+      const url = new URL(article.url);
+      const publisher = url.hostname.toLowerCase().replace(/^www\./u, '');
+      const title = article.title.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{Z}\s]+/gu, ' ').trim();
+      const uuid = url.pathname.match(/article_([a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12})/iu)?.[1]?.toLowerCase();
+      const identities = [`url:${url.href}`, `headline:${publisher}:${title}`];
+      if (uuid) identities.push(`article:${publisher}:${uuid}`);
+      const duplicate = identities.some((identity) => seen.has(identity));
+      identities.forEach((identity) => seen.add(identity));
+      return !duplicate;
+    });
+}
+
 /** Reject malformed snapshots rather than quietly turning unreadable rows into an empty feed. */
 export function parseNewsFeed(value: unknown): NewsFeed {
   const raw = object(value);
@@ -80,7 +97,7 @@ export function parseNewsFeed(value: unknown): NewsFeed {
       publisher: text(article['publisher'], 253), publishedAt: timestamp(article['publishedAt']), topic };
   }).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
   return { schema: 'darkroute-news/v1', updatedAt: timestamp(raw['updatedAt']),
-    lastAttemptAt: timestamp(raw['lastAttemptAt']), articles: parsed,
+    lastAttemptAt: timestamp(raw['lastAttemptAt']), articles: deduplicateNewsArticles(parsed),
     coverage: { status: status as NewsFeed['coverage']['status'], attempted, succeeded } };
 }
 

@@ -41,6 +41,8 @@ export const ROUTES: readonly RouteSpec[] = Object.freeze([
   { path: '/api/v1/stats', pattern: /^\/api\/v1\/stats$/, methods: ['GET'], file: 'stats.ts' },
   { path: '/api/v1/abuse', pattern: /^\/api\/v1\/abuse$/, methods: ['GET'], file: 'abuse.ts' },
   { path: '/api/v1/atlas', pattern: /^\/api\/v1\/atlas$/, methods: ['GET'], file: 'atlas.ts' },
+  { path: '/api/v1/monitoring', pattern: /^\/api\/v1\/monitoring$/, methods: ['GET'], file: 'monitoring.ts' },
+  { path: '/api/v1/monitoring/image', pattern: /^\/api\/v1\/monitoring\/image$/, methods: ['GET'], file: 'monitoring/image.ts' },
   { path: '/api/v1/news', pattern: /^\/api\/v1\/news$/, methods: ['GET'], file: 'news.ts' },
   { path: '/api/v1/place', pattern: /^\/api\/v1\/place$/, methods: ['GET'], file: 'place.ts' },
   { path: '/api/v1/route', pattern: /^\/api\/v1\/route$/, methods: ['GET'], file: 'route.ts' },
