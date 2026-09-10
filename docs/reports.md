@@ -1,5 +1,9 @@
 # Reports, news and EFF Atlas
 
+The [data inventory](data-inventory.md) lists complete downloads, publication
+sources and the distinction between cameras, articles, source records and
+agency deployments.
+
 The map's **Reports** button opens the existing menu and its three abuse
 alert controls. **Read reports** opens a full Reports page with **Abuse** first
 and selected by default, followed by **News**. Existing News shortcuts open

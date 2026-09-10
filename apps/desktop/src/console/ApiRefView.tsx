@@ -10,6 +10,7 @@ import type { ReactElement } from 'react';
 
 import type { Archive } from './Console.tsx';
 import { fetchSize, formatBytes, formatCount } from './data.ts';
+import { DatasetInventory } from './DatasetInventory.tsx';
 
 export interface ApiRefViewProps {
   readonly archive: Archive;
@@ -24,12 +25,19 @@ interface Endpoint {
 
 const FILES: readonly Endpoint[] = [
   { method: 'GET', path: '/cameras/index.json', note: 'count and bbox for the whole archive — fetch this first', weigh: '/cameras/index.json' },
-  { method: 'GET', path: '/cameras/overview.json', note: 'every camera as [lat, lon, id], nothing else', weigh: '/cameras/overview.json' },
+  { method: 'GET', path: '/cameras/overview.json', note: 'count and flat coords: [lat, lon, lat, lon, …]; no camera IDs or full records', weigh: '/cameras/overview.json' },
   { method: 'GET', path: '/cameras/11/{x}/{y}.json', note: 'slippy tiles at z11, full records: street, town, owner, maker, facing', weigh: '/cameras/11/485/783.json' },
   { method: 'GET', path: '/cameras/tombstones.json', note: 'removed cameras and the cause of removal', weigh: '/cameras/tombstones.json' },
   { method: 'GET', path: '/cameras/counties.json', note: 'every county with a camera in it, and how many', weigh: '/cameras/counties.json' },
   { method: 'GET', path: '/cameras/places.json', note: 'every city and town with a camera in it, and how many', weigh: '/cameras/places.json' },
   { method: 'GET', path: '/cameras/continuity.json', note: 'the attested chain from the reviewed capture to the head of replication', weigh: '/cameras/continuity.json' },
+  { method: 'GET', path: '/records/road-monitoring.json', note: 'complete equipment inventory and source status, dates, attribution and terms' },
+  { method: 'GET', path: '/records/atlas-counties.json', note: 'EFF Atlas ALPR deployment context grouped by county, including source metadata' },
+  { method: 'GET', path: '/records/counties.json', note: 'every documented abuse source record, including summaries and citations' },
+  { method: 'GET', path: '/api/v1/news', note: 'complete current news feed, with collection dates and coverage status' },
+  { method: 'GET', path: '/records/hazards.json', note: 'packaged KS/MO work-zone snapshot; inspect builtAt for freshness' },
+  { method: 'GET', path: '/records/county-index.json', note: 'supporting Census county boundaries used to locate records; not surveillance devices' },
+  { method: 'GET', path: '/records/candidates.json', note: 'historical unreviewed candidate queue; not approved findings or the current news feed' },
 ];
 
 const QUERIES: readonly Endpoint[] = [
@@ -47,8 +55,8 @@ const QUERIES: readonly Endpoint[] = [
   { method: 'GET', path: '/api/v1/openapi.json', note: 'the contract, generated from the route table the server runs' },
 ];
 
-const CURL = `curl -s https://api.darkroute.ai/cameras/overview.json \\
-  | jq '.[] | select(.[0] > 38.8 and .[0] < 39.1)'`;
+export const OVERVIEW_CURL = `curl -fsS https://api.darkroute.ai/cameras/overview.json \\
+  | jq '.coords as $c | range(0; $c | length; 2) as $i | [$c[$i], $c[$i + 1]] | select(.[0] > 38.8 and .[0] < 39.1 and .[1] > -94.8 and .[1] < -94.3)'`;
 
 export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
   const [sizes, setSizes] = useState<Readonly<Record<string, number | null>>>({});
@@ -69,12 +77,13 @@ export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
   return (
     <section className="dc-pane" aria-label="API reference">
       <div className="dc-measure">
+        <DatasetInventory archive={archive} />
         <div className="dc-panel">
-          <div className="dc-h">Published files</div>
+          <div className="dc-h">Published files and complete snapshots</div>
           <div className="dc-lede">
-            Static files on a CDN. No keys, no account — a fetch is the whole integration. Generation{' '}
+            Complete JSON reads with no key or account. Camera generation{' '}
             <span className="dc-mono">{archive.stats?.generation?.slice(0, 12) ?? '—'}</span>,{' '}
-            {formatCount(archive.stats?.cameras ?? null)} cameras.
+            {formatCount(archive.stats?.cameras ?? null)} ALPR cameras. The other datasets update independently.
           </div>
           {FILES.map((f) => (
             <div key={f.path} className="dc-endpoint">
@@ -114,12 +123,12 @@ export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
         <div className="dc-panel">
           <div className="dc-code">
             <div className="dc-code-head">
-              <span>Every camera in a bbox</span>
+              <span>Every mapped ALPR coordinate in a bbox</span>
               <button
                 type="button"
                 className="dc-copy"
                 onClick={() => {
-                  void navigator.clipboard?.writeText(CURL).then(() => {
+                  void navigator.clipboard?.writeText(OVERVIEW_CURL).then(() => {
                     setCopied(true);
                     setTimeout(() => {
                       setCopied(false);
@@ -130,7 +139,7 @@ export function ApiRefView({ archive }: ApiRefViewProps): ReactElement {
                 {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <pre>{CURL}</pre>
+            <pre>{OVERVIEW_CURL}</pre>
           </div>
           <div className="dc-licence">
             Camera data: <strong>ODbL-1.0</strong>. Attribute "Map data © OpenStreetMap contributors", and publish

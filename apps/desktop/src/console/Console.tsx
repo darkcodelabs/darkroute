@@ -157,7 +157,7 @@ export function Console(): ReactElement {
           ))}
         </nav>
         <span className="dc-spacer" />
-        {tab !== 'monitoring' ? <label className="dc-search">
+        {tab !== 'monitoring' && tab !== 'reports' ? <label className="dc-search">
           <input
             type="search"
             value={query}
@@ -232,7 +232,7 @@ export function Console(): ReactElement {
       </header>
 
       {tab === 'archive' ? <ArchiveView archive={archive} query={query} theme={theme} /> : null}
-      {tab === 'reports' ? <ReportsView archive={archive} query={query} /> : null}
+      {tab === 'reports' ? <ReportsView archive={archive} query={query} onQueryChange={setQuery} /> : null}
       {tab === 'monitoring' ? <MonitoringView /> : null}
       {tab === 'api' ? <ApiRefView archive={archive} /> : null}
       {tab === 'coverage' ? <CoverageView archive={archive} query={query} /> : null}
@@ -244,7 +244,7 @@ export function Console(): ReactElement {
         <span className="dc-spacer" />
         <span>build {built}</span>
         <span>z11 tiles{archive.tiles === null ? '' : ` · ${formatCount(archive.tiles)}`}</span>
-        <span>{formatCount(archive.stats?.cameras ?? null)} cameras</span>
+        <span>{formatCount(archive.stats?.cameras ?? null)} ALPR cameras</span>
         <span>{formatCount(archive.tombstones)} tombstones</span>
         <span className="dc-ok" data-state={archive.state}>
           {archive.state === 'ok' ? 'build ok' : archive.state === 'pending' ? 'reading' : 'archive unreachable'}

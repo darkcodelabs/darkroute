@@ -3,7 +3,8 @@ import type { ReactElement } from 'react';
 import { fetchAbuse, fetchAtlas, fetchNews } from '../data/api.ts';
 import type { AbuseResult, AtlasResult, NewsResult } from '../data/api.ts';
 import type { Archive } from './Console.tsx';
-import { download, formatCount, misuseCsv, misuseRows } from './data.ts';
+import { countyLabelFor, download, formatCount } from './data.ts';
+import { recordsCsv } from './exports.ts';
 
 type ReportKind = 'news' | 'abuse' | 'atlas';
 const OPTIONS: readonly { id: ReportKind; label: string }[] = [
@@ -16,7 +17,7 @@ function stamp(value: string | null | undefined): string {
   return Number.isFinite(date.getTime()) ? date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/u, ' UTC') : 'date unavailable';
 }
 
-export function ReportsView({ archive, query }: { readonly archive: Archive; readonly query: string }): ReactElement {
+export function ReportsView({ archive, query, onQueryChange }: { readonly archive: Archive; readonly query: string; readonly onQueryChange: (value: string) => void }): ReactElement {
   const [kind, setKind] = useState<ReportKind>(() => {
     const params = new URLSearchParams(globalThis.location?.search ?? '');
     const wanted = params.get('report');
@@ -64,15 +65,19 @@ export function ReportsView({ archive, query }: { readonly archive: Archive; rea
 
   const q = query.trim().toLowerCase();
   const labels = useMemo(() => new Map(archive.counties?.map((county) => [county.fips, county.label])), [archive.counties]);
-  const cases = useMemo(() => misuseRows(abuse?.records ?? [], archive.counties), [abuse, archive.counties]);
+  const cases = abuse?.records ?? [];
   const years = [...new Set(cases.map((record) => record.year))].sort((a, b) => b - a);
   const shownCases = cases.filter((record) => (year === null || record.year === year)
-    && `${record.agency} ${record.county}`.toLowerCase().includes(q));
+    && `${record.agency} ${countyLabelFor(record.fips, archive.counties)} ${record.summary} ${record.sourceName}`.toLowerCase().includes(q));
   const articles = (news?.articles ?? []).filter((article) => (topic === 'all' || article.topic === topic)
     && `${article.title} ${article.publisher}`.toLowerCase().includes(q));
   const counties = (atlas?.counties ?? []).filter((county) =>
     `${county.fips} ${labels.get(county.fips) ?? ''} ${county.agencies.join(' ')} ${county.vendors.join(' ')}`.toLowerCase().includes(q));
   const length = kind === 'news' ? articles.length : kind === 'abuse' ? shownCases.length : counties.length;
+  const current = kind === 'news' ? news : kind === 'abuse' ? abuse : atlas;
+  const matchingRows = kind === 'news' ? articles : kind === 'abuse' ? shownCases : counties.map((county) => ({
+    ...county, sourceAttribution: atlas?.source.attribution, sourceUrl: atlas?.source.home, sourceLicence: atlas?.source.licence, fetchedAt: atlas?.fetchedAt, checkedAt: atlas?.checkedAt,
+  }));
 
   return (
     <section className="dc-pane dc-reports" aria-label="Reports">
@@ -80,6 +85,22 @@ export function ReportsView({ archive, query }: { readonly archive: Archive; rea
         {OPTIONS.map((option) => <button key={option.id} type="button" className="dc-chip" aria-pressed={kind === option.id}
           onClick={() => { setKind(option.id); setLimit(100); }}>{option.label}</button>)}
         <button type="button" className="dc-chip" disabled={loading} onClick={reload}>{loading ? 'Refreshing…' : 'Refresh'}</button>
+      </div>
+      <label className="dc-monitoring-search">Search these reports
+        <input type="search" value={query}
+          placeholder={kind === 'news' ? 'Headline or publisher' : kind === 'atlas' ? 'County name, FIPS, agency or vendor' : 'Agency, county, summary or source'}
+          onChange={(event) => { onQueryChange(event.target.value); setLimit(100); }}
+          onKeyDown={(event) => { if (event.key === 'Escape') { onQueryChange(''); setLimit(100); } }} />
+      </label>
+      <div className="dc-panel">
+        <p><a className="dc-source" href={`/api/v1/${kind}`} target="_blank" rel="noreferrer">Open complete {kind === 'atlas' ? 'Atlas' : kind} API JSON ↗</a> · <a className="dc-source" href="/?tab=api">All datasets and API</a></p>
+        <p className="dc-table-sub">CSV includes every matching record. API JSON includes the complete endpoint response, regardless of filters or the number displayed.</p>
+        {kind === 'atlas' ? <p><a className="dc-source" href="/records/atlas-counties.json" target="_blank" rel="noreferrer">Open raw Atlas snapshot ↗</a> for unplaced rows, field selection and full source metadata.</p> : null}
+        <div className="dc-report-controls">
+          <button type="button" className="dc-chip" disabled={matchingRows.length === 0} onClick={() => { download(`darkroute-${kind}.csv`, recordsCsv(matchingRows), 'text/csv;charset=utf-8'); }}>Download all matching CSV</button>
+          <button type="button" className="dc-chip" disabled={current === null} onClick={() => { download(`darkroute-${kind}.json`, JSON.stringify(current, null, 2), 'application/json'); }}>Download complete API JSON</button>
+          {kind === 'atlas' ? <a className="dc-chip" href="/records/atlas-counties.json" download="darkroute-atlas-snapshot.json">Download raw Atlas snapshot</a> : null}
+        </div>
       </div>
       {errors.length > 0 ? <p className="dc-report-warning" role="status">Could not refresh {errors.join(', ')}. Any previously loaded data remains visible.</p> : null}
       {kind === 'news' ? <>
@@ -102,18 +123,18 @@ export function ReportsView({ archive, query }: { readonly archive: Archive; rea
       {kind === 'abuse' ? <>
         <div className="dc-panel">
           <h1>Documented abuse</h1>
-          <p>{formatCount(abuse?.count ?? null)} cases · Dataset {stamp(abuse?.generatedAt)}</p>
+          <p>{formatCount(abuse?.count ?? null)} source records · Dataset {stamp(abuse?.generatedAt)}</p>
           <p>Each record names an agency and carries a dated source. Records describe county context, not an individual camera. No entry does not establish that no abuse occurred.</p>
           <div className="dc-report-controls" role="group" aria-label="Case year">
             <button type="button" className="dc-chip" aria-pressed={year === null} onClick={() => { setYear(null); setLimit(100); }}>All years</button>
             {years.map((value) => <button key={value} type="button" className="dc-chip" aria-pressed={year === value} onClick={() => { setYear(value); setLimit(100); }}>{value}</button>)}
-            <button type="button" className="dc-chip" disabled={shownCases.length === 0} onClick={() => { download('darkroute-abuse.csv', misuseCsv(shownCases), 'text/csv'); }}>Download CSV</button>
           </div>
         </div>
-        {shownCases.slice(0, limit).map((record) => <article className="dc-panel" key={record.key}>
-          <div className="dc-kicker">{record.year} · {record.county}</div>
+        {shownCases.slice(0, limit).map((record, index) => <article className="dc-panel" key={`${record.fips}:${record.sourceUrl}:${index}`}>
+          <div className="dc-kicker">{record.year} · {countyLabelFor(record.fips, archive.counties)}</div>
           <h2>{record.agency}</h2>
-          <p>{record.cases} cases · {record.incidents} incidents</p>
+          <p>{record.summary}</p>
+          <p className="dc-table-sub">{record.incidents} documented incidents</p>
           <a className="dc-source" href={record.sourceUrl} target="_blank" rel="noopener noreferrer">{record.sourceName || 'Read source'} ↗</a>
         </article>)}
       </> : null}
