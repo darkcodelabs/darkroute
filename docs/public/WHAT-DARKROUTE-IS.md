@@ -477,7 +477,7 @@ continuity core deliberately excludes the derived fields -- county, place,
 street, town (`scripts/camera-integrity.mjs:13`) -- so it is a statement about
 what OSM said and nothing else.
 
-`.github/workflows/camera-sync.yml` still exits on a scheduled run by policy;
+The private camera synchronization workflow gates scheduled runs by policy;
 the sync to the head was run from the operator's own machine for these
 generations, in the order the runbook gives, and the sync state it left is in
 the tree (`scripts/camera-sync-state.json`: `versionsKnown: true`).
@@ -1094,10 +1094,13 @@ Some of this is structural and some of it is just what the app is.
   (`functions/api/v1/submit.ts:115`). The driver's own position is never in
   it.
 - **The EFF Atlas of Surveillance layer** (`apps/pwa/public/records/atlas-counties.json`,
-  4,142 ALPR rows across 1,345 counties and 3,574 agencies, fetched
-  2026-09-09) is joined by county for the misuse screen and rebuilt monthly by
-  `.github/workflows/atlas-refresh.yml`, which opens a pull request when the
-  export moves instead of pushing a data change nobody read.
+  4,142 county-matched ALPR rows across 1,345 counties and 3,574 agencies,
+  fetched 2026-09-09 and checked 2026-09-10) is joined by county for Reports,
+  Lookup and camera details. `scripts/atlas-refresh.mjs` checks the source
+  daily using the existing builder; `scripts/atlas-publish.mjs` publishes a
+  validated snapshot independently of app releases. Failed checks retain the
+  previous data and its dates. [Reports documentation](../reports.md) describes
+  the shared API and refresh behavior.
 - **The intel card wraps its name.** DeFlock's 300 px card cut "Metcalf Ave &
   W 108th St" to "Metcalf Ave …"; the anchored card takes the width the phone
   has, to 360 px, and wraps (`apps/pwa/src/features/intel/intelV1.css`).
@@ -1197,7 +1200,7 @@ touches which section:
 |---|---|
 | a tile route, the pointer, a slot, a generation threshold | §3.1, §3.2, §3.6 |
 | the capture, the receipt schema, the review script | §3.3 |
-| `camera-sync.yml`, `hydrate-cameras.mjs`, `sync-cameras.mjs` | §3.4; re-measure the run counts |
+| camera synchronization, `hydrate-cameras.mjs`, `sync-cameras.mjs` | §3.4; re-measure the run counts |
 | the ownership classifier or the archive itself | §3.5; re-run verify step 5 |
 | an alert constant, the state machine, the facing logic | §4.1 and the table in it |
 | `route.ts`, `place.ts`, the box size, the upstream default | §4.2, §7.2 rows 1–2 |
