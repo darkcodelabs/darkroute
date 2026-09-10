@@ -146,12 +146,11 @@ and noncanonical integer spellings return `400` before R2 data is read. `HEAD`
 on any accepted path runs the same read (`onRequestHead`) and returns the same
 status and headers with no body.
 
-> **Measured 2026-09-09.** The live generation (`0e1b7974…`, built
-> 2026-09-01) carries five of the six sidecars: `continuity.json` answers `503`
-> in production while the other five answer `200`. `scripts/verify-camera-deployment.mjs`
-> requires all six and so cannot pass against production until a generation
-> that includes it is published. This is a data-pipeline fact, not a Function
-> defect; the Function is doing what item 5 below says it must.
+> **Measured 2026-09-10.** All six sidecars, including `continuity.json`,
+> answer `200` with JSON content type and the same live generation header
+> (`4d8a06e8…`, built 2026-09-10). `scripts/verify-camera-deployment.mjs`
+> requires all six. A missing required sidecar still returns `503` with
+> `no-store`, as described in item 5 below.
 
 Generation selection. The Function reads `__camera/current.json` on every
 request. A valid `darkroute-camera-pointer/v1` object names slot `a`, `b`, or
@@ -295,6 +294,16 @@ Cross-origin reads. `/api/v1/*` carries `access-control-allow-origin: *`;
 `/cameras/*` does not. A browser page on another origin can read
 `/api/v1/cameras` and cannot read the raw tiles, by construction, because the
 tile route was built for the app and the API was built for everyone else.
+
+Complete monitoring exports. [The unfiltered monitoring API](https://darkroute.ai/api/v1/monitoring)
+returns every road-monitoring record and all source metadata in one JSON
+response, with `count` equal to `total`. It has no pagination or result
+truncation. [The raw inventory](https://darkroute.ai/records/road-monitoring.json)
+contains the same complete snapshot without the API's `query`, `count` and
+`total` fields. Both include all seven supported equipment categories when
+records exist; a category with no published records has an empty filtered
+response. See [Road monitoring](../road-monitoring.md#shared-feed-and-api) for
+the download command and category names.
 
 How to check, from anywhere:
 
