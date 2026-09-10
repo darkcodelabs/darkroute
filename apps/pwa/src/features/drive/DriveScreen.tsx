@@ -1104,6 +1104,12 @@ export function DriveScreen(): ReactElement {
    * would recreate the exact problem the landmark was added to solve. See
    * `distinctLandmarks`.
    */
+  const monitoringTypes = useSettingsStore((state) => state.monitoringTypes);
+  const monitoringFeed = useRoadMonitoring(monitoringEnabled(monitoringTypes));
+  const monitoringRecords = useMemo(() => selectedMonitoring(monitoringFeed.data?.records ?? NO_MONITORING, monitoringTypes), [monitoringFeed.data, monitoringTypes]);
+  const [monitoringSelection, setMonitoringSelection] = useState<string | null>(null);
+  const [monitoringVisibleCount, setMonitoringVisibleCount] = useState<number | null>(null);
+  const monitoringRecord = monitoringRecords.find((record) => record.id === monitoringSelection);
   /*
    * THE ROADWORK LAYER, fetched only when it is switched on.
    *
@@ -1113,12 +1119,6 @@ export function DriveScreen(): ReactElement {
    * eagerly would make its silence look like an answer to somebody who never
    * opted in.
    */
-  const monitoringTypes = useSettingsStore((state) => state.monitoringTypes);
-  const monitoringFeed = useRoadMonitoring(monitoringEnabled(monitoringTypes));
-  const monitoringRecords = useMemo(() => selectedMonitoring(monitoringFeed.data?.records ?? NO_MONITORING, monitoringTypes), [monitoringFeed.data, monitoringTypes]);
-  const [monitoringSelection, setMonitoringSelection] = useState<string | null>(null);
-  const [monitoringVisibleCount, setMonitoringVisibleCount] = useState<number | null>(null);
-  const monitoringRecord = monitoringRecords.find((record) => record.id === monitoringSelection);
   const showHazards = useSettingsStore((s) => s.showHazards);
   const setShowHazards = useSettingsStore((s) => s.setShowHazards);
   useEffect(() => {

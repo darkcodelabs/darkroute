@@ -1,9 +1,14 @@
 # Road monitoring
 
-Layers on the map can display published traffic CCTV, red-light and speed
-enforcement cameras, Bluetooth detectors, travel-time probe sensors and toll
-gantries. Each type has its own switch, initially off. These inventories stay
-separate from ALPR camera records, exposure totals, alerts and route avoidance.
+Layers on the map display published traffic CCTV, red-light and speed
+enforcement cameras, Bluetooth detectors, travel-time probe sensors, toll
+gantries and radar sensors. Every category is on by default and has its own
+switch. Existing installations enable all categories once when upgraded;
+later per-category choices are saved. These inventories stay separate from
+ALPR camera records, exposure totals, alerts and route avoidance.
+
+With the default layers enabled, inventory metadata loads automatically while
+the map is visible. Camera photos are requested only when a camera is opened.
 
 Open a point for its operator, source, available dates and publisher-reported
 status. Nearby ALPR counts use camera records already loaded on the device.
