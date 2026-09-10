@@ -11,15 +11,20 @@ Proximity can help compare inventories; it does not establish that two records
 are the same device or that their operators share data. An empty area means no
 locations are included in these inventories, not that no monitoring exists.
 
-## Initial coverage
+## Current coverage
 
-Counts below describe the September 10, 2026 import. The live inventory and API
+Counts below describe the expanded September 10, 2026 import. The live inventory and API
 provide current counts and dates for each source.
 
 | Publisher | Equipment | Locations |
 | --- | --- | ---: |
 | [Overland Park](https://maps.opkansas.org/traffic-cameras-map/) | Traffic cameras | 85 |
 | [Caltrans, all 12 districts](https://cwwp2.dot.ca.gov/documentation/cctv/cctv.htm) | Traffic CCTV | 3,554 |
+| [KanDrive / KC Scout](https://www.kandrive.gov/) | Kansas and Kansas City traffic cameras | 608 |
+| [MoDOT](https://traveler.modot.org/) | Missouri and unmatched KC Scout traffic cameras | 569 |
+| [Austin](https://data.austintexas.gov/d/b4k4-adkb) | Deployed traffic cameras | 817 |
+| [Iowa DOT](https://511ia.org/) | Iowa DOT roadway traffic cameras | 735 |
+| [WSDOT](https://wsdot.com/Travel/Real-time/Map/) | Roadway traffic cameras | 1,484 |
 | [Chicago](https://data.cityofchicago.org/d/thvf-6diy) | Red-light camera locations | 300 |
 | [Chicago](https://data.cityofchicago.org/d/4i42-qv3h) | Speed camera locations | 209 |
 | [DelDOT / Delaware FirstMap](https://enterprise.firstmap.delaware.gov/arcgis/rest/services/Transportation/DE_Boundary_and_Point/FeatureServer/25) | Bluetooth detectors | 295 |
@@ -28,7 +33,23 @@ provide current counts and dates for each source.
 | [Florida DOT](https://services1.arcgis.com/O1JpcwDW8sjYuddV/arcgis/rest/services/eTraffic_Exhibit_A_Devices_Public/FeatureServer/0) | Travel-time probe sensors, technology unspecified | 1,162 |
 | [New York State Thruway](https://data.ny.gov/Transportation/Thruway-Toll-Gantries/pfuu-4nqq) | Toll gantry locations | 70 |
 
-These 6,292 locations are partial geographic coverage. Radar is a supported
+These 10,505 locations include 7,852 traffic cameras and provide partial
+geographic coverage. Kansas includes KC Scout cameras on both sides of the
+state line. MoDOT entries are omitted only when the actual KanDrive inventory
+contains a matching Scout camera identifier; unmatched cameras stay mapped.
+This removes 311 confirmed aliases without treating nearby cameras as duplicates.
+Kansas provides
+409 still-image links, including 347 Scout snapshots; video-only cameras stay
+mapped without an image. Missouri's separate feed supplies video streams,
+so those records have no still photo.
+
+Austin excludes desired, void and removed installations; construction status
+does not establish live camera health. Iowa is limited to the publisher's
+Iowa DOT roadway category. Washington covers roadway images on the WSDOT image
+service; ferry, airport and external-provider cameras are excluded. This is
+not a complete inventory of every city or road in those states.
+
+Radar is a supported
 category with no current source included. Austin's old Bluetooth/radar dataset
 is excluded because its publisher says the devices were removed from operation.
 Florida probes are not classified as Bluetooth without source evidence. The
@@ -56,7 +77,9 @@ Images are not collected with the inventory or archived by this feature.
 The proxy accepts known camera IDs, checks a source-specific host/path
 allowlist, rejects redirects, and bounds image size, time and content type.
 It returns `Cache-Control: no-store`. A failed image leaves source details
-available. Snapshot retrieval time is not presented as the photograph's capture
+available. A publisher may itself return an unavailable-image placeholder;
+publisher-listed active status does not guarantee a current photo.
+Snapshot retrieval time is not presented as the photograph's capture
 time. Red-light cameras and other assets without public images have no photo.
 
 ## Shared feed and API
@@ -100,5 +123,23 @@ publication checks the prior object's ETag and rejects older generations.
 
 The collector, normalizers and publisher are `scripts/build-road-monitoring.mjs`,
 `scripts/road-monitoring-sources.mjs` and `scripts/road-monitoring-publish.mjs`.
+The additional traffic-camera adapters are `scripts/kc-traffic-sources.mjs`
+and `scripts/traffic-camera-sources.mjs`.
 Source attribution and available terms remain attached to every inventory;
 an absent licence field is not treated as a public-domain declaration.
+
+To reproduce the inventory locally without publishing or fetching images:
+
+```sh
+node --dns-result-order=ipv4first scripts/build-road-monitoring.mjs \
+  --previous apps/pwa/public/records/road-monitoring.json \
+  --output /tmp/road-monitoring.json
+```
+
+Adding a source requires a stable publisher identifier, validated coordinates,
+an explicit equipment category, bounded complete retrieval, attribution and
+coverage information. Tests cover exclusions and malformed upstream responses.
+New photo services also need a source-specific host/path entry and tests in
+`functions/api/v1/monitoring/image.ts`; registering an inventory alone does not
+authorize arbitrary image URLs. No API schema change is needed for another
+source using the existing equipment categories.

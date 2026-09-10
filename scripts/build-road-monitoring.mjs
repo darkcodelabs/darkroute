@@ -44,12 +44,14 @@ export async function fetchMonitoringSource(source, read = fetch) {
     const count = (await readJson(query(endpoint, { where: source.where, returnCountOnly: 'true', f: 'json' }), read)).data.count;
     if (!Number.isSafeInteger(count) || count < 1 || count > MONITORING_MAX_RECORDS) throw new Error('Invalid or empty upstream inventory');
     const idField = metadata.data.objectIdField ?? metadata.data.fields?.find((field) => field.type === 'esriFieldTypeOID')?.name;
+    const advertisedLimit = metadata.data.maxRecordCount;
+    const pageSize = Number.isSafeInteger(advertisedLimit) && advertisedLimit > 0 ? Math.min(1000, advertisedLimit) : 1000;
     rows = [];
-    for (let offset = 0; offset < count; offset += 1000) {
+    for (let offset = 0; offset < count; offset += pageSize) {
       const params = { where: source.where, outFields: source.fields, returnGeometry: 'true', outSR: '4326', f: 'geojson',
-        resultOffset: String(offset), resultRecordCount: '1000', ...(idField ? { orderByFields: idField } : {}) };
+        resultOffset: String(offset), resultRecordCount: String(pageSize), ...(idField ? { orderByFields: idField } : {}) };
       const page = (await readJson(query(endpoint, params), read)).data;
-      if (page.type !== 'FeatureCollection' || !Array.isArray(page.features) || page.features.length !== Math.min(1000, count - offset)) {
+      if (page.type !== 'FeatureCollection' || !Array.isArray(page.features) || page.features.length !== Math.min(pageSize, count - offset)) {
         throw new Error('Incomplete upstream inventory page');
       }
       rows.push(...page.features);
@@ -63,15 +65,15 @@ export async function fetchMonitoringSource(source, read = fetch) {
     if (!Number.isSafeInteger(count) || count < 1 || count > MONITORING_MAX_RECORDS) throw new Error('Invalid or empty upstream inventory');
     rows = (await readJson(query(source.endpoint, { $limit: String(count), $order: ':id' }), read)).data;
     if (!Array.isArray(rows) || rows.length !== count) throw new Error('Incomplete upstream inventory');
-  } else if (source.format === 'caltrans') {
+  } else if (source.format === 'caltrans' || source.format === 'json') {
     const response = await readJson(source.endpoint, read);
     sourceUpdatedAt = response.modified;
-    rows = response.data.data;
-    if (!Array.isArray(rows) || rows.length < 1 || rows.length > MONITORING_MAX_RECORDS) throw new Error('Invalid or empty Caltrans inventory');
+    rows = source.format === 'caltrans' ? response.data.data : source.rows(response.data);
+    if (!Array.isArray(rows) || rows.length < 1 || rows.length > MONITORING_MAX_RECORDS) throw new Error('Invalid or empty JSON inventory');
   } else throw new Error('Unknown source format');
   const records = rows.map((row) => source.normalize(row)).filter((row) => row !== null);
-  // A normalizer returns null only for explicitly removed equipment. A complete,
-  // nonempty upstream inventory of removed rows authoritatively clears old assets.
+  // Normalizers exclude explicitly removed, never-deployed, private or out-of-scope
+  // entries. A complete, nonempty source with all entries excluded clears old assets.
   const ids = new Set(records.map((row) => row.id));
   if (ids.size !== records.length) throw new Error('Source returned duplicate equipment identifiers');
   return { records, sourceUpdatedAt };
@@ -110,6 +112,23 @@ export async function collectRoadMonitoring({ previous = null, sources = MONITOR
       }
     }));
     results.push(...group);
+  }
+  // Only remove cross-feed aliases when the preferred inventory actually contains
+  // the same publisher camera identifier. Proximity or a shared operator is not proof.
+  for (const config of sources) {
+    if (!config.duplicateOf) continue;
+    const result = results.find((item) => item.source.id === config.id);
+    const preferred = results.find((item) => item.source.id === config.duplicateOf);
+    if (!preferred) continue;
+    const keys = new Set(preferred.records.map((row) => config.duplicateKey(row)).filter((key) => key !== null));
+    const before = result.records.length;
+    result.records = result.records.filter((row) => {
+      const key = config.duplicateKey(row);
+      return key === null || !keys.has(key);
+    });
+    result.source.count = result.records.length;
+    if (before !== result.records.length) onSource({ id: config.id, status: result.source.status,
+      count: result.records.length, duplicatesRemoved: before - result.records.length });
   }
   const snapshot = { schema: MONITORING_SCHEMA, generatedAt: now,
     sources: results.map((result) => result.source), records: results.flatMap((result) => result.records) };

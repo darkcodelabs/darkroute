@@ -63,6 +63,37 @@ describe('road monitoring equipment sources', () => {
     assert.equal(result.records.length, 2);
   });
 
+  it('honors a GIS service page limit below 1,000 without losing locations', async () => {
+    const features = Array.from({ length: 5 }, (_, id) => ({ ...feature, properties: { ...feature.properties, OBJECTID: id } }));
+    const offsets = [];
+    const result = await fetchMonitoringSource(op, async (url) => {
+      const params = new URL(url).searchParams;
+      if (params.has('returnCountOnly')) return response({ count: features.length });
+      if (!new URL(url).pathname.endsWith('/query')) return response({ objectIdField: 'OBJECTID', maxRecordCount: 2 });
+      assert.equal(params.get('resultRecordCount'), '2');
+      const offset = Number(params.get('resultOffset'));
+      offsets.push(offset);
+      return response(inventory(features.slice(offset, offset + 2)));
+    });
+    assert.equal(result.records.length, 5);
+    assert.deepEqual(offsets, [0, 2, 4]);
+  });
+
+  it('validates complete JSON inventories and keeps the last good data for malformed responses', async () => {
+    const config = { ...op, format: 'json', rows: (data) => data.cameras };
+    const good = await collectRoadMonitoring({ sources: [config], now: OLD,
+      read: async () => response({ cameras: [feature] }, { headers: { 'last-modified': 'Wed, 09 Sep 2026 00:00:00 GMT' } }) });
+    assert.equal(good.records.length, 1);
+    assert.equal(good.sources[0].sourceUpdatedAt, '2026-09-09T00:00:00.000Z');
+    for (const cameras of [undefined, {}, [], [feature, feature]]) {
+      const result = await collectRoadMonitoring({ sources: [config], previous: good, now: NOW,
+        read: async () => response({ cameras }) });
+      assert.equal(result.sources[0].status, 'stale');
+      assert.equal(result.sources[0].fetchedAt, OLD);
+      assert.deepEqual(result.records, good.records);
+    }
+  });
+
   it('never publishes an initial failed/empty inventory as zero coverage', async () => {
     await assert.rejects(collectRoadMonitoring({ sources: [op], now: NOW, read: async () => response({}, { status: 503 }) }), /No valid monitoring data/);
     const result = await collectRoadMonitoring({ previous: snapshot, sources: [op], now: NOW, read: arcgis([]) });
@@ -79,6 +110,27 @@ describe('road monitoring equipment sources', () => {
     assert.equal(second.sources[1].fetchedAt, null);
     assert.equal(second.sources[1].count, 0);
     assert.equal(second.sources[0].status, 'ok');
+  });
+
+  it('deduplicates proven publisher aliases and retains unmatched cameras when preferred coverage is missing', async () => {
+    const fallback = { ...op, id: 'fallback', endpoint: 'https://fallback.example/layer',
+      duplicateOf: op.id, duplicateKey: (record) => record.name };
+    const unmatched = { ...feature, properties: { ...feature.properties, OBJECTID: 252, DisplayId: 'Harris Road' } };
+    const read = async (url) => url.startsWith(fallback.endpoint) ? arcgis([feature, unmatched])(url) : arcgis()(url);
+    const both = await collectRoadMonitoring({ sources: [op, fallback], now: OLD, read });
+    assert.equal(both.records.length, 2);
+    assert.equal(both.sources[1].count, 1);
+    assert.equal(both.records[1].name, 'Harris Road');
+    const absent = await collectRoadMonitoring({ sources: [op, fallback], now: NOW,
+      read: async (url) => url.startsWith(op.endpoint) ? response({}, { status: 503 }) : read(url) });
+    assert.equal(absent.sources[0].status, 'unavailable');
+    assert.equal(absent.sources[1].count, 2);
+    assert.equal(absent.records.length, 2);
+    const stale = await collectRoadMonitoring({ previous: both, sources: [op, fallback], now: NOW,
+      read: async (url) => url.startsWith(op.endpoint) ? response({}, { status: 503 }) : read(url) });
+    assert.equal(stale.sources[0].status, 'stale');
+    assert.equal(stale.sources[1].count, 1);
+    assert.equal(stale.records.length, 2);
   });
 
   it('loads maintenance-only Socrata inventories and drops explicitly retired equipment', async () => {
@@ -131,7 +183,7 @@ describe('road monitoring equipment sources', () => {
   });
 
   it('keeps Bluetooth, unspecified probes and cameras separate, excluding removed inventory', () => {
-    assert.ok(!MONITORING_SOURCES.some((config) => /austin/iu.test(config.id)));
+    assert.ok(!MONITORING_SOURCES.some((config) => /austin/iu.test(config.id) && config.kind !== 'traffic_camera'));
     const york = MONITORING_SOURCES.find((config) => config.id === 'york-bluetooth');
     const yorkRow = york.normalize({ ...feature, geometry: { type: 'Point', coordinates: [-79.4, 44] }, properties: { OBJECTID: 2, READERID: 'Road reader' } });
     assert.equal(yorkRow.kind, 'bluetooth_sensor');

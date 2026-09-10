@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import type { MonitoringRecord } from '../../../../packages/core/src/roadMonitoring.ts';
 import { IMAGE_MAX_BYTES, IMAGE_TIMEOUT_MS, officialImageUrl, onRequestGet } from './image.ts';
 
@@ -26,6 +27,12 @@ const invoke = (query = '?id=op%3A1') => onRequestGet({ request: new Request(`ht
 afterEach(() => vi.restoreAllMocks());
 
 describe('official inventory image proxy', () => {
+  it('accepts every image service linked by the packaged inventory', () => {
+    const snapshot = JSON.parse(readFileSync(new URL('../../../../apps/pwa/public/records/road-monitoring.json', import.meta.url), 'utf8')) as { records: MonitoringRecord[] };
+    const refused = snapshot.records.filter((record) => record.imageUrl !== null && officialImageUrl(record) === null);
+    expect(refused.map((record) => ({ id: record.id, imageUrl: record.imageUrl }))).toEqual([]);
+  });
+
   it('resolves a known id and fetches only its pinned official image without forwarding viewer headers', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(inventory())
       .mockResolvedValueOnce(new Response(JPEG, { headers: { 'content-type': 'image/jpeg' } }));
@@ -72,6 +79,29 @@ describe('official inventory image proxy', () => {
     fetcher.mockResolvedValueOnce(inventory({ imageUrl: 'https://example.org/image.jpg' }));
     expect((await invoke()).status).toBe(503);
     expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it('pins each expanded publisher to its own still-image service and rejects video and arbitrary queries', () => {
+    const approved = [
+      ['kansas-traffic', 'https://www.kcscout.net/TransSuite.VCS.CameraSnapshots/K069SBC-22.jpg'],
+      ['kansas-traffic', 'https://kscam.carsprogram.org/KDOT_573004_IMAGE001.JPG'],
+      ['kansas-traffic', 'https://kscam.carsprogram.org/snapshots/GEN_5-015-0731-2-K-15&MACARTHURRD.jpeg'],
+      ['austin-traffic', 'https://cctv.austinmobility.io/image/1.jpg'],
+      ['iowa-traffic', 'https://atmsqf.iowadot.gov/snapshots/public/Metro/example.jpg'],
+      ['wsdot-traffic', 'https://images.wsdot.wa.gov/nw/example.jpg'],
+      ['wsdot-traffic', 'https://images.wsdot.wa.gov/rweather/Medium_HorseHeaven%40I-82.jpg'],
+    ] as const;
+    for (const [sourceId, imageUrl] of approved) {
+      expect(officialImageUrl(entry({ sourceId, imageUrl }))).toBe(imageUrl);
+      expect(officialImageUrl(entry({ sourceId: 'unlisted-source', imageUrl }))).toBeNull();
+      expect(officialImageUrl(entry({ sourceId, imageUrl: `${imageUrl}?url=https://example.org` }))).toBeNull();
+      expect(officialImageUrl(entry({ sourceId, imageUrl: imageUrl!.replace(/\.(?:jpe?g)$/iu, '.m3u8') }))).toBeNull();
+    }
+    for (const [sourceId, imageUrl] of [
+      ['kansas-traffic', 'https://www.kcscout.net/mapsubsystem/snapshots/K069SBC-22.jpg'],
+      ['iowa-traffic', 'https://atmsqf.iowadot.gov/private/example.jpg'],
+      ['wsdot-traffic', 'https://images.wsdot.wa.gov/ferries/example.jpg'],
+    ] as const) expect(officialImageUrl(entry({ sourceId, imageUrl }))).toBeNull();
   });
 
   it('refuses redirects without requesting their target', async () => {
