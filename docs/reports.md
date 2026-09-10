@@ -26,6 +26,11 @@ Atlas runs the existing county builder; it does not maintain a second agency
 database. Public article headlines and links are automatically published, but
 they do not become confirmed case records or camera ownership claims.
 
+Repeated section URLs from the same publisher are merged by normalized headline
+or publisher article identifier. The collector removes these duplicates before
+publication, and the app also handles older cached feeds. Separate publishers'
+coverage stays separate.
+
 ## Reading freshness
 
 News reports the last collection attempt and whether coverage was complete,

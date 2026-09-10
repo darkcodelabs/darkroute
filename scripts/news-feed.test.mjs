@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  buildNewsFeed, classifyNewsTopic, normalizeNewsArticle, normalizePublicSourceUrl,
+  buildNewsFeed, classifyNewsTopic, deduplicateNewsArticles, normalizeNewsArticle, normalizePublicSourceUrl,
 } from './news-feed.mjs';
 
 const NOW = '2026-09-10T12:00:00.000Z';
@@ -76,6 +76,28 @@ describe('public news citations', () => {
 });
 
 describe('bounded news feed refresh', () => {
+  it('collapses the same publisher story across section aliases and repeated sightings', () => {
+    const rows = ['spotlightnews', 'ade', 'leader_herald', 'the_recorder', 'hv360'].map((section, index) =>
+      normalizeNewsArticle({ ...SOURCE, title: 'Flock data misused by Albany County investigator : Sheriff | News',
+        url: `https://www.dailygazette.com/${section}/news/article_5047ba1c-0563-4b8f-960c-837d8b2f20bd.html`,
+        publishedAt: index === 0 ? NOW : SOURCE.publishedAt }));
+    const otherPublisher = normalizeNewsArticle({ ...SOURCE, title: rows[0].title, url: 'https://other.example.com/story' });
+    const correctedHeadline = { ...rows[1], title: 'Sheriff releases findings of the Albany County investigation' };
+    const result = deduplicateNewsArticles([...rows, correctedHeadline, otherPublisher]);
+    assert.equal(result.length, 2);
+    assert.equal(result[0].url, rows[0].url);
+    assert.equal(result[0].publishedAt, NOW);
+    assert.equal(result[1].publisher, 'other.example.com');
+  });
+
+  it('also collapses matching publisher headlines without an article UUID', () => {
+    const rows = [
+      normalizeNewsArticle(SOURCE),
+      normalizeNewsArticle({ ...SOURCE, url: 'https://example.com/another-section/cameras', title: 'Council discusses license plate readers!', publishedAt: NOW }),
+      normalizeNewsArticle({ ...SOURCE, url: 'https://example.com/different', title: 'Council votes to remove all cameras' }),
+    ];
+    assert.equal(deduplicateNewsArticles(rows).length, 2);
+  });
   it('deduplicates normalized citations deterministically and keeps the newest seen time', () => {
     const newer = { ...SOURCE, url: `${SOURCE.url}?utm_medium=rss`, publishedAt: NOW };
     const rows = [SOURCE, newer, { ...SOURCE, url: 'https://example.org/second' }];
@@ -121,7 +143,7 @@ describe('bounded news feed refresh', () => {
   });
 
   it('seeds dated legacy candidates without a review gate and rejects unbounded options', () => {
-    const candidates = Array.from({ length: 142 }, (_, i) => ({ ...candidate, sourceUrl: `https://example.com/story/${i}` }));
+    const candidates = Array.from({ length: 142 }, (_, i) => ({ ...candidate, _title: `${candidate._title} ${i}`, sourceUrl: `https://example.com/story/${i}` }));
     assert.equal(buildNewsFeed({ candidates, attempted: 6, succeeded: 3, now: NOW }).articles.length, 142);
     for (const options of [
       { maxArticles: 1001 }, { maxAgeDays: 181 }, { attempted: 1, succeeded: 2 },

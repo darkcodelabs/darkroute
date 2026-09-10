@@ -20,13 +20,15 @@ import { CoverageView } from './CoverageView.tsx';
 import { fetchCounties, fetchIndex, fetchTombstones, formatCount } from './data.ts';
 import type { CountyRow } from './data.ts';
 import { ReportsView } from './ReportsView.tsx';
+import { MonitoringView } from './MonitoringView.tsx';
 import './console.css';
 
-export type TabId = 'archive' | 'reports' | 'api' | 'coverage';
+export type TabId = 'archive' | 'reports' | 'monitoring' | 'api' | 'coverage';
 
 export const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
   { id: 'archive', label: 'Archive' },
   { id: 'reports', label: 'Reports' },
+  { id: 'monitoring', label: 'Monitoring' },
   { id: 'api', label: 'API' },
   { id: 'coverage', label: 'Coverage' },
 ];
@@ -34,6 +36,7 @@ export const TABS: readonly { readonly id: TabId; readonly label: string }[] = [
 const RAILS: Readonly<Record<TabId, 'both' | 'left' | 'none'>> = {
   archive: 'both',
   reports: 'none',
+  monitoring: 'none',
   api: 'none',
   coverage: 'left',
 };
@@ -154,7 +157,7 @@ export function Console(): ReactElement {
           ))}
         </nav>
         <span className="dc-spacer" />
-        <label className="dc-search">
+        {tab !== 'monitoring' ? <label className="dc-search">
           <input
             type="search"
             value={query}
@@ -168,7 +171,7 @@ export function Console(): ReactElement {
             }}
           />
           <kbd>/</kbd>
-        </label>
+        </label> : null}
         <span className="dc-keys">
           <button
             type="button"
@@ -230,6 +233,7 @@ export function Console(): ReactElement {
 
       {tab === 'archive' ? <ArchiveView archive={archive} query={query} theme={theme} /> : null}
       {tab === 'reports' ? <ReportsView archive={archive} query={query} /> : null}
+      {tab === 'monitoring' ? <MonitoringView /> : null}
       {tab === 'api' ? <ApiRefView archive={archive} /> : null}
       {tab === 'coverage' ? <CoverageView archive={archive} query={query} /> : null}
 

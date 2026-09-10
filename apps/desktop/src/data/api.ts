@@ -1,3 +1,7 @@
+import { parseMonitoringSnapshot } from '../../../../packages/core/src/roadMonitoring.ts';
+import type { MonitoringSnapshot } from '../../../../packages/core/src/roadMonitoring.ts';
+export type { MonitoringKind, MonitoringRecord } from '../../../../packages/core/src/roadMonitoring.ts';
+
 /**
  * THE CONSOLE'S ONLY WAY TO REACH DATA.
  *
@@ -181,6 +185,40 @@ export interface AtlasResult {
 }
 export function fetchAtlas(signal?: AbortSignal): Promise<AtlasResult> {
   return get<AtlasResult>('/api/v1/atlas', signal);
+}
+
+export interface MonitoringResult extends MonitoringSnapshot {
+  readonly count: number;
+  readonly total: number;
+}
+
+/** Fetch the complete inventory once; searches and kind filters stay on this device. */
+export async function fetchMonitoring(signal?: AbortSignal): Promise<MonitoringResult> {
+  const body = await get<unknown>('/api/v1/monitoring', signal);
+  const snapshot = parseMonitoringSnapshot(body);
+  const envelope = typeof body === 'object' && body !== null ? body as Record<string, unknown> : {};
+  const query = envelope['query'];
+  if (snapshot === null || envelope['count'] !== snapshot.records.length || envelope['total'] !== snapshot.records.length
+    || typeof query !== 'object' || query === null || !('bbox' in query) || !('kind' in query)
+    || query.bbox !== null || query.kind !== null) {
+    throw new ApiError(200, 'monitoring_malformed', 'The monitoring inventory response is incomplete or invalid.');
+  }
+  return { ...snapshot, count: snapshot.records.length, total: snapshot.records.length };
+}
+
+/** Images go through the same-origin proxy only when a record's details are open. */
+export async function fetchMonitoringImage(id: string, signal?: AbortSignal): Promise<Blob> {
+  const response = await fetch(`/api/v1/monitoring/image?${new URLSearchParams({ id }).toString()}`, {
+    credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', signal: signal ?? null,
+  });
+  const type = response.headers.get('content-type')?.split(';')[0]?.trim();
+  if (!response.ok || !['image/jpeg', 'image/png', 'image/webp'].includes(type ?? '')
+    || Number(response.headers.get('content-length')) > 5 * 1024 * 1024) {
+    throw new ApiError(response.status, 'monitoring_image_unavailable', 'The source photo is unavailable right now.');
+  }
+  const blob = await response.blob();
+  if (blob.size === 0 || blob.size > 5 * 1024 * 1024) throw new ApiError(200, 'monitoring_image_invalid', 'The source photo is invalid.');
+  return blob;
 }
 
 export interface Stats {

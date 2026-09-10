@@ -87,6 +87,8 @@
  */
 
 :root {
+  /* Dynamic viewport ceiling for scrollable map inventory details. */
+  --fwm-viewport-height: 100dvh;
   --fwm-bg:            #000000;
 
   /* ---------------------------------------------------------------------

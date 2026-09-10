@@ -109,6 +109,24 @@ export function normalizeNewsArticle(row) {
   };
 }
 
+/** Publishers can expose one story through multiple section URLs. Observation
+ * dates and URL hashes identify sightings, not distinct stories. */
+export function deduplicateNewsArticles(articles) {
+  const seen = new Set();
+  return [...articles].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt) || a.url.localeCompare(b.url))
+    .filter((article) => {
+      const url = new URL(article.url);
+      const publisher = url.hostname.toLowerCase().replace(/^www\./u, '');
+      const title = article.title.normalize('NFKC').toLowerCase().replace(/[\p{P}\p{Z}\s]+/gu, ' ').trim();
+      const uuid = url.pathname.match(/article_([a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12})/iu)?.[1]?.toLowerCase();
+      const identities = [`url:${url.href}`, `headline:${publisher}:${title}`];
+      if (uuid) identities.push(`article:${publisher}:${uuid}`);
+      const duplicate = identities.some((identity) => seen.has(identity));
+      identities.forEach((identity) => seen.add(identity));
+      return !duplicate;
+    });
+}
+
 function rows(value, name) {
   if (!Array.isArray(value) || value.length > MAX_INPUT_ROWS) {
     throw new Error(`${name} must be an array of at most ${String(MAX_INPUT_ROWS)} rows`);
@@ -155,17 +173,13 @@ export function buildNewsFeed({
   }
   combined.sort((a, b) =>
     b.publishedAt.localeCompare(a.publishedAt) || a.url.localeCompare(b.url) || a.title.localeCompare(b.title));
-  const unique = new Map();
-  for (const article of combined) {
-    if (!unique.has(article.url)) unique.set(article.url, article);
-    if (unique.size === maxArticles) break;
-  }
+  const unique = deduplicateNewsArticles(combined).slice(0, maxArticles);
   const priorUpdatedAt = timestamp(prior?.updatedAt);
   return {
     schema: NEWS_SCHEMA,
     updatedAt: status === 'unavailable' && priorUpdatedAt !== null ? priorUpdatedAt : checkedAt,
     lastAttemptAt: checkedAt,
     coverage: { status, attempted, succeeded },
-    articles: [...unique.values()],
+    articles: unique,
   };
 }

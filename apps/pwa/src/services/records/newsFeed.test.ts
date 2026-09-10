@@ -12,8 +12,19 @@ credentialUrl.password = 'fixture-password';
 describe('news feed boundary', () => {
   it('preserves empty snapshots and sorts valid reporting by observation time', () => {
     expect(parseNewsFeed({ ...snapshot, articles: [] }).articles).toEqual([]);
-    const older = { ...article, id: 'older', publishedAt: '2026-09-09T01:00:00Z' };
+    const older = { ...article, id: 'older', title: 'Police release camera policy', url: 'https://publisher.test/policy', publishedAt: '2026-09-09T01:00:00Z' };
     expect(parseNewsFeed({ ...snapshot, articles: [older, article] }).articles.map((row) => row.id)).toEqual(['one', 'older']);
+  });
+
+  it('repairs old snapshots containing one story under multiple section URLs', () => {
+    const rows = ['spotlightnews', 'ade', 'leader_herald', 'the_recorder', 'hv360'].map((section, index) => ({
+      ...article, id: section, title: 'Flock data misused by Albany County investigator : Sheriff | News',
+      url: `https://www.dailygazette.com/${section}/news/article_5047ba1c-0563-4b8f-960c-837d8b2f20bd.html`,
+      publishedAt: index === 0 ? article.publishedAt : '2026-09-09T01:00:00Z',
+    }));
+    const other = { ...rows[1], id: 'other', url: 'https://another.example/story' };
+    const parsed = parseNewsFeed({ ...snapshot, articles: [...rows, other] });
+    expect(parsed.articles.map((row) => row.id)).toEqual(['spotlightnews', 'other']);
   });
 
   it.each(['javascript:alert(1)', 'data:text/html,hello', '//publisher.test/story',

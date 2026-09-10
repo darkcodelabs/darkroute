@@ -27,6 +27,9 @@
  */
 
 import { create } from 'zustand';
+import { MONITORING_KINDS, MONITORING_OFF, readMonitoringTypes } from '../services/records/monitoringCatalog.ts';
+import type { MonitoringTypes } from '../services/records/monitoringCatalog.ts';
+import type { MonitoringKind } from './fwmCore.ts';
 import { persist } from 'zustand/middleware';
 import type { PersistStorage } from 'zustand/middleware';
 
@@ -219,6 +222,8 @@ export interface PersistedSettings {
    * how somebody learns it exists and therefore learns what it does not cover.
    */
   readonly showHazards: boolean;
+  /** Optional infrastructure display; never used by ALPR alerts or routing. */
+  readonly monitoringTypes: MonitoringTypes;
   /**
    * Count documented abuse in the nearby query, and let the dock resolve which
    * county you are in.
@@ -434,6 +439,7 @@ export interface SettingsActions {
   setAbuseNameAgency(on: boolean): void;
   /** Draw roadwork and closures. See `showHazards`. */
   setShowHazards(on: boolean): void;
+  setMonitoringType(kind: MonitoringKind, on: boolean): void;
   /** Turn the map to face the direction of travel. See `headingUpMap`. */
   setHeadingUpMap(on: boolean): void;
   /** Declare the wide layout regardless of the viewport. See `forceLandscape`. */
@@ -572,6 +578,7 @@ export const DEFAULT_SETTINGS: PersistedSettings = Object.freeze({
   immersiveOnLaunch: false,
   // Off until asked for. See `showHazards`.
   showHazards: false,
+  monitoringTypes: MONITORING_OFF,
   abuseNearMe: true,
   abuseAlertOnEntry: false,
   abuseNameAgency: true,
@@ -712,6 +719,7 @@ export function mergePersistedSettings(stored: unknown): PersistedSettings {
      */
     immersiveOnLaunch: readBoolean(bag['immersiveOnLaunch'], DEFAULT_SETTINGS.immersiveOnLaunch),
     showHazards: bag['showHazards'] === true,
+    monitoringTypes: readMonitoringTypes(bag['monitoringTypes']),
     /* `readBoolean(..., DEFAULT)` and not `=== true`: an install predating these
        switches must keep the published default rather than be silently forced
        off, which is what a bare truthiness read would do to the two that
@@ -939,6 +947,11 @@ export function createSettingsStore(options: SettingsStoreOptions = {}) {
           set({ immersiveOnLaunch: on === true });
         },
 
+        setMonitoringType(kind: MonitoringKind, on: boolean) {
+          if (!MONITORING_KINDS.includes(kind)) return;
+          set((state) => ({ monitoringTypes: { ...state.monitoringTypes, [kind]: on === true } }));
+        },
+
         setShowHazards(on: unknown) {
           set({ showHazards: on === true });
         },
@@ -1057,6 +1070,7 @@ export function createSettingsStore(options: SettingsStoreOptions = {}) {
           keepPlacesDays: state.keepPlacesDays,
           immersiveOnLaunch: state.immersiveOnLaunch,
           showHazards: state.showHazards,
+          monitoringTypes: state.monitoringTypes,
           abuseNearMe: state.abuseNearMe,
           abuseAlertOnEntry: state.abuseAlertOnEntry,
           abuseNameAgency: state.abuseNameAgency,

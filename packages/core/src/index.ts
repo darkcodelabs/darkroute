@@ -27,6 +27,9 @@ export type {
 export type { Clock, TestClock } from './clock.ts';
 export { systemClock, createTestClock } from './clock.ts';
 
+export { MONITORING_SCHEMA, MONITORING_MAX_BYTES, MONITORING_MAX_RECORDS, MONITORING_KINDS, parseMonitoringSnapshot } from './roadMonitoring.ts';
+export type { MonitoringKind, MonitoringRecord, MonitoringSource, MonitoringSnapshot } from './roadMonitoring.ts';
+
 export {
   AHEAD_HALF_ANGLE_DEG,
   DEFAULT_FACING_TOLERANCE_DEG,

@@ -75,6 +75,10 @@ import {
 } from '../../services/adapters/demoGeolocation.ts';
 import { AbuseMenu } from '../map/AbuseMenu.tsx';
 import { setMisuseCasesOnly } from '../misuse/misuseView.ts';
+import { useRoadMonitoring } from '../../services/records/useRoadMonitoring.ts';
+import { monitoringEnabled, selectedMonitoring } from '../../services/records/monitoringCatalog.ts';
+import { MonitoringDetail } from '../map/MonitoringDetail.tsx';
+import { NO_MONITORING } from '../map/monitoringLayers.ts';
 import { MapControlPanel } from '../map/MapControlPanel.tsx';
 import { MapViewPanel } from '../map/MapViewPanel.tsx';
 import { LIGHT_MODES, toggleDayNight } from '../../app/dayNight.ts';
@@ -1109,6 +1113,12 @@ export function DriveScreen(): ReactElement {
    * eagerly would make its silence look like an answer to somebody who never
    * opted in.
    */
+  const monitoringTypes = useSettingsStore((state) => state.monitoringTypes);
+  const monitoringFeed = useRoadMonitoring(monitoringEnabled(monitoringTypes));
+  const monitoringRecords = useMemo(() => selectedMonitoring(monitoringFeed.data?.records ?? NO_MONITORING, monitoringTypes), [monitoringFeed.data, monitoringTypes]);
+  const [monitoringSelection, setMonitoringSelection] = useState<string | null>(null);
+  const [monitoringVisibleCount, setMonitoringVisibleCount] = useState<number | null>(null);
+  const monitoringRecord = monitoringRecords.find((record) => record.id === monitoringSelection);
   const showHazards = useSettingsStore((s) => s.showHazards);
   const setShowHazards = useSettingsStore((s) => s.setShowHazards);
   useEffect(() => {
@@ -1216,6 +1226,9 @@ export function DriveScreen(): ReactElement {
             lon={mapFix?.lon ?? null}
             bearingDeg={mapHeading}
             cameras={drawn.length > 0 ? drawn : NO_CAMERAS}
+            monitoring={monitoringRecords}
+            onSelectMonitoring={(id) => { setMonitoringSelection(id); closeMapPanel(); setAbusePanelOpen(false); setMapViewOpen(false); }}
+            onMonitoringVisibleCount={setMonitoringVisibleCount}
             cluster={clusterCameras}
             mapView={mapView}
             pitchDeg={MAP_TILT_DEG[mapTilt]}
@@ -1237,6 +1250,7 @@ export function DriveScreen(): ReactElement {
               setPanned(true);
             }}
             onSelectCamera={(id) => {
+              setMonitoringSelection(null);
               openIntelCard(id);
             }}
           />
@@ -1406,6 +1420,7 @@ export function DriveScreen(): ReactElement {
                   'map-view': { expanded: mapViewOpen, ref: mapViewKeyRef },
                 }}
                 onSelect={(chip: ChipId) => {
+                  setMonitoringSelection(null);
                   // ONE PANEL AT A TIME, AND NOW THERE ARE THREE. Two glass
                   // panels overlapping the same band of map is unreadable, and
                   // the second one to open would be the only one a driver could
@@ -1588,12 +1603,18 @@ export function DriveScreen(): ReactElement {
             }}
           />
 
+          {monitoringRecord ? <MonitoringDetail record={monitoringRecord} cameras={cameras}
+            onOpenCamera={(id) => { setMonitoringSelection(null); openIntelCard(id); }}
+            source={monitoringFeed.data?.sources.find((source) => source.id === monitoringRecord.sourceId)}
+            onClose={() => { setMonitoringSelection(null); }} /> : null}
+
           {/* SIBLING OF THE RAIL, not a child of it: the rail is a column of
               48px keys and this is a pane beside them. */}
           <MapControlPanel
             open={mapPanelOpen}
             onClose={closeMapPanel}
             returnFocusTo={mapPanelKeyRef}
+            monitoringVisibleCount={monitoringVisibleCount}
             hazards={showHazards}
             onToggleHazards={() => {
               setShowHazards(!showHazards);

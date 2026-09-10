@@ -54,6 +54,9 @@ import type { FeatureCollection, Point } from 'geojson';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import type { MonitoringRecord } from '../../stores/fwmCore.ts';
+import { MONITORING_HIT, NO_MONITORING, monitoringInView, syncMonitoringLayers } from './monitoringLayers.ts';
+
 import { basemapUrl, isPmtiles } from './basemap.ts';
 import { resolveArchiveUrl } from './manifest.ts';
 import { setCurrentMap, setResolvedArchive } from './mapRegistry.ts';
@@ -164,6 +167,9 @@ export interface MapCanvasProps {
   /** Degrees to rotate the map to, or null for north-up. */
   readonly bearingDeg: number | null;
   readonly cameras: readonly CameraFeatureInput[];
+  readonly monitoring?: readonly MonitoringRecord[];
+  readonly onSelectMonitoring?: (id: string) => void;
+  readonly onMonitoringVisibleCount?: (count: number) => void;
   readonly zoom?: number | undefined;
   /** True while the driver has dragged away; suppresses following the vehicle. */
   readonly panned?: boolean | undefined;
@@ -426,6 +432,9 @@ export function MapCanvas({
   lon,
   bearingDeg,
   cameras,
+  monitoring = NO_MONITORING,
+  onSelectMonitoring,
+  onMonitoringVisibleCount,
   zoom = DEFAULT_ZOOM,
   panned = false,
   onSelectCamera,
@@ -480,6 +489,12 @@ export function MapCanvas({
 
   // Handlers change identity every render; the map is built once. Reading them
   // through refs keeps the map from being torn down and rebuilt for a callback.
+  const monitoringSelectRef = useRef(onSelectMonitoring);
+  monitoringSelectRef.current = onSelectMonitoring;
+  const monitoringCountRef = useRef(onMonitoringVisibleCount);
+  monitoringCountRef.current = onMonitoringVisibleCount;
+  const monitoringRef = useRef(monitoring);
+  monitoringRef.current = monitoring;
   const selectRef = useRef(onSelectCamera);
   selectRef.current = onSelectCamera;
   const movedRef = useRef(onUserMoved);
@@ -808,6 +823,8 @@ export function MapCanvas({
         // AFTER the camera layers, because the rings belong on top of the dots
         // they mark. The hull inserts itself underneath; see `syncCounted`.
         syncCounted(instance);
+        syncMonitoringLayers(instance, monitoringRef.current, palette);
+        monitoringCountRef.current?.(monitoringInView(instance, monitoringRef.current));
         // THE MODE MAY HAVE CHANGED WHILE THIS WAS BUILDING. Reconcile now that
         // `ready` is true, or a theme applied during the build is lost forever.
         repaintRef.current?.();
@@ -854,6 +871,14 @@ export function MapCanvas({
        * and no future rebuild can silently unbind it.
        */
       instance.on('click', (event) => {
+        if (instance.getLayer(MONITORING_HIT) !== undefined) {
+          const hit = instance.queryRenderedFeatures(event.point, { layers: [MONITORING_HIT] })[0];
+          const monitoringId = hit?.properties?.['monitoringId'];
+          if (typeof monitoringId === 'string') {
+            monitoringSelectRef.current?.(monitoringId);
+            return;
+          }
+        }
         if (instance.getLayer(HIT_LAYER) === undefined) return;
         const feature = instance.queryRenderedFeatures(event.point, { layers: [HIT_LAYER] })[0];
         if (feature === undefined) return;
@@ -911,6 +936,7 @@ export function MapCanvas({
       // still building. The zoom swap stays; that is the actual job of this
       // handler.
       instance.on('moveend', () => {
+        monitoringCountRef.current?.(monitoringInView(instance, monitoringRef.current));
         swapForZoom(instance);
         syncViewport(instance);
       });
@@ -1638,6 +1664,7 @@ export function MapCanvas({
           syncRoute(instance);
           addCameraLayers(instance, readPalette(holder.current ?? undefined), clusterRef.current);
           syncCounted(instance);
+          syncMonitoringLayers(instance, monitoringRef.current, readPalette(holder.current ?? undefined));
           showingOverview.current = false;
           swapForZoom(instance);
         });
@@ -1692,6 +1719,7 @@ export function MapCanvas({
       syncRoute(instance);
       addCameraLayers(instance, palette, clusterRef.current);
       syncCounted(instance);
+      syncMonitoringLayers(instance, monitoringRef.current, palette);
     };
 
     const observer = new MutationObserver(repaint);
@@ -1769,9 +1797,17 @@ export function MapCanvas({
     });
     addCameraLayers(instance, palette, cluster);
     syncCounted(instance);
+    syncMonitoringLayers(instance, monitoringRef.current, palette);
     showingOverview.current = false;
     swapForZoom(instance);
   }, [cluster, swapForZoom, syncCounted]);
+
+  useEffect(() => {
+    const instance = map.current;
+    if (instance === null || !ready.current || !instance.isStyleLoaded()) return;
+    syncMonitoringLayers(instance, monitoring, readPalette(holder.current ?? undefined));
+    monitoringCountRef.current?.(monitoringInView(instance, monitoring));
+  }, [monitoring]);
 
   // --- the data ------------------------------------------------------------
   useEffect(() => {
