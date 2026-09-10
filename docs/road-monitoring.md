@@ -101,6 +101,16 @@ combine `kind` and `bbox`. Source counts describe the full source inventory;
 `count` describes the filtered response and `total` the complete inventory.
 The filtered response is an API envelope, not a replacement raw snapshot.
 
+Omit both filters to retrieve every category and all source metadata in one
+JSON response. The monitoring API has no pagination or result truncation.
+For a complete inventory export without the API envelope:
+
+```sh
+curl --fail --show-error --location \
+  https://darkroute.ai/records/road-monitoring.json \
+  --output road-monitoring.json
+```
+
 The schema is `darkroute-road-monitoring/v1`, defined in
 `packages/core/src/roadMonitoring.ts`. Records include stable source IDs,
 equipment kind, WGS84 coordinates, name, operator, road, direction, status,
