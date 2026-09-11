@@ -60,8 +60,8 @@ importers:
   apps/desktop:
     dependencies:
       maplibre-gl:
-        specifier: 6.6.0
-        version: 6.6.0
+        specifier: 6.8.0
+        version: 6.8.0
       pmtiles:
         specifier: 4.5.0
         version: 4.5.0
@@ -109,8 +109,8 @@ importers:
         specifier: 8.0.3
         version: 8.0.3
       maplibre-gl:
-        specifier: 6.6.0
-        version: 6.6.0
+        specifier: 6.8.0
+        version: 6.8.0
       pbf:
         specifier: ^5.1.2
         version: 5.1.2
@@ -2843,8 +2843,8 @@ packages:
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
-  maplibre-gl@6.6.0:
-    resolution: {integrity: sha512-EQql6eZYPhbHvJpqY4AwoiuLkUfXFRBHk67S8mDtzNo1F/jAo7xAxunIzO7gJ1vwTcPMgrK9b64dqKHvnkTlDQ==}
+  maplibre-gl@6.8.0:
+    resolution: {integrity: sha512-+ZkjKTodsVLY0ewQThvXRxXQsclcsSgOm5LlnrBM3G8AloMJKt6Haw8mY4xrOl8T0WMqH6DTYjktZ9zGQXZd4w==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
 
   math-intrinsics@1.1.0:
@@ -6400,7 +6400,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  maplibre-gl@6.6.0:
+  maplibre-gl@6.8.0:
     dependencies:
       '@mapbox/point-geometry': 1.1.0
       '@mapbox/tiny-sdf': 2.2.0
