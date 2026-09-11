@@ -20,7 +20,7 @@
     "@mapbox/vector-tile": "^3.0.0",
     "@meshtastic/js": "2.6.0-0",
     "@protomaps/basemaps": "5.7.2",
-    "@tanstack/react-query": "5.101.4",
+    "@tanstack/react-query": "5.102.8",
     "idb": "8.0.3",
     "maplibre-gl": "6.6.0",
     "pbf": "^5.1.2",
