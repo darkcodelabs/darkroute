@@ -66,18 +66,18 @@ importers:
         specifier: 4.5.0
         version: 4.5.0
       react:
-        specifier: 19.2.8
-        version: 19.2.8
+        specifier: 19.3.1
+        version: 19.3.1
       react-dom:
         specifier: 19.2.8
-        version: 19.2.8(react@19.2.8)
+        version: 19.2.8(react@19.3.1)
     devDependencies:
       '@types/react':
-        specifier: 19.2.18
-        version: 19.2.18
+        specifier: 19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: 19.2.5
-        version: 19.2.5(@types/react@19.2.18)
+        version: 19.2.5(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 6.1.1
         version: 6.1.1(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0))
@@ -104,7 +104,7 @@ importers:
         version: 5.7.2
       '@tanstack/react-query':
         specifier: 5.101.4
-        version: 5.101.4(react@19.2.8)
+        version: 5.101.4(react@19.3.1)
       idb:
         specifier: 8.0.3
         version: 8.0.3
@@ -118,17 +118,17 @@ importers:
         specifier: 4.5.0
         version: 4.5.0
       react:
-        specifier: 19.2.8
-        version: 19.2.8
+        specifier: 19.3.1
+        version: 19.3.1
       react-dom:
         specifier: 19.2.8
-        version: 19.2.8(react@19.2.8)
+        version: 19.2.8(react@19.3.1)
       workbox-window:
         specifier: 7.4.1
         version: 7.4.1
       zustand:
         specifier: 5.0.15
-        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)
+        version: 5.0.15(@types/react@19.3.0)(react@19.3.1)
     devDependencies:
       '@playwright/test':
         specifier: 1.62.1
@@ -141,7 +141,7 @@ importers:
         version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@types/node@26.2.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0)))
       '@testing-library/react':
         specifier: 16.3.2
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.8(react@19.3.1))(react@19.3.1)
       '@types/geojson':
         specifier: ^7946.0.16
         version: 7946.0.16
@@ -149,11 +149,11 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       '@types/react':
-        specifier: 19.2.18
-        version: 19.2.18
+        specifier: 19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: 19.2.5
-        version: 19.2.5(@types/react@19.2.18)
+        version: 19.2.5(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 6.1.1
         version: 6.1.1(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0))
@@ -782,6 +782,10 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0 || ^8.0.0-0 <8.0.0
 
+  '@babel/runtime@7.29.15':
+    resolution: {integrity: sha512-304gsbbGVmQc+cNGHzwHBlqepYdWLKj3VXCQBGt/EGcV7PUPfKI7kAUNW1FZEOCwlQiLvQjg1JEaAlRQ616h+Q==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/runtime@7.29.7':
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
@@ -1281,8 +1285,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@jsr/meshtastic__protobufs@2.8.0':
-    resolution: {integrity: sha512-FiyUe1AYhD4Plt0hiewx8s+Q+icZA58MZyTWLwOusb5yNWQHX5oJ7EK8EQt82N7hrgSYU0MZyPyYliQuTUkLaw==, tarball: https://npm.jsr.io/~/11/@jsr/meshtastic__protobufs/2.8.0.tgz}
+  '@jsr/meshtastic__protobufs@2.8.2':
+    resolution: {integrity: sha512-ckx88Ee+SZKibFjfAleyiURXti/hznU4S98ZgqwEzBjx1Z9wr36mI0owr4wwHCqkaGhoolnyo0Qvfj01h5bHAw==, tarball: https://npm.jsr.io/~/11/@jsr/meshtastic__protobufs/2.8.2.tgz}
 
   '@mapbox/jsonlint-lines-primitives@2.0.3':
     resolution: {integrity: sha512-0SElaV0uMxEnxzBhhX9WTuPyUeMsAN/SS0i16tjuba4/mio63MG9khjC1a0JAiPGXAwvwm4UfHJURCN7nyudQg==}
@@ -1618,6 +1622,9 @@ packages:
   '@smithy/core@3.33.3':
     resolution: {integrity: sha512-CsOeKq/9kA3y6VJHt+/+VTCtBaxJ4OTFpgrjIUhPpDIKxBci1k2bJaQASF2h/ELWrulGp+t97DZ0mevfAD8idg==}
     engines: {node: '>=18.0.0'}
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -1811,8 +1818,8 @@ packages:
     peerDependencies:
       '@types/react': ^19.2.0
 
-  '@types/react@19.2.18':
-    resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
+  '@types/react@19.3.0':
+    resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -2110,8 +2117,8 @@ packages:
   css.escape@1.5.1:
     resolution: {integrity: sha512-YUifsXXuknHlUsmlgyY0PKzgPOr7/FjCePfHNt0jxm83wHZi44VDMQ7/fGNkjY3/jV1MC+1CmZbaHzugyeRtpg==}
 
-  csstype@3.2.3:
-    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+  csstype@3.2.4:
+    resolution: {integrity: sha512-PoKaoPzQapnEoqUSnHx1u6W6ku8CVEgKsnpmmzU3m1nwkidpPBQ8V/Zq2+bWNrsOKoKLwTGdbx6xF7BXP1zLVQ==}
 
   data-urls@7.0.0:
     resolution: {integrity: sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==}
@@ -3031,8 +3038,8 @@ packages:
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
-  react@19.2.8:
-    resolution: {integrity: sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==}
+  react@19.3.1:
+    resolution: {integrity: sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==}
     engines: {node: '>=0.10.0'}
 
   readable-stream@3.6.2:
@@ -4519,6 +4526,8 @@ snapshots:
       '@babel/types': 7.29.8
       esutils: 2.0.3
 
+  '@babel/runtime@7.29.15': {}
+
   '@babel/runtime@7.29.7': {}
 
   '@babel/template@7.29.7':
@@ -4871,7 +4880,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@jsr/meshtastic__protobufs@2.8.0':
+  '@jsr/meshtastic__protobufs@2.8.2':
     dependencies:
       '@bufbuild/protobuf': 2.14.0
 
@@ -4915,7 +4924,7 @@ snapshots:
   '@meshtastic/js@2.6.0-0':
     dependencies:
       '@bufbuild/protobuf': 2.14.0
-      '@meshtastic/protobufs': '@jsr/meshtastic__protobufs@2.8.0'
+      '@meshtastic/protobufs': '@jsr/meshtastic__protobufs@2.8.2'
       crc: 4.3.2
       ste-simple-events: 3.0.11
       tslog: 4.11.0
@@ -5224,15 +5233,15 @@ snapshots:
 
   '@tanstack/query-core@5.101.4': {}
 
-  '@tanstack/react-query@5.101.4(react@19.2.8)':
+  '@tanstack/react-query@5.101.4(react@19.3.1)':
     dependencies:
       '@tanstack/query-core': 5.101.4
-      react: 19.2.8
+      react: 19.3.1
 
   '@testing-library/dom@10.4.1':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/runtime': 7.29.7
+      '@babel/runtime': 7.29.15
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -5252,15 +5261,15 @@ snapshots:
     optionalDependencies:
       vitest: 4.1.11(@types/node@26.2.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.50.0))
 
-  '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.8(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
       '@testing-library/dom': 10.4.1
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
+      react: 19.3.1
+      react-dom: 19.2.8(react@19.3.1)
     optionalDependencies:
-      '@types/react': 19.2.18
-      '@types/react-dom': 19.2.5(@types/react@19.2.18)
+      '@types/react': 19.3.0
+      '@types/react-dom': 19.2.5(@types/react@19.3.0)
 
   '@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1':
     dependencies:
@@ -5294,13 +5303,13 @@ snapshots:
     dependencies:
       undici-types: 8.3.0
 
-  '@types/react-dom@19.2.5(@types/react@19.2.18)':
+  '@types/react-dom@19.2.5(@types/react@19.3.0)':
     dependencies:
-      '@types/react': 19.2.18
+      '@types/react': 19.3.0
 
-  '@types/react@19.2.18':
+  '@types/react@19.3.0':
     dependencies:
-      csstype: 3.2.3
+      csstype: 3.2.4
 
   '@types/resolve@1.20.2': {}
 
@@ -5626,7 +5635,7 @@ snapshots:
 
   css.escape@1.5.1: {}
 
-  csstype@3.2.3: {}
+  csstype@3.2.4: {}
 
   data-urls@7.0.0:
     dependencies:
@@ -6572,14 +6581,14 @@ snapshots:
 
   quickselect@3.0.0: {}
 
-  react-dom@19.2.8(react@19.2.8):
+  react-dom@19.2.8(react@19.3.1):
     dependencies:
-      react: 19.2.8
+      react: 19.3.1
       scheduler: 0.27.0
 
   react-is@17.0.2: {}
 
-  react@19.2.8: {}
+  react@19.3.1: {}
 
   readable-stream@3.6.2:
     dependencies:
@@ -7366,7 +7375,7 @@ snapshots:
       cookie: 1.1.1
       youch-core: 0.3.3
 
-  zustand@5.0.15(@types/react@19.2.18)(react@19.2.8):
+  zustand@5.0.15(@types/react@19.3.0)(react@19.3.1):
     optionalDependencies:
-      '@types/react': 19.2.18
-      react: 19.2.8
+      '@types/react': 19.3.0
+      react: 19.3.1
